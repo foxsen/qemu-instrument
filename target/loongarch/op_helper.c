@@ -127,4 +127,10 @@ void helper_idle(CPULoongArchState *env)
     cs->halted = 1;
     do_raise_exception(env, EXCP_HLT, 0);
 }
+
+uint64_t helper_rdtime_d(CPULoongArchState *env)
+{
+     LoongArchCPU *cpu = LOONGARCH_CPU(env_cpu(env));
+     return cpu_loongarch_get_constant_timer_counter(cpu);
+}
 #endif /* !CONFIG_USER_ONLY */
