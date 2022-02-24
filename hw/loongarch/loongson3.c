@@ -19,6 +19,29 @@
 
 #include "target/loongarch/cpu.h"
 
+static void loongarch_cpu_set_irq(void *opaque, int irq, int level)
+{
+    LoongArchCPU *cpu = opaque;
+    CPULoongArchState *env = &cpu->env;
+    CPUState *cs = CPU(cpu);
+
+    if (irq < 0 || irq > N_IRQS) {
+        return;
+    }
+
+    if (level) {
+        env->CSR_ESTAT |= 1 << irq;
+    } else {
+        env->CSR_ESTAT &= ~(1 << irq);
+    }
+
+    if (FIELD_EX64(env->CSR_ESTAT, CSR_ESTAT, IS)) {
+        cpu_interrupt(cs, CPU_INTERRUPT_HARD);
+    } else {
+        cpu_reset_interrupt(cs, CPU_INTERRUPT_HARD);
+    }
+}
+
 static void loongarch_cpu_reset(void *opaque)
 {
     LoongArchCPU *cpu = opaque;
@@ -68,6 +91,8 @@ static void loongarch_cpu_init(LoongArchCPU *la_cpu, int cpu_num)
 {
     CPULoongArchState *env;
     env = &la_cpu->env;
+
+    qdev_init_gpio_in(DEVICE(la_cpu), loongarch_cpu_set_irq, N_IRQS);
 
     memory_region_init_io(&env->system_iocsr, OBJECT(la_cpu), NULL,
                       env, "iocsr", UINT64_MAX);
