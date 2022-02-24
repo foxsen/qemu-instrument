@@ -56,6 +56,7 @@ struct LoongArchMachineState {
     MemoryRegion bios;
 
     /* State for other subsystems/APIs: */
+    Notifier machine_done;
     FWCfgState  *fw_cfg;
 };
 
