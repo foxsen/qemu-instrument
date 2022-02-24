@@ -16,6 +16,11 @@
 #include "sysemu/reset.h"
 #include "sysemu/rtc.h"
 #include "hw/loongarch/loongarch.h"
+#include "hw/intc/loongarch_ipi.h"
+#include "hw/intc/loongarch_extioi.h"
+#include "hw/intc/loongarch_pch_pic.h"
+#include "hw/intc/loongarch_pch_msi.h"
+#include "hw/pci-host/ls7a.h"
 
 #include "target/loongarch/cpu.h"
 
@@ -87,8 +92,11 @@ static const MemoryRegionOps loongarch_qemu_ops = {
     },
 };
 
+static struct DeviceState *ipi, *extioi;
+
 static void loongarch_cpu_init(LoongArchCPU *la_cpu, int cpu_num)
 {
+    unsigned long ipi_addr;
     CPULoongArchState *env;
     env = &la_cpu->env;
 
@@ -107,12 +115,101 @@ static void loongarch_cpu_init(LoongArchCPU *la_cpu, int cpu_num)
                           NULL, "iocsr_misc", IOCSR_MEM_SIZE);
 
     memory_region_add_subregion(&env->system_iocsr, 0, &env->iocsr_mem);
+    /* ipi memory region */
+    ipi_addr = SMP_IPI_MAILBOX + cpu_num * 0x100;
+    memory_region_add_subregion(&env->system_iocsr, ipi_addr,
+                                sysbus_mmio_get_region(SYS_BUS_DEVICE(ipi),
+                                cpu_num));
+    /* extioi memory region */
+    memory_region_add_subregion(&env->system_iocsr, APIC_BASE,
+                                sysbus_mmio_get_region(SYS_BUS_DEVICE(extioi),
+                                cpu_num));
+}
+
+static DeviceState *create_ipi(void)
+{
+    DeviceState *ipi;
+
+    ipi = qdev_new(TYPE_LOONGARCH_IPI);
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(ipi), &error_fatal);
+    return ipi;
+}
+
+static DeviceState *create_extioi(void)
+{
+    DeviceState *extioi;
+
+    extioi = qdev_new(TYPE_LOONGARCH_EXTIOI);
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(extioi), &error_fatal);
+    return extioi;
+}
+
+static void loongarch_irq_init(LoongArchMachineState *lams,
+                               DeviceState *ipi, DeviceState *extioi)
+{
+    MachineState *ms = MACHINE(lams);
+    DeviceState *pch_pic, *pch_msi, *cpudev;
+
+    SysBusDevice *d;
+    int cpu, pin, i;
+
+    for (cpu = 0; cpu < ms->smp.cpus; cpu++) {
+        cpudev = DEVICE(qemu_get_cpu(cpu));
+        /* connect ipi irq to cpu irq */
+        qdev_connect_gpio_out(ipi, cpu, qdev_get_gpio_in(cpudev, IRQ_IPI));
+    }
+
+    for (i = 0; i < EXTIOI_IRQS; i++) {
+        sysbus_connect_irq(SYS_BUS_DEVICE(extioi),
+                           i, qdev_get_gpio_in(extioi, i));
+    }
+
+    /*
+     * connect ext irq to the cpu irq
+     * cpu_pin[9:2] <= intc_pin[7:0]
+     */
+    for (cpu = 0; cpu < ms->smp.cpus; cpu++) {
+        cpudev = DEVICE(qemu_get_cpu(cpu));
+        for (pin = 0; pin < LS3A_INTC_IP; pin++) {
+            qdev_connect_gpio_out(extioi, (cpu * 8 + pin),
+                                  qdev_get_gpio_in(cpudev, pin + 2));
+        }
+    }
+
+    pch_pic = qdev_new(TYPE_LOONGARCH_PCH_PIC);
+    d = SYS_BUS_DEVICE(pch_pic);
+    sysbus_realize_and_unref(d, &error_fatal);
+    memory_region_add_subregion(get_system_memory(), LS7A_IOAPIC_REG_BASE,
+                            sysbus_mmio_get_region(d, 0));
+    memory_region_add_subregion(get_system_memory(),
+                            LS7A_IOAPIC_REG_BASE + PCH_PIC_ROUTE_ENTRY_OFFSET,
+                            sysbus_mmio_get_region(d, 1));
+    memory_region_add_subregion(get_system_memory(),
+                            LS7A_IOAPIC_REG_BASE + PCH_PIC_INT_STATUS_LO,
+                            sysbus_mmio_get_region(d, 2));
+
+    /* Connect 64 pch_pic irqs to extioi */
+    for (int i = 0; i < PCH_PIC_IRQ_NUM; i++) {
+        sysbus_connect_irq(d, i, qdev_get_gpio_in(extioi, i));
+    }
+
+    pch_msi = qdev_new(TYPE_LOONGARCH_PCH_MSI);
+    d = SYS_BUS_DEVICE(pch_msi);
+    sysbus_realize_and_unref(d, &error_fatal);
+    sysbus_mmio_map(d, 0, LS7A_PCH_MSI_ADDR_LOW);
+    for (i = 0; i < PCH_MSI_IRQ_NUM; i++) {
+        /* Connect 192 pch_msi irqs to extioi */
+        sysbus_connect_irq(d, i,
+                           qdev_get_gpio_in(extioi, i + PCH_MSI_IRQ_START));
+    }
 }
 
 static void loongarch_init(MachineState *machine)
 {
     const char *cpu_model = machine->cpu_type;
     LoongArchCPU *la_cpu;
+    ipi = create_ipi();
+    extioi = create_extioi();
     ram_addr_t offset = 0;
     ram_addr_t ram_size = machine->ram_size;
     uint64_t highram_size = 0;
@@ -152,6 +249,8 @@ static void loongarch_init(MachineState *machine)
                              get_system_io(), 0, LOONGARCH_ISA_IO_SIZE);
     memory_region_add_subregion(address_space_mem, LOONGARCH_ISA_IO_BASE,
                                 &lams->isa_io);
+    /* Initialize the IO interrupt subsystem */
+    loongarch_irq_init(lams, ipi, extioi);
 }
 
 static void loongarch_class_init(ObjectClass *oc, void *data)
