@@ -358,6 +358,8 @@ void loongarch_cpu_list(void);
 
 #include "exec/cpu-all.h"
 
+#define CPU_INTERRUPT_WAKE CPU_INTERRUPT_TGT_INT_0
+
 #define LOONGARCH_CPU_TYPE_SUFFIX "-" TYPE_LOONGARCH_CPU
 #define LOONGARCH_CPU_TYPE_NAME(model) model LOONGARCH_CPU_TYPE_SUFFIX
 #define CPU_RESOLVING_TYPE TYPE_LOONGARCH_CPU
