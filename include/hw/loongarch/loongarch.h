@@ -58,8 +58,14 @@ struct LoongArchMachineState {
     /* State for other subsystems/APIs: */
     Notifier machine_done;
     FWCfgState  *fw_cfg;
+    OnOffAuto   acpi;
+    char        *oem_id;
+    char        *oem_table_id;
 };
 
 #define TYPE_LOONGARCH_MACHINE  MACHINE_TYPE_NAME("virt")
 OBJECT_DECLARE_SIMPLE_TYPE(LoongArchMachineState, LOONGARCH_MACHINE)
+
+bool loongarch_is_acpi_enabled(LoongArchMachineState *lams);
+void loongarch_acpi_setup(LoongArchMachineState *lams);
 #endif

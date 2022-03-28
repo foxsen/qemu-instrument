@@ -32,6 +32,8 @@
 #include "hw/misc/unimp.h"
 #include "hw/loongarch/fw_cfg.h"
 #include "hw/firmware/smbios.h"
+#include "hw/acpi/aml-build.h"
+#include "qapi/qapi-visit-common.h"
 
 #include "target/loongarch/cpu.h"
 
@@ -195,6 +197,7 @@ void loongarch_machine_done(Notifier *notifier, void *data)
 {
     LoongArchMachineState *lams = container_of(notifier,
                                         LoongArchMachineState, machine_done);
+    loongarch_acpi_setup(lams);
     loongarch_build_smbios(lams);
 }
 
@@ -297,11 +300,11 @@ static DeviceState *create_extioi(void)
 
 static void loongarch_devices_init(DeviceState *pch_pic)
 {
-    DeviceState *gpex_dev;
+    DeviceState *gpex_dev, *ls7a_pm;
     SysBusDevice *d;
     PCIBus *pci_bus;
     MemoryRegion *ecam_alias, *ecam_reg, *pio_alias, *pio_reg;
-    MemoryRegion *mmio_alias, *mmio_reg;
+    MemoryRegion *mmio_alias, *mmio_reg, *pm_reg;
     int i;
 
     gpex_dev = qdev_new(TYPE_GPEX_HOST);
@@ -367,6 +370,19 @@ static void loongarch_devices_init(DeviceState *pch_pic)
     sysbus_create_simple("ls7a_rtc", LS7A_RTC_REG_BASE,
                          qdev_get_gpio_in(pch_pic,
                          LS7A_RTC_IRQ - PCH_PIC_IRQ_OFFSET));
+
+    /* Init pm */
+    ls7a_pm = qdev_new(TYPE_LS7A_PM);
+    d = SYS_BUS_DEVICE(ls7a_pm);
+    sysbus_realize_and_unref(d, &error_fatal);
+    ls7a_pm_init(ls7a_pm, qdev_get_gpio_in(pch_pic,
+                                           ACPI_SCI_IRQ - PCH_PIC_IRQ_OFFSET));
+    pm_reg = sysbus_mmio_get_region(d, 0);
+    memory_region_add_subregion(get_system_memory(), ACPI_IO_BASE, pm_reg);
+    memory_region_add_subregion(pm_reg, LS7A_GPE0_STS_REG,
+                                sysbus_mmio_get_region(d, 1));
+    memory_region_add_subregion(pm_reg, LS7A_GPE0_RESET_REG,
+                                sysbus_mmio_get_region(d, 2));
 }
 
 static void loongarch_irq_init(LoongArchMachineState *lams,
@@ -529,6 +545,40 @@ static void loongarch_init(MachineState *machine)
 
 }
 
+bool loongarch_is_acpi_enabled(LoongArchMachineState *lams)
+{
+    if (lams->acpi == ON_OFF_AUTO_OFF) {
+        return false;
+    }
+    return true;
+}
+
+static void loongarch_get_acpi(Object *obj, Visitor *v, const char *name,
+                               void *opaque, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+    OnOffAuto acpi = lams->acpi;
+
+    visit_type_OnOffAuto(v, name, &acpi, errp);
+}
+
+static void loongarch_set_acpi(Object *obj, Visitor *v, const char *name,
+                               void *opaque, Error **errp)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+
+    visit_type_OnOffAuto(v, name, &lams->acpi, errp);
+}
+
+static void loongarch_machine_initfn(Object *obj)
+{
+    LoongArchMachineState *lams = LOONGARCH_MACHINE(obj);
+
+    lams->acpi = ON_OFF_AUTO_AUTO;
+    lams->oem_id = g_strndup(ACPI_BUILD_APPNAME6, 6);
+    lams->oem_table_id = g_strndup(ACPI_BUILD_APPNAME8, 8);
+}
+
 static void loongarch_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -545,6 +595,12 @@ static void loongarch_class_init(ObjectClass *oc, void *data)
     mc->block_default_type = IF_VIRTIO;
     mc->default_boot_order = "c";
     mc->no_cdrom = 1;
+
+    object_class_property_add(oc, "acpi", "OnOffAuto",
+        loongarch_get_acpi, loongarch_set_acpi,
+        NULL, NULL);
+    object_class_property_set_description(oc, "acpi",
+        "Enable ACPI");
 }
 
 static const TypeInfo loongarch_machine_types[] = {
@@ -552,6 +608,7 @@ static const TypeInfo loongarch_machine_types[] = {
         .name           = TYPE_LOONGARCH_MACHINE,
         .parent         = TYPE_MACHINE,
         .instance_size  = sizeof(LoongArchMachineState),
+        .instance_init = loongarch_machine_initfn,
         .class_init     = loongarch_class_init,
     }
 };
