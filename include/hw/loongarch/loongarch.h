@@ -42,6 +42,9 @@ struct LoongArchMachineState {
 #define LA_BIOS_BASE            0x1c000000
 #define LA_BIOS_SIZE            (4 * 1024 * 1024)
 
+#define LA_FDT_BASE             0x1c400000
+#define LA_FDT_SIZE             0x100000
+
 /* Kernels can be configured with 64KB pages */
 #define INITRD_PAGE_SIZE        (64 * KiB)
 #define INITRD_BASE             0x04000000
@@ -61,6 +64,7 @@ struct LoongArchMachineState {
     OnOffAuto   acpi;
     char        *oem_id;
     char        *oem_table_id;
+    int fdt_size;
 };
 
 #define TYPE_LOONGARCH_MACHINE  MACHINE_TYPE_NAME("virt")
