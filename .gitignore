@@ -16,3 +16,5 @@ GTAGS
 *.swp
 *.patch
 *.gcov
+/.ccls-cache/
+/build-x86-64-softmmu/

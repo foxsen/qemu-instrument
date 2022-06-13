@@ -54,6 +54,9 @@
 #include "signal-common.h"
 #include "loader.h"
 #include "user-mmap.h"
+#ifdef CONFIG_LMJ
+#include "target/loongarch/instrument/translate.h"
+#endif
 
 #ifndef AT_FLAGS_PRESERVE_ARGV0
 #define AT_FLAGS_PRESERVE_ARGV0_BIT 0
@@ -63,6 +66,8 @@
 char *exec_path;
 
 int singlestep;
+int lmj_showtrans;
+int lmj_debug;
 static const char *argv0;
 static const char *gdbstub;
 static envlist_t *envlist;
@@ -389,6 +394,15 @@ static void handle_arg_singlestep(const char *arg)
     singlestep = 1;
 }
 
+static void handle_arg_lmj_showtrans(const char *arg)
+{
+    lmj_showtrans = 1;
+}
+static void handle_arg_lmj_debug(const char *arg)
+{
+    lmj_debug = 1;
+}
+
 static void handle_arg_strace(const char *arg)
 {
     enable_strace = true;
@@ -467,6 +481,10 @@ static const struct qemu_argument arg_table[] = {
      "pagesize",   "set the host page size to 'pagesize'"},
     {"singlestep", "QEMU_SINGLESTEP",  false, handle_arg_singlestep,
      "",           "run in singlestep mode"},
+    {"lmj_showtrans", "QEMU_LMJ_SHOWTRANS",  false, handle_arg_lmj_showtrans,
+     "",           "show ins translation"},
+    {"lmj_debug", "QEMU_LMJ_DEBUG",  false, handle_arg_lmj_debug,
+     "",           "lmj's debug config"},
     {"strace",     "QEMU_STRACE",      false, handle_arg_strace,
      "",           "log system calls"},
     {"seed",       "QEMU_RAND_SEED",   true,  handle_arg_seed,
@@ -875,6 +893,50 @@ int main(int argc, char **argv, char **envp)
         qemu_log("auxv_start  0x" TARGET_ABI_FMT_lx "\n", info->saved_auxv);
     }
 
+    if (lmj_debug) {
+        /* debug info */
+        fprintf(stderr, "\n[argv]\n");
+        char **_argv = (char **)info->arg_start;
+        while (*_argv) {
+            fprintf(stderr, "%p:\t%p\t%s\n", _argv, *_argv, *_argv);
+            ++_argv;
+        }
+
+        fprintf(stderr, "\n[envp]\n");
+        char **_envp = (char **)(info->arg_end + (abi_ulong)sizeof(abi_ulong));
+        while (*_envp) {
+            fprintf(stderr, "%p:\t%p\t%s\n", _envp, *_envp, *_envp);
+            ++_envp;
+        }
+
+        fprintf(stderr, "\n[auxv]\n");
+        uint64_t *auxv = (uint64_t *)info->saved_auxv;
+        fprintf(stderr, "%p: type: AT_PHDR  \t val: %lx\n", auxv, *(auxv + 1));
+        fprintf(stderr, "%p: type: AT_PHENT \t val: %lx\n", auxv + 2, *(auxv + 3));
+        fprintf(stderr, "%p: type: AT_PHNUM \t val: %lx\n", auxv + 4, *(auxv + 5));
+        fprintf(stderr, "%p: type: AT_PAGESZ\t val: %lx\n", auxv + 6, *(auxv + 7));
+        fprintf(stderr, "%p: type: AT_BASE  \t val: %lx\n", auxv + 8, *(auxv + 9));
+        fprintf(stderr, "%p: type: AT_FLAGS \t val: %lx\n", auxv + 10, *(auxv + 11));
+        fprintf(stderr, "%p: type: AT_ENTRY \t val: %lx\n", auxv + 12, *(auxv + 13));
+        fprintf(stderr, "%p: type: AT_UID   \t val: %lx\n", auxv + 14, *(auxv + 15));
+        fprintf(stderr, "%p: type: AT_EUID  \t val: %lx\n", auxv + 16, *(auxv + 17));
+        fprintf(stderr, "%p: type: AT_GID   \t val: %lx\n", auxv + 18, *(auxv + 19));
+        fprintf(stderr, "%p: type: AT_EGID  \t val: %lx\n", auxv + 20, *(auxv + 21));
+        fprintf(stderr, "%p: type: AT_HWCAP \t val: %lx\n", auxv + 22, *(auxv + 23));
+        fprintf(stderr, "%p: type: AT_CLKTCK\t val: %lx\n", auxv + 24, *(auxv + 25));
+        fprintf(stderr, "%p: type: AT_RANDOM\t val: %lx\n", auxv + 26, *(auxv + 27));
+        fprintf(stderr, "%p: type: AT_SECURE\t val: %lx\n", auxv + 28, *(auxv + 29));
+        fprintf(stderr, "%p: type: AT_EXECFN\t val: %lx\t%s\n", auxv + 30, *(auxv + 31), (char *)*(auxv + 31));
+
+        /* Fix the Random Bytes
+         * {0x29, 0xd6, 0x24, 0x80, 0x83, 0x87, 0xcd, 0xde, 0xe4, 0x52, 0x41, 0xfa, 0x2, 0x8d, 0x1a, 0xfc};
+         */
+        fprintf(stderr, "fix 16 bytes random: 0xdecd87838024d629 0xfc1a8d02fa4152e4\n");
+        uint64_t *auxv_rnd = (uint64_t *)*(auxv + 27);
+        *auxv_rnd = 0xdecd87838024d629;
+        *(auxv_rnd + 1) = 0xfc1a8d02fa4152e4;
+    }
+
     target_set_brk(info->brk);
     syscall_init();
     signal_init();
@@ -882,7 +944,20 @@ int main(int argc, char **argv, char **envp)
     /* Now that we've loaded the binary, GUEST_BASE is fixed.  Delay
        generating the prologue until now so that the prologue can take
        the real value of GUEST_BASE into account.  */
+    /* FIXME: 直接在外面生成 */
+#ifndef CONFIG_LMJ
     tcg_prologue_init(tcg_ctx);
+#else
+    int ins_nr;
+    tcg_ctx->code_ptr = tcg_ctx->code_gen_ptr;
+    ins_nr = la_gen_prologue(cpu, tcg_ctx);
+    /* TODO: 但是这里可能还要改别的？ */
+    /* tcg_out32 通过 *s->code_ptr++ = v 将数据放入缓存 */
+    tcg_ctx->code_ptr += ins_nr;
+    ins_nr = la_gen_epilogue(cpu, tcg_ctx);
+    tcg_ctx->code_ptr += ins_nr;
+    tcg_ctx->code_gen_ptr = tcg_ctx->code_ptr;
+#endif
 
     target_cpu_copy_regs(env, regs);
 

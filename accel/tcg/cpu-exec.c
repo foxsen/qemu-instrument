@@ -886,6 +886,8 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
 #endif
 }
 
+extern int lmj_debug;
+
 /* main execution loop */
 
 int cpu_exec(CPUState *cpu)
@@ -973,6 +975,13 @@ int cpu_exec(CPUState *cpu)
 
             if (check_for_breakpoints(cpu, pc, &cflags)) {
                 break;
+            }
+
+            /* /1* debug info *1/ */
+            if (lmj_debug == 1) {
+                fprintf(stderr, "~~~ cpu_exec: before tb_gen_code ~~~\n");
+                log_cpu_state(cpu, 0);
+                fprintf(stderr, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
             }
 
             tb = tb_lookup(cpu, pc, cs_base, flags, cflags);

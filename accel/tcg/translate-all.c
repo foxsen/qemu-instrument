@@ -61,6 +61,10 @@
 #include "tb-hash.h"
 #include "tb-context.h"
 #include "internal.h"
+#ifdef CONFIG_LMJ
+#include "target/loongarch/instrument/instrument.h"
+#include "target/loongarch/instrument/ins.h"
+#endif
 
 /* #define DEBUG_TB_INVALIDATE */
 /* #define DEBUG_TB_FLUSH */
@@ -1445,7 +1449,14 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tcg_func_start(tcg_ctx);
 
     tcg_ctx->cpu = env_cpu(env);
+#ifdef CONFIG_LMJ
+    /* instrument: generate LA ins_list */
+    tr_init(tb);
+    la_decode(cpu, tb, max_insns);
+    la_relocation(cpu, tb);
+#else
     gen_intermediate_code(cpu, tb, max_insns);
+#endif
     assert(tb->size != 0);
     tcg_ctx->cpu = NULL;
     max_insns = tb->icount;
@@ -1471,7 +1482,13 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     ti = profile_getclock();
 #endif
 
+#ifdef CONFIG_LMJ
+    /* TODO: tb->tc.ptr = tcg_splitwx_to_rx(gen_code_buf); ?? */
+    gen_code_size = la_encode(tcg_ctx, gen_code_buf);
+    tr_fini();
+#else
     gen_code_size = tcg_gen_code(tcg_ctx, tb);
+#endif
     if (unlikely(gen_code_size < 0)) {
  error_return:
         switch (gen_code_size) {

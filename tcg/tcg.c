@@ -171,7 +171,9 @@ const void *tcg_code_gen_epilogue;
 uintptr_t tcg_splitwx_diff;
 
 #ifndef CONFIG_TCG_INTERPRETER
+#ifndef CONFIG_LMJ
 tcg_prologue_fn *tcg_qemu_tb_exec;
+#endif
 #endif
 
 static TCGRegSet tcg_target_available_regs[TCG_TYPE_COUNT];
@@ -728,7 +730,9 @@ void tcg_prologue_init(TCGContext *s)
     s->data_gen_ptr = NULL;
 
 #ifndef CONFIG_TCG_INTERPRETER
+#ifndef CONFIG_LMJ
     tcg_qemu_tb_exec = (tcg_prologue_fn *)tcg_splitwx_to_rx(s->code_ptr);
+#endif
 #endif
 
 #ifdef TCG_TARGET_NEED_POOL_LABELS

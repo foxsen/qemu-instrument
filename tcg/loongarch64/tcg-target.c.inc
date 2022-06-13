@@ -1632,6 +1632,26 @@ static const int tcg_target_callee_save_regs[] = {
 /* We're expecting to be able to use an immediate for frame allocation.  */
 QEMU_BUILD_BUG_ON(FRAME_SIZE > 0x7ff);
 
+#ifdef CONFIG_LATX
+#include "target/loongarch/instrument/translate.h"
+/* Generate global QEMU prologue and epilogue code */
+static void tcg_target_qemu_prologue(TCGContext *s)
+{
+
+    int inst_nr = 0;
+
+// --------------------------------- prologue ------------------------------- //
+    inst_nr = la_gen_prologue(s->code_ptr);
+    s->code_ptr += inst_nr;
+
+
+// --------------------------------- epilogue ------------------------------- //
+    inst_nr = la_gen_epilogue(s->code_ptr);
+    tcg_code_gen_epilogue = s->code_ptr;
+    s->code_ptr += inst_nr;
+
+}
+#else
 /* Generate global QEMU prologue and epilogue code */
 static void tcg_target_qemu_prologue(TCGContext *s)
 {
@@ -1671,6 +1691,7 @@ static void tcg_target_qemu_prologue(TCGContext *s)
     tcg_out_opc_addi_d(s, TCG_REG_SP, TCG_REG_SP, FRAME_SIZE);
     tcg_out_opc_jirl(s, TCG_REG_ZERO, TCG_REG_RA, 0);
 }
+#endif
 
 static void tcg_target_init(TCGContext *s)
 {

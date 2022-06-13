@@ -220,6 +220,11 @@ typedef struct CPUArchState {
 
     uint64_t badaddr;
 
+#ifdef CONFIG_LMJ
+    /* TODO: need init */
+    uint64_t last_executed_tb;
+#endif
+
     /* LoongArch CSRs */
     uint64_t CSR_CRMD;
     uint64_t CSR_PRMD;
