@@ -3307,37 +3307,37 @@ IR2_OPND_TYPE get_ir2_opnd_type(Ins *ins, int i)
     return ir2_opnd_type;
 }
 
-void ins_print(IR2 *ir2, char * disam_message) {
+void ins_print(IR2 *ir2, char * msg) {
     assert(ir2->op >= LISA_INVALID && ir2->op <= LISA_ENDING);
-    sprintf(disam_message,"%-15s\t", ir2_ins_name[ir2->op]);
+    sprintf(msg,"%-15s\t", ir2_ins_name[ir2->op]);
     for (int i = 0; i < ir2->opnd_count; i++) {
         if (i != 0)
-            sprintf(disam_message + strlen(disam_message),", ");
+            sprintf(msg + strlen(msg),", ");
 
         IR2_OPND_TYPE type = get_ir2_opnd_type(ir2, i);
         switch (type) {
             case IR2_OPND_GPR:
-                sprintf(disam_message + strlen(disam_message),"%s", ir2_gpr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_gpr_name[ir2->opnd[i].val]);
                 break;
             case IR2_OPND_FPR:
-                sprintf(disam_message + strlen(disam_message),"%s", ir2_fpr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_fpr_name[ir2->opnd[i].val]);
                 break;
             case IR2_OPND_FCSR:
-                sprintf(disam_message + strlen(disam_message),"%d", ir2->opnd[i].val); 
+                sprintf(msg + strlen(msg),"%d", ir2->opnd[i].val); 
                 break;
             case IR2_OPND_SCR:
-                sprintf(disam_message + strlen(disam_message),"%s", ir2_scr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_scr_name[ir2->opnd[i].val]);
                 break;
             case IR2_OPND_CC:
-                sprintf(disam_message + strlen(disam_message),"%s", ir2_cc_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_cc_name[ir2->opnd[i].val]);
                 break;
             case IR2_OPND_LABEL:
                 break;
             case IR2_OPND_IMM:
-                sprintf(disam_message + strlen(disam_message),"0x%x", ir2->opnd[i].val);
+                sprintf(msg + strlen(msg),"0x%x", ir2->opnd[i].val);
                 break;
             default:
-                sprintf(disam_message + strlen(disam_message),"Error in print_ir2, unknown opnd\n");
+                sprintf(msg + strlen(msg),"Error in print_ir2, unknown opnd\n");
                 exit(EXIT_FAILURE);
         }
     }

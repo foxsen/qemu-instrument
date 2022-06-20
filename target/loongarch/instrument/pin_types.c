@@ -2,13 +2,16 @@
 #include "error.h"
 #include <stdlib.h>
 
-INS INS_alloc(uint64_t pc, uint32_t opcode)
+INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins)
 {
+    /* FIXME: never free, memory leakage */
     INS ins = malloc(sizeof(struct pin_ins));
     ins->pc = pc;
     ins->opcode = opcode;
+    ins->origin_ins = la_ins;
     ins->first_ins = NULL;
     ins->last_ins = NULL;
+    ins->nr_ins_real = 0;
     ins->next = NULL;
     ins->prev = NULL;
     return ins;
@@ -41,7 +44,7 @@ void INS_set_range(INS ins, Ins *start, Ins *end, int len)
 {
     ins->first_ins = start;
     ins->last_ins = end;
-    ins->nr_ins = len;
+    ins->nr_ins_real = len;
 }
 
 void BBL_append_ins(BBL bbl, INS ins)
@@ -56,6 +59,10 @@ void BBL_append_ins(BBL bbl, INS ins)
         ins->prev = bbl->ins_tail;
         bbl->ins_tail->next = ins;
         bbl->ins_tail = ins;
+
+        /* 连接INS之间的la_ins链表 */
+        ins->first_ins->prev = ins->prev->last_ins;
+        ins->prev->last_ins->next = ins->first_ins;
     }
 }
 
@@ -71,5 +78,9 @@ void TRACE_append_bbl(TRACE trace, BBL bbl)
         bbl->prev = trace->bbl_tail;
         trace->bbl_tail->next = bbl;
         trace->bbl_tail = bbl;
+
+        /* 连接BBL之间的la_ins链表 */
+        bbl->ins_head->first_ins->prev = bbl->prev->ins_tail->last_ins;
+        bbl->prev->ins_tail->last_ins->next = bbl->ins_head->first_ins;
     }
 }

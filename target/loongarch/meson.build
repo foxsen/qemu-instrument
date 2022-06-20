@@ -16,6 +16,7 @@ loongarch_tcg_ss.add(files(
 loongarch_tcg_ss.add(zlib)
 
 subdir('instrument')
+subdir('pin')
 
 loongarch_softmmu_ss = ss.source_set()
 loongarch_softmmu_ss.add(files(

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifdef CONFIG_LATX_DEBUG
+#ifdef CONFIG_LMJ_DEBUG
 #define lsassert(cond)                                                  \
     do {                                                                \
         if (!(cond)) {                                                  \

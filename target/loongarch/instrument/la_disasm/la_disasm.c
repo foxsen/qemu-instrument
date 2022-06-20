@@ -118,9 +118,9 @@ void la_disasm_one_ins(uint32_t opcode, Ins *ins)
     }
 }
 
-void la_disasm_print(uint32_t opcode, char *disasm_message) 
+void la_disasm_print(uint32_t opcode, char *msg) 
 {
     Ins ins;
     la_disasm_one_ins(opcode, &ins);
-    ins_print(&ins, disasm_message);
+    ins_print(&ins, msg);
 }

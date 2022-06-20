@@ -22,12 +22,14 @@ typedef struct TRANSLATION_DATA {
 } TRANSLATION_DATA;
 
 extern TRANSLATION_DATA tr_data;
-#define MAX_INS_NR 1000
+/* FIXME: maybe too large，如果插桩，给每个INS的每个call需要(1+4*args)条指令 */
+#define MAX_INS_NR 5000
 
 void tr_init(void *tb);
 void tr_fini(void);
 
 Ins *ins_alloc(uint64_t pc);
+Ins *ins_copy(Ins *old);
 void ins_append(Ins *ins);
 void ins_remove(Ins *ins);
 void ins_insert_before(Ins *old, Ins *ins);

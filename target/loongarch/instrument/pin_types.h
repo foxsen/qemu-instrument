@@ -9,9 +9,10 @@ typedef struct pin_ins {
     uint32_t opcode;
 
     /* origin ins translated to multiple ins */
+    Ins *origin_ins;
     Ins *first_ins;
     Ins *last_ins;
-    int nr_ins;
+    int nr_ins_real;
 
     struct pin_ins *next;
     struct pin_ins *prev;
@@ -19,7 +20,7 @@ typedef struct pin_ins {
 
 typedef struct pin_bbl {
     uint64_t pc;
-    uint32_t nr_ins;
+    int nr_ins;
     INS ins_head;
     INS ins_tail;
     struct pin_bbl *next;
@@ -28,13 +29,13 @@ typedef struct pin_bbl {
 
 typedef struct pin_trace {
     uint64_t pc;
-    uint32_t nr_bbl;
-    uint32_t nr_ins;
+    int nr_bbl;
+    int nr_ins;
     BBL bbl_head;
     BBL bbl_tail;
 } *TRACE;
 
-INS INS_alloc(uint64_t pc, uint32_t opcode);
+INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins);
 BBL BBL_alloc(uint64_t pc);
 TRACE TRACE_alloc(uint64_t pc);
 

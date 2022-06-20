@@ -56,6 +56,7 @@
 #include "user-mmap.h"
 #ifdef CONFIG_LMJ
 #include "target/loongarch/instrument/translate.h"
+#include "target/loongarch/pin/example.h"
 #endif
 
 #ifndef AT_FLAGS_PRESERVE_ARGV0
@@ -67,6 +68,7 @@ char *exec_path;
 
 int singlestep;
 int lmj_showtrans;
+int lmj_instru;
 int lmj_debug;
 static const char *argv0;
 static const char *gdbstub;
@@ -398,6 +400,12 @@ static void handle_arg_lmj_showtrans(const char *arg)
 {
     lmj_showtrans = 1;
 }
+
+static void handle_arg_lmj_instru(const char *arg)
+{
+    lmj_instru = 1;
+}
+
 static void handle_arg_lmj_debug(const char *arg)
 {
     lmj_debug = 1;
@@ -483,6 +491,8 @@ static const struct qemu_argument arg_table[] = {
      "",           "run in singlestep mode"},
     {"lmj_showtrans", "QEMU_LMJ_SHOWTRANS",  false, handle_arg_lmj_showtrans,
      "",           "show ins translation"},
+    {"lmj_instru", "QEMU_LMJ_INSTRU",  false, handle_arg_lmj_instru,
+     "",           "enable instrument"},
     {"lmj_debug", "QEMU_LMJ_DEBUG",  false, handle_arg_lmj_debug,
      "",           "lmj's debug config"},
     {"strace",     "QEMU_STRACE",      false, handle_arg_strace,
@@ -957,6 +967,12 @@ int main(int argc, char **argv, char **envp)
     ins_nr = la_gen_epilogue(cpu, tcg_ctx);
     tcg_ctx->code_ptr += ins_nr;
     tcg_ctx->code_gen_ptr = tcg_ctx->code_ptr;
+#endif
+
+#ifdef CONFIG_LMJ
+    if (lmj_instru) {
+        ins_instru(argc, argv);
+    }
 #endif
 
     target_cpu_copy_regs(env, regs);

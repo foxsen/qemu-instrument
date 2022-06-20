@@ -4,7 +4,7 @@
 
 #include "translate.h"
 
-/* todo: 应该放在 lsenv->tr_data */
+/* TODO: 应该放在 lsenv->tr_data */
 TRANSLATION_DATA tr_data;
 
 void tr_init(void *tb)
@@ -12,15 +12,15 @@ void tr_init(void *tb)
     TRANSLATION_DATA *t = &tr_data;
     t->curr_tb = tb;
 
+    /* allocate ins_array when called at the first time */
     if (t->ins_array == NULL) {
         lsassert(t->cur_ins_nr == 0);
         t->ins_array = (Ins *)calloc(MAX_INS_NR, sizeof(Ins));
         t->max_ins_nr = MAX_INS_NR;
     }
-
     t->cur_ins_nr = 0;
-    t->list_ins_nr = 0;
 
+    t->list_ins_nr = 0;
     t->first_ins = NULL;
     t->last_ins = NULL;
 }
@@ -32,15 +32,26 @@ void tr_fini(void)
 Ins *ins_alloc(uint64_t pc)
 {
     TRANSLATION_DATA *t = &tr_data;
-    lsassert(t->cur_ins_nr < MAX_INS_NR);
+    lsassertm(t->cur_ins_nr < MAX_INS_NR, "too many ins\n");
 
     Ins *ins = t->ins_array + t->cur_ins_nr;
     t->cur_ins_nr++;
 
     ins->pc = pc;
-    /* for safe */
     ins->prev = NULL;
     ins->next = NULL;
+    return ins;
+}
+
+Ins *ins_copy(Ins *old)
+{
+    Ins *ins = ins_alloc(old->pc);
+    ins->op = old->op;
+    ins->opnd_count = old->opnd_count;
+    ins->opnd[0].val = old->opnd[0].val;
+    ins->opnd[1].val = old->opnd[1].val;
+    ins->opnd[2].val = old->opnd[2].val;
+    ins->opnd[3].val = old->opnd[3].val;
     return ins;
 }
 
@@ -66,8 +77,10 @@ void ins_append(Ins *ins)
     t->list_ins_nr++;
 }
 
+/* 只将元素从链表中移除，但是仍然可以通过它可以访问到前后元素 */
 void ins_remove(Ins *ins)
 {
+    /* TODO: this is all no more use */
     TRANSLATION_DATA *t = &tr_data;
     if (t->first_ins == ins) {
         t->first_ins = ins->next;
@@ -75,6 +88,8 @@ void ins_remove(Ins *ins)
     if (t->last_ins == ins) {
         t->last_ins = ins->prev;
     }
+    /* 以上这些好像可以删掉了 */
+
     if (ins->prev != NULL)  ins->prev->next = ins->next;
     if (ins->next != NULL)  ins->next->prev = ins->prev;
 

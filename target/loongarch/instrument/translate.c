@@ -6,7 +6,7 @@
 /* for cpu_loop_exit */
 #include "exec/exec-all.h"
 
-int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
+int INS_translate(CPUState *cs, INS pin_ins)
 {
     /* 
      * Do 2 things:
@@ -17,12 +17,14 @@ int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
     /* TRANSLATION_DATA *t = &tr_data; */
     /* TranslationBlock *tb = t->curr_tb; */
 
+
+    Ins *ins = ins_copy(pin_ins->origin_ins);
     int ins_nr = 1;
     int insert_before_nr = 0;
     int insert_after_nr = 0;
 
     /* FIXME: 目前指令的寄存器操作数是读/写还不确定，因此一律ld + st (对于st指令，dest均为读，其中sc读后还要会写) */
-    /* FIXME: 对于多个opnd使用相同的reg的情况，同一个reg会被ld/st多次 */
+    /* FIXME: 对于多个opnd使用相同的reg的情况，同一个reg会被ld/st多次 (已修复) */
     /* FIXME: we can do better(延迟释放已分配的itemp) */
     /* Native reg is in the memory
      * so when:
@@ -30,7 +32,7 @@ int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
      * - ins write gpr: write back to memory.
      */
     /* 1. record regs used, maping to itemp */
-    /* gpr[4] 保存原寄存器 */
+    /* gpr[4] 保存四个操作数用到的原寄存器 */
     int gpr[4] = {-1, -1, -1, -1};
     for (int i = 0; i < ins->opnd_count; i++) {
         if (opnd_is_gpr(ins, i)) {
@@ -78,10 +80,10 @@ int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
         lsassert(ins->op == LISA_RDTIME_D);
 
         /* rdtime.d 总是写 0 
-         * BUG: 不写0会运行会出错
+         * FIXME: BUG: 不写0会运行会出错
          * */
         int rd = ins->opnd[0].val;
-        ins_insert_before(ins, ins_create_3(LISA_AND, rd, rd, reg_zero));
+        ins_insert_before(ins, ins_create_3(LISA_OR, rd, reg_zero, reg_zero));
         insert_before_nr++;
 
         ins_remove(ins);
@@ -262,7 +264,7 @@ int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
         ins_nr--;
     } else if (ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
         /* FIXME: put SYSCALL and BREAK together, but BREAK not tested */
-        lsassert(ins->op != LISA_BREAK);
+        /* lsassert(ins->op != LISA_BREAK); */
 
         int itemp = reg_alloc_itemp();
         int itemp_cpu = reg_alloc_itemp();
@@ -301,27 +303,36 @@ int ins_translate(CPUState *cs, Ins *ins, Ins **start, Ins **end)
         /* ctx->base.is_jmp = DISAS_NORETURN; */
     }
 
+    Ins *start = ins, *end = ins;
+    /* TODO: a ugly fix for ins被remove的情况 */
+    if (ins_nr == 0) {
+        end = end->prev;
+    }
+    if (ins)
     for (int i = 0; i < insert_before_nr; ++i)
-        *start = (*start)->prev;
+        start = start->prev;
     for (int i = 0; i < insert_after_nr; ++i)
-        *end = (*end)->next;
-
+        end = end->next;
     ins_nr += insert_before_nr + insert_after_nr;
+    INS_set_range(pin_ins, start, end, ins_nr);
+
     return ins_nr;
 }
 
-int ins_append_exit(Ins *ins, Ins **end)
+/* add an exit to BT after INS  */
+int INS_append_exit(INS pin_ins)
 {
-        /* set reg_target = branch target */
-        Ins *b = ins_b(0);
-        ins_append(b);
-        *end = b;
+    Ins *end = ins_b(0);
+    ins_insert_after(pin_ins->last_ins, end);
 
-        uint64_t target = ins->pc + 4;
-        int li_nr = ins_insert_before_li_d(b, reg_target, target);
-        ins_insert_before(b, ins_create_3(LISA_ORI, reg_a0, reg_zero, reg_zero));
+    uint64_t target = pin_ins->pc + 4;
+    int li_nr = ins_insert_before_li_d(end, reg_target, target);
+    ins_insert_before(end, ins_create_3(LISA_ORI, reg_a0, reg_zero, reg_zero));
 
-        return li_nr + 2;
+    pin_ins->last_ins = end;
+    pin_ins->nr_ins_real += li_nr + 2;
+
+    return li_nr + 2;
 }
 
 /* context switch */

@@ -8,6 +8,7 @@
 #include "error.h"
 #include "pin_types.h"
 #include "translate.h"
+#include "../pin/pin_state.h"
 
 
 static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
@@ -23,7 +24,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 {
     addr_t start_pc = tb->pc;
     addr_t pc = start_pc;
-    Ins *ins = NULL;
+    Ins *la_ins = NULL;
     int ins_nr = 0;
     int real_ins_nr = 0;
 
@@ -34,47 +35,68 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
     while (1) {
         /* disasm */
         uint32_t opcode = read_opcode(cs, pc);
-        ins = ins_alloc(pc);
-        la_disasm_one_ins(opcode, ins);
-        ins_append(ins);
+        la_ins = ins_alloc(pc);
+        la_disasm_one_ins(opcode, la_ins);
+        /* ins_append(la_ins); */  /* FIXME: maybe no use anymore */
 
-        /* translate */
-        Ins *start = ins, *end = ins;
-        int len = ins_translate(cs, ins, &start, &end);
-
-        if (max_insns == 1) {
-            len += ins_append_exit(ins, &end);
+        /* 注：INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->nr_ins_real */
+        INS ins = INS_alloc(pc, opcode, la_ins);
+        INS_translate(cs, ins);
+        INS_instrument(ins);
+        ++ins_nr;
+        if (ins_nr == max_insns || op_is_condition_jmp(la_ins->op)) {
+            INS_append_exit(ins);
         }
-
-        INS pin_ins = INS_alloc(pc, opcode);
-        INS_set_range(pin_ins, start, end, len);
-        BBL_append_ins(bbl, pin_ins);
-
-        /* TODO: ins_instrument */
+        BBL_append_ins(bbl, ins);
 
         pc += 4;
-        ins_nr++;
-        real_ins_nr += len;
+        /* TODO: BBL instrument 后，会改变。。 */
+        real_ins_nr += ins->nr_ins_real;
 
-        if (max_insns == 1) {
+#ifdef CONFIG_LMJ_DEBUG
+        int c1 = 0;
+        for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
+            c1++;
+            if (i->next == NULL && i != ins->last_ins) {
+                fprintf(stderr, "assert fail\n");
+                char msg[128];
+                ins_print(ins->origin_ins, msg);
+                fprintf(stderr, "origin: %p, %s\n", ins->origin_ins, msg);
+                ins_print(i, msg);
+                fprintf(stderr, "i: %p, %s\n", i, msg);
+                ins_print(ins->last_ins, msg);
+                fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
+                fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->nr_ins_real, c1);
+                /* move this to INS_dump() */
+                for (Ins *in = ins->first_ins; in != NULL; in = in->next) {
+                    ins_print(in, msg);
+                    fprintf(stderr, "%p: %08x\t%s\n", in, opcode, msg);
+                }
+                lsassert(0);
+            }
+        }
+        lsassertm(c1 == ins->nr_ins_real, "c1: %d, read: %d", c1, ins->nr_ins_real);
+#endif
+
+        if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL) {
             TRACE_append_bbl(trace, bbl);
             /* TODO: bbl_instrument */
             break;
-        } else if (op_is_branch(ins->op) || ins->op == LISA_SYSCALL) {
-            TRACE_append_bbl(trace, bbl);
-
-            /* TODO: bbl_instrument */
-
-            if (op_is_condition_jmp(ins->op)) {
-                bbl = BBL_alloc(pc);
-            } else {
-                break;
-            }
         }
+        /* only one BBL for one TRACE */
+        /* else if (op_is_condition_jmp(la_ins->op)) { */
+        /*     TRACE_append_bbl(trace, bbl); */
+        /*     /1* TODO: bbl_instrument *1/ */
+        /*     bbl = BBL_alloc(pc); */
+        /* } */
     }
-    lsassert(ins_nr <= max_insns);
+    lsassertm(ins_nr <= max_insns, "tb ins_nr >= max_insns(%d)\n", max_insns);
 
     /* TODO: trace_instrument */
+
+    tr_data.first_ins = trace->bbl_head->ins_head->first_ins;
+    tr_data.last_ins = trace->bbl_tail->ins_tail->last_ins;
+    tr_data.list_ins_nr = real_ins_nr;
 
     /* The disas_log hook may use these values rather than recompute.  */
     tb->size = pc - start_pc;
@@ -117,7 +139,7 @@ void la_relocation(CPUState *cs, TranslationBlock *tb)
 extern int lmj_showtrans;
 
 /* ins -> binary */
-    /* TODO: 这些指针没搞清楚 */
+    /* TODO: 这些code-cache指针没搞清楚 */
     /* code_buf = tcg_ctx->code_gen_ptr; */
     /* if (unlikely((void *)s->code_ptr > s->code_gen_highwater)) { */
     /*     return -1; */
@@ -125,9 +147,9 @@ extern int lmj_showtrans;
 int la_encode(TCGContext *tcg_ctx, void* code_buf)
 {
     TRANSLATION_DATA *t = &tr_data;
+    uint64_t code_size = tr_data.list_ins_nr * 4;
 
     /* check code_cache overflow. */
-    uint64_t code_size = t->list_ins_nr * 4;
     if (code_buf + code_size >
         tcg_ctx->code_gen_buffer + tcg_ctx->code_gen_buffer_size) {
         tr_data.curr_tb = NULL;
@@ -136,15 +158,36 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
 
     int ins_nr = 0;
     uint32_t *code_ptr = code_buf;
-    for (Ins *ins = t->first_ins; ins != NULL; ins = ins->next) {
-        uint32_t opcode = la_assemble(ins);
-        *code_ptr = opcode;
-        ++code_ptr;
-        ++ins_nr;
+    if (tr_data.trace == NULL) {
+        /* FIXME: gen_prologue 目前用这种方式来encode */
+        /* FIXed: 其实现在普通的tb也能这样encode */
+        for (Ins *ins = t->first_ins; ins != NULL; ins = ins->next) {
+            uint32_t opcode = la_assemble(ins);
+            *code_ptr = opcode;
+            ++code_ptr;
+            ++ins_nr;
+        }
+    }
+    else {
+        for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
+            for (INS ins = bbl->ins_head; ins != NULL; ins = ins->next) {
+                Ins *la_ins = ins->first_ins;
+                while (la_ins) {
+                    uint32_t opcode = la_assemble(la_ins);
+                    *code_ptr = opcode;
+                    ++code_ptr;
+                    ++ins_nr;
+
+                    if (la_ins == ins->last_ins)
+                        break;
+                    la_ins = la_ins->next;
+                }
+            }
+        }
     }
 
-    /* Debug Info:
-     * Print origin_ins and translated_ins */
+#ifdef CONFIG_LMJ_DEBUG
+    /* Print origin_ins and translated_ins */
     if (lmj_showtrans == 1 && tr_data.trace != NULL) {
         fprintf(stderr, "\n==== TB_ENCODE ====\n");
         char ins_info[128];
@@ -172,12 +215,11 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
         lsassert(pc == code_ptr);
         fprintf(stderr, "===================\n");
     }
+#endif
 
-    lsassert(t->list_ins_nr == ins_nr);
+    lsassertm(t->list_ins_nr == ins_nr, "t->list_ins_nr(%d) != ins_nr(%d)\n", t->list_ins_nr, ins_nr);
     return ins_nr * 4;
 }
-
-
 
 
 /* int tr_translate_tb(CPUState *cs, struct TranslationBlock *tb, int max_ins) */
