@@ -3,6 +3,7 @@
 /*
  * LA registers
  */
+#define reg_invalid -1
 #define reg_zero    0
 #define reg_ra      1
 #define reg_tp      2
@@ -35,6 +36,7 @@
 #define reg_s6      29
 #define reg_s7      30
 #define reg_s8      31
+#define reg_end     32
 
 #define reg_fcsr    0
 

@@ -5,6 +5,7 @@
 
 /* for cpu_loop_exit */
 #include "exec/exec-all.h"
+#include "translate.h"
 
 int INS_translate(CPUState *cs, INS pin_ins)
 {
@@ -19,6 +20,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
 
     Ins *ins = ins_copy(pin_ins->origin_ins);
+    ++tr_data.list_ins_nr;      // copy的ins会被加入到链表
     int ins_nr = 1;
     int insert_before_nr = 0;
     int insert_after_nr = 0;
@@ -157,10 +159,12 @@ int INS_translate(CPUState *cs, INS pin_ins)
                 insert_before_nr++;
                 break;
             case LISA_BCEQZ:
+                lsassertm(0, "need confirm what is condition reg (the first opnd)\n");
                 ins_insert_before(ins, ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 7));
                 insert_before_nr++;
                 break;
             case LISA_BCNEZ:
+                lsassertm(0, "need confirm what is condition reg (the first opnd)\n");
                 ins_insert_before(ins, ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 7));
                 insert_before_nr++;
                 break;
@@ -299,8 +303,6 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         ins_remove(ins);
         ins_nr--;
-        /* translate end */
-        /* ctx->base.is_jmp = DISAS_NORETURN; */
     }
 
     Ins *start = ins, *end = ins;

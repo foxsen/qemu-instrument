@@ -1,8 +1,9 @@
-#ifndef TYPES_FOUNDATION_H
-#define TYPES_FOUNDATION_H
+#ifndef PIN_TYPES_H
+#define PIN_TYPES_H
 
 #include <stdint.h>
 #include <stdio.h> // for NULL
+#include "../instrument/pin_types.h"
 
 typedef unsigned char BOOL;
 
@@ -27,4 +28,8 @@ typedef int64_t INT64;
 typedef UINT64 ADDRINT;
 typedef INT64 ADDRDELTA;
 
+typedef VOID (*AFUNPTR)(void);
+
+/* const UINT32 PIN_MAX_THREADS = 8192; */
+#define PIN_MAX_THREADS 8192
 #endif

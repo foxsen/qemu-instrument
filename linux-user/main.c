@@ -67,8 +67,8 @@
 char *exec_path;
 
 int singlestep;
-int lmj_showtrans;
-int lmj_instru;
+int showtrans;
+int instru;
 int lmj_debug;
 static const char *argv0;
 static const char *gdbstub;
@@ -396,14 +396,14 @@ static void handle_arg_singlestep(const char *arg)
     singlestep = 1;
 }
 
-static void handle_arg_lmj_showtrans(const char *arg)
+static void handle_arg_showtrans(const char *arg)
 {
-    lmj_showtrans = 1;
+    showtrans = 1;
 }
 
-static void handle_arg_lmj_instru(const char *arg)
+static void handle_arg_instru(const char *arg)
 {
-    lmj_instru = 1;
+    instru = 1;
 }
 
 static void handle_arg_lmj_debug(const char *arg)
@@ -489,9 +489,9 @@ static const struct qemu_argument arg_table[] = {
      "pagesize",   "set the host page size to 'pagesize'"},
     {"singlestep", "QEMU_SINGLESTEP",  false, handle_arg_singlestep,
      "",           "run in singlestep mode"},
-    {"lmj_showtrans", "QEMU_LMJ_SHOWTRANS",  false, handle_arg_lmj_showtrans,
+    {"showtrans", "QEMU_SHOWTRANS",  false, handle_arg_showtrans,
      "",           "show ins translation"},
-    {"lmj_instru", "QEMU_LMJ_INSTRU",  false, handle_arg_lmj_instru,
+    {"instru", "QEMU_INSTRU",  false, handle_arg_instru,
      "",           "enable instrument"},
     {"lmj_debug", "QEMU_LMJ_DEBUG",  false, handle_arg_lmj_debug,
      "",           "lmj's debug config"},
@@ -970,7 +970,7 @@ int main(int argc, char **argv, char **envp)
 #endif
 
 #ifdef CONFIG_LMJ
-    if (lmj_instru) {
+    if (instru) {
         ins_instru(argc, argv);
     }
 #endif

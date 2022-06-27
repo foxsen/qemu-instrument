@@ -44,13 +44,13 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         INS_translate(cs, ins);
         INS_instrument(ins);
         ++ins_nr;
+        /* if (ins_nr == max_insns) { */
         if (ins_nr == max_insns || op_is_condition_jmp(la_ins->op)) {
             INS_append_exit(ins);
         }
         BBL_append_ins(bbl, ins);
 
         pc += 4;
-        /* TODO: BBL instrument 后，会改变。。 */
         real_ins_nr += ins->nr_ins_real;
 
 #ifdef CONFIG_LMJ_DEBUG
@@ -80,23 +80,23 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 
         if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL) {
             TRACE_append_bbl(trace, bbl);
-            /* TODO: bbl_instrument */
             break;
+            /* if (op_is_condition_jmp(la_ins->op)) { */
+            /*     bbl = BBL_alloc(pc); */
+            /* } else { */
+            /*     break; */
+            /* } */
         }
-        /* only one BBL for one TRACE */
-        /* else if (op_is_condition_jmp(la_ins->op)) { */
-        /*     TRACE_append_bbl(trace, bbl); */
-        /*     /1* TODO: bbl_instrument *1/ */
-        /*     bbl = BBL_alloc(pc); */
-        /* } */
     }
     lsassertm(ins_nr <= max_insns, "tb ins_nr >= max_insns(%d)\n", max_insns);
 
-    /* TODO: trace_instrument */
+    TRACE_instrument(trace);
 
     tr_data.first_ins = trace->bbl_head->ins_head->first_ins;
     tr_data.last_ins = trace->bbl_tail->ins_tail->last_ins;
-    tr_data.list_ins_nr = real_ins_nr;
+    /* real_ins_nr没有计算插桩加入指令数，现在用 ins_insert 系列指令来维护 tr_data.list_ins_nr */
+    /* lsassertm(tr_data.list_ins_nr == real_ins_nr, "list_ins_nr(%d) != real_ins_nr(%d), trace->ins_nr=%d\n", tr_data.list_ins_nr, real_ins_nr, trace->nr_ins); */
+    /* tr_data.list_ins_nr = real_ins_nr; */
 
     /* The disas_log hook may use these values rather than recompute.  */
     tb->size = pc - start_pc;
@@ -136,7 +136,7 @@ void la_relocation(CPUState *cs, TranslationBlock *tb)
 
 
 
-extern int lmj_showtrans;
+extern int showtrans;
 
 /* ins -> binary */
     /* TODO: 这些code-cache指针没搞清楚 */
@@ -188,7 +188,7 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
 
 #ifdef CONFIG_LMJ_DEBUG
     /* Print origin_ins and translated_ins */
-    if (lmj_showtrans == 1 && tr_data.trace != NULL) {
+    if (showtrans == 1 && tr_data.trace != NULL) {
         fprintf(stderr, "\n==== TB_ENCODE ====\n");
         char ins_info[128];
         uint32_t *pc = code_buf;

@@ -5,6 +5,7 @@ loongarch_tcg_ss.add(files(
   'translate.c',
   'ins.c',
   'regs.c',
+  'debug.c',
 ))
 
 subdir('la_disasm')

@@ -24,6 +24,10 @@
 #include <sys/gmon.h>
 #endif
 
+#ifdef CONFIG_LMJ
+#include "target/loongarch/pin/pin_state.h"
+#endif
+
 #ifdef CONFIG_GCOV
 extern void __gcov_dump(void);
 #endif
@@ -38,4 +42,5 @@ void preexit_cleanup(CPUArchState *env, int code)
 #endif
         gdb_exit(code);
         qemu_plugin_user_exit();
+        pin_instrument_exit(env, code);
 }

@@ -153,10 +153,10 @@ bool op_is_condition_jmp(IR2_INS_OP op)
 
 bool op_is_load(IR2_INS_OP op)
 {
-    if (op >= LISA_LD_B && op <=  LISA_LD_D) {
+    if (op >= LISA_LD_B && op <= LISA_LD_D) {
         return true;
     }
-    if (op >=  LISA_LD_BU && op <=  LISA_LD_WU) {
+    if (op >= LISA_LD_BU && op <= LISA_LD_WU) {
         return true;
     }
     if (op == LISA_LL_W || op == LISA_LL_D) {
@@ -172,6 +172,8 @@ bool op_is_load(IR2_INS_OP op)
         return true;
     }
     if (op >= LISA_LDL_W && op <= LISA_LDR_D){
+        /* TODO: LA dont have? */
+        lsassert(0);
         return true;
     }
     if (op >= LISA_VLDREPL_D && op <= LISA_VLDREPL_B){
@@ -203,7 +205,7 @@ bool op_is_store(IR2_INS_OP op)
     if (op == LISA_FST_S || op == LISA_FST_D) {
         return true;
     }
-    if (op == LISA_XVST || op == LISA_VST){
+    if (op == LISA_VST || op == LISA_XVST){
         return true;
     }
     return false;
