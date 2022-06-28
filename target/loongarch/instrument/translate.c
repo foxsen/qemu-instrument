@@ -37,7 +37,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
     /* gpr[4] 保存四个操作数用到的原寄存器 */
     int gpr[4] = {-1, -1, -1, -1};
     for (int i = 0; i < ins->opnd_count; i++) {
-        if (opnd_is_gpr(ins, i)) {
+        if (opnd_is_gpr(ins, i) && ins->opnd[i].val != reg_zero) {
+            /* 忽略 reg_zero */
             int reg = ins->opnd[i].val;
             int reg_itemp = map_native_reg_to_itemp(reg);
             gpr[i] = reg;
@@ -159,12 +160,10 @@ int INS_translate(CPUState *cs, INS pin_ins)
                 insert_before_nr++;
                 break;
             case LISA_BCEQZ:
-                lsassertm(0, "need confirm what is condition reg (the first opnd)\n");
                 ins_insert_before(ins, ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 7));
                 insert_before_nr++;
                 break;
             case LISA_BCNEZ:
-                lsassertm(0, "need confirm what is condition reg (the first opnd)\n");
                 ins_insert_before(ins, ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 7));
                 insert_before_nr++;
                 break;
@@ -329,7 +328,7 @@ int INS_append_exit(INS pin_ins)
 
     uint64_t target = pin_ins->pc + 4;
     int li_nr = ins_insert_before_li_d(end, reg_target, target);
-    ins_insert_before(end, ins_create_3(LISA_ORI, reg_a0, reg_zero, reg_zero));
+    ins_insert_before(end, ins_create_3(LISA_OR, reg_a0, reg_zero, reg_zero));
 
     pin_ins->last_ins = end;
     pin_ins->nr_ins_real += li_nr + 2;

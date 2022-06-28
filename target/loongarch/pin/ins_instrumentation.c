@@ -27,18 +27,18 @@ void PIN_AddFiniFunction(FINI_CALLBACK fun, VOID *val)
     PIN_state.fini_cb_val = val;
 }
 
-// void PIN_AddSyscallEntryFunction(SYSCALL_ENTRY_CALLBACK fun, VOID *val)
-// {
-//     PIN_state.syscall_entry_cb = fun;
-//     PIN_state.syscall_entry_cb_val = val;
+void PIN_AddSyscallEntryFunction(SYSCALL_ENTRY_CALLBACK fun, VOID *val)
+{
+    PIN_state.syscall_entry_cb = fun;
+    PIN_state.syscall_entry_cb_val = val;
     
-// }
+}
 
-// void PIN_AddSyscallExitFunction(SYSCALL_EXIT_CALLBACK fun, VOID *val)
-// {
-//     PIN_state.syscall_exit_cb = fun;
-//     PIN_state.syscall_exit_cb_val = val;
-// }
+void PIN_AddSyscallExitFunction(SYSCALL_EXIT_CALLBACK fun, VOID *val)
+{
+    PIN_state.syscall_exit_cb = fun;
+    PIN_state.syscall_exit_cb_val = val;
+}
 
 typedef struct analysis_call_arg {
     IARG_TYPE type;

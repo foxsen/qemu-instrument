@@ -1,0 +1,3 @@
+let l:bm_file_version = 1
+let l:bm_sessions = {'default': {'/home/lmj/code/qemu/include/qemu/plugin.h': [{'sign_idx': 9502, 'line_nr': 21, 'content': '    QEMU_PLUGIN_EV_VCPU_INIT,'},],'/home/lmj/code/qemu/linux-user/syscall.c': [{'sign_idx': 9502, 'line_nr': 10490, 'content': '        ret = get_errno(do_fork(cpu_env, arg1, arg2, arg3, arg5, arg4));'},],}}
+let l:bm_current_session = 'default'

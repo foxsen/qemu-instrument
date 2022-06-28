@@ -32,4 +32,6 @@ typedef VOID (*AFUNPTR)(void);
 
 /* const UINT32 PIN_MAX_THREADS = 8192; */
 #define PIN_MAX_THREADS 8192
+
+#include "context.h"
 #endif

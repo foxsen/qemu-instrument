@@ -12,10 +12,10 @@ typedef struct PIN_STATE {
     VOID* trace_cb_val;
     FINI_CALLBACK fini_cb;
     VOID* fini_cb_val;
-    // SYSCALL_ENTRY_CALLBACK syscall_entry_cb;
-    // VOID* syscall_entry_cb_val;
-    // SYSCALL_EXIT_CALLBACK syscall_exit_cb;
-    // VOID* syscall_exit_cb_val;
+    SYSCALL_ENTRY_CALLBACK syscall_entry_cb;
+    VOID* syscall_entry_cb_val;
+    SYSCALL_EXIT_CALLBACK syscall_exit_cb;
+    VOID* syscall_exit_cb_val;
 } PIN_STATE;
 
 extern PIN_STATE PIN_state;

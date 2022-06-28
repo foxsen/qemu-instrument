@@ -11,6 +11,9 @@
 #define SYSCALL_TRACE_H
 
 #include "trace/trace-root.h"
+#ifdef CONFIG_LMJ
+#include "target/loongarch/pin/pin_state.h"
+#endif
 
 /*
  * These helpers just provide a common place for the various
@@ -30,12 +33,20 @@ static inline void record_syscall_start(void *cpu, int num,
     qemu_plugin_vcpu_syscall(cpu, num,
                              arg1, arg2, arg3, arg4,
                              arg5, arg6, arg7, arg8);
+#ifdef CONFIG_LMJ
+    pin_instrument_syscall(cpu, num,
+                           arg1, arg2, arg3, arg4,
+                           arg5, arg6, arg7, arg8);
+#endif
 }
 
 static inline void record_syscall_return(void *cpu, int num, abi_long ret)
 {
     trace_guest_user_syscall_ret(cpu, num, ret);
     qemu_plugin_vcpu_syscall_ret(cpu, num, ret);
+#ifdef CONFIG_LMJ
+    pin_instrument_syscall_ret(cpu, num, ret);
+#endif
 }
 
 

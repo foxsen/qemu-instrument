@@ -27,6 +27,7 @@ static inline int env_offset_of_pc(CPUState *cs)
     return (int)((uint64_t)(&cpu->pc) - (uint64_t)cpu);
 }
 
+/* TODO: maybe bug, fork之后偏移值可能会变? */
 static inline int env_offset_exception_index(CPUState *cs)
 {
     /* CPUState *cpu_state = env_cpu(cpu); */

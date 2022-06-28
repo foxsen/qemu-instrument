@@ -42,5 +42,7 @@ void preexit_cleanup(CPUArchState *env, int code)
 #endif
         gdb_exit(code);
         qemu_plugin_user_exit();
+#ifdef CONFIG_LMJ
         pin_instrument_exit(env, code);
+#endif
 }

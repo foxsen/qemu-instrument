@@ -62,6 +62,10 @@ void reg_free_itemp(int reg)
 
 int map_native_reg_to_itemp(int native)
 {
+    /* reg_zero 不用做映射 */
+    if (native == reg_zero)
+        return 0;
+
     if (native_itemp_map[native] == INVALID_TEMP) {
         native_itemp_map[native] = reg_alloc_itemp();
     }
@@ -70,6 +74,9 @@ int map_native_reg_to_itemp(int native)
 
 void unmap_native_reg_to_itemp(int native)
 {
+    if (native == reg_zero)
+        return;
+
     int itemp = native_itemp_map[native];
     if (itemp != INVALID_TEMP) {
         reg_free_itemp(itemp);

@@ -117,8 +117,8 @@ void la_relocation(CPUState *cs, TranslationBlock *tb)
 
     for (Ins *ins = t->first_ins; ins != NULL; ins = ins->next) {
         if (ins->op == LISA_B && ins->opnd[0].val == 0x0) {
-            uint64_t curr_ins_pos = (uint64_t)tb->tc.ptr + (ins_nr << 2);
-            uint64_t exit_offset = context_switch_native_to_bt - curr_ins_pos;
+            uint64_t cur_ins_pos = (uint64_t)tb->tc.ptr + (ins_nr << 2);
+            uint64_t exit_offset = context_switch_native_to_bt - cur_ins_pos;
             ins->opnd[0].val = exit_offset >> 2;
         }
         ins_nr++;
