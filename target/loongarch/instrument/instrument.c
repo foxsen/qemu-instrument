@@ -39,12 +39,13 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         la_disasm_one_ins(opcode, la_ins);
         /* ins_append(la_ins); */  /* FIXME: maybe no use anymore */
 
-        /* 注：INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->nr_ins_real */
+        /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->nr_ins_real */
         INS ins = INS_alloc(pc, opcode, la_ins);
         INS_translate(cs, ins);
         INS_instrument(ins);
         ++ins_nr;
         /* if (ins_nr == max_insns) { */
+        /* 条件跳转也作为trace结束 */
         if (ins_nr == max_insns || op_is_condition_jmp(la_ins->op)) {
             INS_append_exit(ins);
         }
@@ -79,6 +80,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 #endif
 
         if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL) {
+            /* 条件跳转也作为trace结束 */
             TRACE_append_bbl(trace, bbl);
             break;
             /* if (op_is_condition_jmp(la_ins->op)) { */
@@ -218,7 +220,7 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
 #endif
 
     lsassertm(t->list_ins_nr == ins_nr, "t->list_ins_nr(%d) != ins_nr(%d)\n", t->list_ins_nr, ins_nr);
-    return ins_nr * 4;
+    return ins_nr;
 }
 
 

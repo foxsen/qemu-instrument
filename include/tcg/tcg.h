@@ -835,6 +835,9 @@ static inline void *tcg_malloc(int size)
 
 void tcg_init(size_t tb_size, int splitwx, unsigned max_cpus);
 void tcg_register_thread(void);
+#ifdef CONFIG_LMJ
+void pin_prologue_init(TCGContext *s, CPUState *cpu);
+#endif
 void tcg_prologue_init(TCGContext *s);
 void tcg_func_start(TCGContext *s);
 
@@ -1200,7 +1203,7 @@ uintptr_t tcg_qemu_tb_exec(CPUArchState *env, const void *tb_ptr);
 #elif defined CONFIG_LMJ
 #include "target/loongarch/instrument/translate.h"
 #define tcg_qemu_tb_exec(env, tb_ptr) \
-    ((uintptr_t (*)(const void *, void *))context_switch_bt_to_native)(tb_ptr, env)
+    ((uintptr_t (*)(void *, const void *))context_switch_bt_to_native)(env, tb_ptr)
 #else
 typedef uintptr_t tcg_prologue_fn(CPUArchState *env, const void *tb_ptr);
 extern tcg_prologue_fn *tcg_qemu_tb_exec;

@@ -289,7 +289,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         /* call cpu_loop_exit(CPUState *cpu) 
          * BUG promt: 很可能出问题
-         * TODO: maybe need call cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc) */
+         * TODO: maybe need call (see) cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc) */
         li_nr = ins_insert_before_li_d(ins, itemp, (uint64_t)cpu_loop_exit);
         li_nr = ins_insert_before_li_d(ins, itemp_cpu, (uint64_t)cs);
         /* syscall will never return, so reg_ra is no use */
@@ -379,11 +379,11 @@ static void generate_context_switch_bt_to_native(void)
     ins_append_3(LISA_ST_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
 
     /* FIXME: 目前看来只有这两个寄存器是有必要恢复的，其他都不需要了？ */
-    /* arg1(a0): code_cache */
-    /* arg2(a1): env */
+    /* arg1(a0): env */
+    /* arg2(a1): code_cache */
     /* FIXME: use reg_fp to save native_addr maybe not a good idea */
-    ins_append_3(LISA_OR, reg_code_ptr, reg_a0, reg_zero);
-    ins_append_3(LISA_OR, reg_env, reg_a1, reg_zero);
+    ins_append_3(LISA_OR, reg_env, reg_a0, reg_zero);
+    ins_append_3(LISA_OR, reg_code_ptr, reg_a1, reg_zero);
 
     /* FIXME: confused */
     /* /1* save dbt FCSR *1/ */

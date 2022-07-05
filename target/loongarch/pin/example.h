@@ -2,6 +2,8 @@
 #define _LMJ_EXAMPLE_H_
 #include "pin_state.h"
 VOID docount(UINT64 pc, UINT32 opcode);
+VOID syscall_enter(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
+VOID syscall_exit(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
 VOID Instruction(INS ins, VOID* v);
 VOID Fini(INT32 code, VOID* v);
 INT32 Usage(void);

@@ -20,4 +20,5 @@ BBL BBL_Next(BBL x);
 BBL BBL_Prev(BBL x);
 BOOL BBL_Valid(BBL x);
 
+const char* syscall_name(uint64_t nr);
 #endif

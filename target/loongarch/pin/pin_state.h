@@ -27,8 +27,6 @@ void TRACE_instrument(TRACE trace);
 
 #include "../instrument/env.h"
 void pin_instrument_exit(CPUArchState *env, int code);
-void pin_instrument_syscall(CPUState *cpu, int64_t num, uint64_t a1, uint64_t a2,
-                            uint64_t a3, uint64_t a4, uint64_t a5,
-                            uint64_t a6, uint64_t a7, uint64_t a8);
-void pin_instrument_syscall_ret(void *cpu, int num, abi_long ret);
+void pin_instrument_syscall(CPUState *cpu);
+void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret);
 #endif

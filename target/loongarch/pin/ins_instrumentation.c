@@ -31,7 +31,6 @@ void PIN_AddSyscallEntryFunction(SYSCALL_ENTRY_CALLBACK fun, VOID *val)
 {
     PIN_state.syscall_entry_cb = fun;
     PIN_state.syscall_entry_cb_val = val;
-    
 }
 
 void PIN_AddSyscallExitFunction(SYSCALL_EXIT_CALLBACK fun, VOID *val)
@@ -344,8 +343,16 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             break;
         case IARG_SYSCALL_NUMBER:
             lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
-            /* to be finished */
-
+            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a7)));
+            ++ins_nr;
+            break;
+        case IARG_SYSARG_REFERENCE:
+            lsassert(0);
+            break;
+        case IARG_SYSARG_VALUE:
+            lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
+            lsassert(cb.arg[i].val < 7);
+            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0 + cb.arg[i].val)));
             break;
 
         default:

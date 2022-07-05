@@ -30,20 +30,22 @@ void pin_instrument_exit(CPUArchState *env, int code)
     }
 }
 
-void pin_instrument_syscall(CPUState *cpu, int64_t num, uint64_t a1, uint64_t a2,
-                              uint64_t a3, uint64_t a4, uint64_t a5,
-                              uint64_t a6, uint64_t a7, uint64_t a8)
+void pin_instrument_syscall(CPUState *cpu)
 {
-    /* todo: make args and call PIN_state... */
+    /* FIXME: some args are temporarily filled with NULL and 0 */
+    CONTEXT ctxt;
+    ctxt.env = cpu->env_ptr;
     if (PIN_state.syscall_entry_cb != NULL) {
-        PIN_state.syscall_entry_cb(..., PIN_state.syscall_entry_cb_val);
+        PIN_state.syscall_entry_cb(PIN_ThreadId(), &ctxt, 0, PIN_state.syscall_entry_cb_val);
     }
 }
 
-void pin_instrument_syscall_ret(void *cpu, int num, abi_long ret)
+void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret)
 {
-    /* todo: make args and call PIN_state.... */
+    /* FIXME: some args are temporarily filled with NULL and 0 */
+    CONTEXT ctxt;
+    ctxt.env = cpu->env_ptr;
     if (PIN_state.syscall_exit_cb != NULL) {
-        PIN_state.syscall_exit_cb(..., PIN_state.syscall_exit_cb_val);
+        PIN_state.syscall_exit_cb(PIN_ThreadId(), &ctxt, 0, PIN_state.syscall_exit_cb_val);
     }
 }

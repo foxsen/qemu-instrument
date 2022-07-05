@@ -721,6 +721,22 @@ TranslationBlock *tcg_tb_alloc(TCGContext *s)
     return tb;
 }
 
+#ifdef CONFIG_LMJ
+void pin_prologue_init(TCGContext *s, CPUState *cpu)
+{
+    int ins_nr;
+    s->code_ptr = s->code_gen_ptr;
+    ins_nr = la_gen_prologue(cpu, s);
+    /* TODO: 但是这里可能还要改别的？ */
+    /* tcg_out32 通过 *s->code_ptr++ = v 将数据放入缓存 */
+    s->code_ptr += ins_nr;
+    ins_nr = la_gen_epilogue(cpu, s);
+    s->code_ptr += ins_nr;
+    // s->code_gen_ptr = s->code_ptr; // tcg_region_prologue_set() will set this
+    tcg_region_prologue_set(s);
+}
+#endif
+
 void tcg_prologue_init(TCGContext *s)
 {
     size_t prologue_size;

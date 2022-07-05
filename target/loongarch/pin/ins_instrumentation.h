@@ -3,12 +3,14 @@
 
 #include "types.h"
 #include "instrumentation_arguements.h"
+#include "thread.h"
+#include "context.h"
 
-typedef VOID (*INS_INSTRUMENT_CALLBACK)(INS ins, VOID* v);
+typedef VOID (*INS_INSTRUMENT_CALLBACK) (INS ins, VOID* v);
 typedef VOID (*TRACE_INSTRUMENT_CALLBACK) (TRACE trace, VOID *v);
-typedef VOID(* FINI_CALLBACK) (INT32 code, VOID *v);
-typedef VOID(* SYSCALL_ENTRY_CALLBACK) (THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
-typedef VOID(* SYSCALL_EXIT_CALLBACK) (THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
+typedef VOID (* FINI_CALLBACK) (INT32 code, VOID *v);
+typedef VOID (* SYSCALL_ENTRY_CALLBACK) (THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
+typedef VOID (* SYSCALL_EXIT_CALLBACK) (THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v);
 
 /* FIXME: change the return type(PIN_CALLBACK) to (void) because I dont know the class of PIN_CALLBACK */
 void INS_AddInstrumentFunction(INS_INSTRUMENT_CALLBACK fun, VOID* val);

@@ -6528,6 +6528,10 @@ typedef struct {
     sigset_t sigmask;
 } new_thread_info;
 
+#ifdef CONFIG_LMJ
+#include "target/loongarch/pin/thread.h"
+#endif
+
 static void *clone_func(void *arg)
 {
     new_thread_info *info = arg;
@@ -6548,6 +6552,9 @@ static void *clone_func(void *arg)
     if (info->parent_tidptr)
         put_user_u32(info->tid, info->parent_tidptr);
     qemu_guest_random_seed_thread_part2(cpu->random_seed);
+#ifdef CONFIG_LMJ
+    PIN_Thread_create();
+#endif
     /* Enable signals.  */
     sigprocmask(SIG_SETMASK, &info->sigmask, NULL);
     /* Signal to the parent that we're ready.  */

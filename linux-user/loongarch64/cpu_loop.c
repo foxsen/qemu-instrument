@@ -11,6 +11,9 @@
 #include "user-internals.h"
 #include "cpu_loop-common.h"
 #include "signal-common.h"
+#ifdef CONFIG_LMJ
+#include "target/loongarch/pin/pin_state.h"
+#endif
 
 void cpu_loop(CPULoongArchState *env)
 {
@@ -47,6 +50,10 @@ void cpu_loop(CPULoongArchState *env)
                 break;
             }
             env->gpr[4] = ret;
+#ifdef CONFIG_LMJ
+            /* fixme: sencod arg is syscall num */
+            pin_instrument_syscall_ret(cs, 0, ret);
+#endif
             break;
         case EXCCODE_INE:
             force_sig_fault(TARGET_SIGILL, 0, env->pc);

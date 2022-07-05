@@ -954,19 +954,10 @@ int main(int argc, char **argv, char **envp)
     /* Now that we've loaded the binary, GUEST_BASE is fixed.  Delay
        generating the prologue until now so that the prologue can take
        the real value of GUEST_BASE into account.  */
-    /* FIXME: 直接在外面生成 */
 #ifndef CONFIG_LMJ
     tcg_prologue_init(tcg_ctx);
 #else
-    int ins_nr;
-    tcg_ctx->code_ptr = tcg_ctx->code_gen_ptr;
-    ins_nr = la_gen_prologue(cpu, tcg_ctx);
-    /* TODO: 但是这里可能还要改别的？ */
-    /* tcg_out32 通过 *s->code_ptr++ = v 将数据放入缓存 */
-    tcg_ctx->code_ptr += ins_nr;
-    ins_nr = la_gen_epilogue(cpu, tcg_ctx);
-    tcg_ctx->code_ptr += ins_nr;
-    tcg_ctx->code_gen_ptr = tcg_ctx->code_ptr;
+    pin_prologue_init(tcg_ctx, cpu);
 #endif
 
 #ifdef CONFIG_LMJ

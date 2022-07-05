@@ -33,5 +33,7 @@ typedef VOID (*AFUNPTR)(void);
 /* const UINT32 PIN_MAX_THREADS = 8192; */
 #define PIN_MAX_THREADS 8192
 
-#include "context.h"
+/* FIXME: no use, also should not define at here */
+typedef uint32_t SYSCALL_STANDARD;
+
 #endif

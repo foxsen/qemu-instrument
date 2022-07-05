@@ -1484,7 +1484,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
 
 #ifdef CONFIG_LMJ
     /* TODO: tb->tc.ptr = tcg_splitwx_to_rx(gen_code_buf); ?? */
-    gen_code_size = la_encode(tcg_ctx, gen_code_buf);
+    gen_code_size = la_encode(tcg_ctx, gen_code_buf) * 4;
     tr_fini();
 #else
     gen_code_size = tcg_gen_code(tcg_ctx, tb);
