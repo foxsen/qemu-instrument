@@ -149,46 +149,49 @@ int INS_translate(CPUState *cs, INS pin_ins)
          * fallthrough:
          *   ...
          */
+        tr_data.is_jmp = TRANS_NORETURN;
+
         switch (ins->op) {
             case LISA_BEQZ:
-                /* magic number 7: we will insert additional 6 ins before next ins */
-                ins_insert_before(ins, ins_create_2(LISA_BNEZ, ins->opnd[0].val, 7));
+                /* FIXME: maybe we can calc the magic number and patch this ins later */
+                /* magic number 11: we will insert additional 10 ins before next ins */
+                ins_insert_before(ins, ins_create_2(LISA_BNEZ, ins->opnd[0].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BNEZ:
-                ins_insert_before(ins, ins_create_2(LISA_BEQZ, ins->opnd[0].val, 7));
+                ins_insert_before(ins, ins_create_2(LISA_BEQZ, ins->opnd[0].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BCEQZ:
-                ins_insert_before(ins, ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 7));
+                ins_insert_before(ins, ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BCNEZ:
-                ins_insert_before(ins, ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 7));
+                ins_insert_before(ins, ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BEQ:
-                ins_insert_before(ins, ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BNE:
-                ins_insert_before(ins, ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BLT:
-                ins_insert_before(ins, ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BGE:
-                ins_insert_before(ins, ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BLTU:
-                ins_insert_before(ins, ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             case LISA_BGEU:
-                ins_insert_before(ins, ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, 7));
+                ins_insert_before(ins, ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, 11));
                 insert_before_nr++;
                 break;
             default:
@@ -205,11 +208,11 @@ int INS_translate(CPUState *cs, INS pin_ins)
             reg_free_itemp(itemp_ra);
         }
 
-
-        /* set reg_tb = tb_addr, for tb link */
-        /* TranslationBlock *tb = tr_data.curr_tb; */
-        /* uint64_t tb_addr = (uint64_t)tb; */
-        /* /1* todo: load tb_addr to reg_tb *1/ */
+        /* tb_link: fallthrough, this B ins will be patched when tb_link */
+        Ins *b = ins_b(1);
+        tr_data.jmp_ins[0] = b;
+        ins_insert_before(ins, b);
+        insert_before_nr++;
 
         /* set reg_target = branch target */
         uint64_t target = ins_target_addr(ins);
@@ -217,10 +220,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
         insert_before_nr += li_nr;
         lsassert(li_nr == 4);
 
-        /* set return value ($a0) = 0 */
-        /* FIXME: return value not used */
-        ins_insert_before(ins, ins_create_3(LISA_ORI, reg_a0, reg_zero, reg_zero));
-        insert_before_nr++;
+        /* set return value ($a0) = (tb | slot_index) */
+        li_nr = ins_insert_before_li_d(ins, reg_a0, ((uint64_t)tr_data.curr_tb | 0));
+        insert_before_nr += li_nr;
 
         /* Branch to context_switch_native_to_bt, will be modify in redirection process */
         ins_insert_before(ins, ins_b(0));
@@ -234,6 +236,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
          * 2. 跳转到上下文切换代码（推迟到重定位再做）
          * TODO: 添加stub for jmp_glue
          */
+        tr_data.is_jmp = TRANS_NORETURN;
+
         int rd = ins->opnd[0].val;
         int rj = ins->opnd[1].val;
         int offset16 = ins->opnd[2].val;
@@ -266,8 +270,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         ins_remove(ins);
         ins_nr--;
     } else if (ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
-        /* FIXME: put SYSCALL and BREAK together, but BREAK not tested */
-        /* lsassert(ins->op != LISA_BREAK); */
+        tr_data.is_jmp = TRANS_NORETURN;
 
         int itemp = reg_alloc_itemp();
         int itemp_cpu = reg_alloc_itemp();
@@ -281,7 +284,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* set exception index */
         if (ins->op == LISA_SYSCALL) {
             li_nr = ins_insert_before_li_d(ins, itemp, EXCCODE_SYS);
-        } else {
+        } else if (ins->op == LISA_BREAK){
             li_nr = ins_insert_before_li_d(ins, itemp, EXCCODE_BRK);
         }
         ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_exception_index(cs)));
@@ -320,20 +323,33 @@ int INS_translate(CPUState *cs, INS pin_ins)
     return ins_nr;
 }
 
-/* add an exit to BT after INS  */
-int INS_append_exit(INS pin_ins)
+/* add an exit to BT after INS */
+int INS_append_exit(INS pin_ins, uint32_t index)
 {
-    Ins *end = ins_b(0);
-    ins_insert_after(pin_ins->last_ins, end);
+    /* index indicate the jmp slot index */
+    lsassert(index < 2);
+    int num = 0;
 
-    uint64_t target = pin_ins->pc + 4;
-    int li_nr = ins_insert_before_li_d(end, reg_target, target);
-    ins_insert_before(end, ins_create_3(LISA_OR, reg_a0, reg_zero, reg_zero));
+    /* tb_link: fallthrough, this B ins will be patched when tb_link */
+    Ins *b = ins_b(1);
+    tr_data.jmp_ins[index] = b;
+    ins_insert_after(pin_ins->last_ins, b);
+    ++num;
+
+    Ins *end = ins_b(0);
+    ins_insert_after(b, end);
+    ++num;
+
+    /* set reg_target = pc + 4 */
+    num += ins_insert_before_li_d(end, reg_target, pin_ins->pc + 4);
+
+    /* set return value ($a0) = (tb | slot_index) */
+    num += ins_insert_before_li_d(end, reg_a0, ((uint64_t)tr_data.curr_tb | index));
 
     pin_ins->last_ins = end;
-    pin_ins->nr_ins_real += li_nr + 2;
+    pin_ins->nr_ins_real += num;
 
-    return li_nr + 2;
+    return num;
 }
 
 /* context switch */

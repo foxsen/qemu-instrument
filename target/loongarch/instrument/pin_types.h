@@ -12,7 +12,7 @@ typedef struct pin_ins {
     Ins *origin_ins;
     Ins *first_ins;
     Ins *last_ins;
-    int nr_ins_real;
+    int nr_ins_real;    /* length of la_ins list in PIN_INS */
 
     struct pin_ins *next;
     struct pin_ins *prev;

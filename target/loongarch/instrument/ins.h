@@ -5,15 +5,26 @@
 #include "la_disasm/include/disasm.h"
 #include "pin_types.h"
 
+/* FIXME: not realy used */
+typedef enum TransType {
+    TRANS_NEXT,
+    TRANS_TOO_MANY,
+    TRANS_NORETURN,
+    TRANS_TARGET_0,
+    TRANS_TARGET_1,
+} TransType;
+
 typedef struct TRANSLATION_DATA {
     void *curr_tb;
+    TransType is_jmp;
+    Ins* jmp_ins[2];
 
-    /* ins array */
+    /* ins array: 提前分配好的ins对象池 */
     Ins *ins_array;
     int max_ins_nr;
     int cur_ins_nr;
 
-    /* ins list */
+    /* ins list: 翻译过程中生成的指令链表 */
     int list_ins_nr;    // ins_nr in ins list
     Ins *first_ins;
     Ins *last_ins;

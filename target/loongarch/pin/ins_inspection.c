@@ -88,7 +88,6 @@ BOOL INS_HasFallThrough(INS ins)
     if (op_is_branch(op) && !op_is_condition_jmp(op))
         return false;
     return true;
-    
 }
 
 /* TRACE */

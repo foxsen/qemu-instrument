@@ -123,7 +123,7 @@ typedef enum {
 #define TCG_TARGET_HAS_clz_i32          1
 #define TCG_TARGET_HAS_ctz_i32          1
 #define TCG_TARGET_HAS_ctpop_i32        0
-#define TCG_TARGET_HAS_direct_jump      0
+#define TCG_TARGET_HAS_direct_jump      1
 #define TCG_TARGET_HAS_brcond2          0
 #define TCG_TARGET_HAS_setcond2         0
 #define TCG_TARGET_HAS_qemu_st8_i32     0
@@ -166,8 +166,21 @@ typedef enum {
 #define TCG_TARGET_HAS_muluh_i64        1
 #define TCG_TARGET_HAS_mulsh_i64        1
 
+#ifndef CONFIG_LMJ
 /* not defined -- call should be eliminated at compile time */
 void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+#else
+#include "target/loongarch/instrument/ins.h"
+static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
+                                            uintptr_t jmp_rw, uintptr_t addr)
+{
+    /* patch the branch destination */
+    int offset = addr - jmp_rx;
+    Ins * b = ins_b(offset >> 2);
+    uint32_t opcode = la_assemble(b);
+    qatomic_set((int32_t *)jmp_rw, opcode);
+}
+#endif
 
 #define TCG_TARGET_DEFAULT_MO (0)
 

@@ -11,6 +11,9 @@ void tr_init(void *tb)
 {
     TRANSLATION_DATA *t = &tr_data;
     t->curr_tb = tb;
+    t->is_jmp = TRANS_NEXT;
+    t->jmp_ins[0] = NULL;
+    t->jmp_ins[1] = NULL;
 
     /* allocate ins_array when called at the first time */
     if (t->ins_array == NULL) {
@@ -261,6 +264,7 @@ uint64_t ins_target_addr(Ins *ins)
 #include "qemu/bitops.h"
 Ins *ins_b(long offset)
 {
+    /* note: the real offset is offset << 2 */
     lsassert(offset == sextract64(offset, 0, 26));
     return ins_create_1(LISA_B, offset);
 }

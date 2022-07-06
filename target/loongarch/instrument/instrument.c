@@ -32,6 +32,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
     BBL bbl = BBL_alloc(pc);
     tr_data.trace = trace;
 
+    lsassert(tr_data.is_jmp == TRANS_NEXT);
     while (1) {
         /* disasm */
         uint32_t opcode = read_opcode(cs, pc);
@@ -44,17 +45,22 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         INS_translate(cs, ins);
         INS_instrument(ins);
         ++ins_nr;
-        /* if (ins_nr == max_insns) { */
-        /* 条件跳转也作为trace结束 */
-        if (ins_nr == max_insns || op_is_condition_jmp(la_ins->op)) {
-            INS_append_exit(ins);
+
+        if (tr_data.is_jmp == TRANS_NEXT && ins_nr == max_insns) {
+            tr_data.is_jmp = TRANS_TOO_MANY;
+            INS_append_exit(ins, 0);
+        } else if (op_is_condition_jmp(la_ins->op)) {
+            /* 条件跳转也作为tb结束 */
+            INS_append_exit(ins, 1);
         }
+
         BBL_append_ins(bbl, ins);
 
         pc += 4;
         real_ins_nr += ins->nr_ins_real;
 
 #ifdef CONFIG_LMJ_DEBUG
+        /* check length of ins list == PIN_INS.nr_ins_real  */
         int c1 = 0;
         for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
             c1++;
@@ -79,10 +85,11 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         lsassertm(c1 == ins->nr_ins_real, "c1: %d, read: %d", c1, ins->nr_ins_real);
 #endif
 
-        if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL) {
-            /* 条件跳转也作为trace结束 */
+        /* 现在一个trace只有一个bbl */
+        if (tr_data.is_jmp != TRANS_NEXT) {
             TRACE_append_bbl(trace, bbl);
             break;
+        /* if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL || la_ins->op == LISA_BREAK) { */
             /* if (op_is_condition_jmp(la_ins->op)) { */
             /*     bbl = BBL_alloc(pc); */
             /* } else { */
@@ -96,7 +103,6 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 
     tr_data.first_ins = trace->bbl_head->ins_head->first_ins;
     tr_data.last_ins = trace->bbl_tail->ins_tail->last_ins;
-    /* real_ins_nr没有计算插桩加入指令数，现在用 ins_insert 系列指令来维护 tr_data.list_ins_nr */
     /* lsassertm(tr_data.list_ins_nr == real_ins_nr, "list_ins_nr(%d) != real_ins_nr(%d), trace->ins_nr=%d\n", tr_data.list_ins_nr, real_ins_nr, trace->nr_ins); */
     /* tr_data.list_ins_nr = real_ins_nr; */
 
@@ -108,20 +114,31 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 }
 
 
-void la_relocation(CPUState *cs, TranslationBlock *tb)
+/* 此时所有指令在code cache中位置已经确定，不会再添加新的指令 */
+void la_relocation(CPUState *cs)
 {
-    /* 跳转指令重定向
-     * FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt 
-     */
     int ins_nr = 0;
-    TRANSLATION_DATA *t = &tr_data;
-    /* TranslationBlock *tb = t->curr_tb; */
+    TranslationBlock *tb = tr_data.curr_tb;
 
-    for (Ins *ins = t->first_ins; ins != NULL; ins = ins->next) {
-        if (ins->op == LISA_B && ins->opnd[0].val == 0x0) {
-            uint64_t cur_ins_pos = (uint64_t)tb->tc.ptr + (ins_nr << 2);
-            uint64_t exit_offset = context_switch_native_to_bt - cur_ins_pos;
-            ins->opnd[0].val = exit_offset >> 2;
+    for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
+        if (ins->op == LISA_B) {
+            uintptr_t cur_ins_pos = (uintptr_t)tb->tc.ptr + (ins_nr << 2);
+            /* 跳转指令重定向 */ 
+            /* FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt */
+            if (ins->opnd[0].val == 0x0) {
+                uintptr_t exit_offset = context_switch_native_to_bt - cur_ins_pos;
+                ins->opnd[0].val = exit_offset >> 2;
+            }
+
+            /* 记录tb_link要patch的B的地址 */
+            if (tr_data.jmp_ins[0] == ins) {
+                tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+            }
+            if (tr_data.jmp_ins[1] == ins) {
+                tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+            }
         }
         ins_nr++;
     }

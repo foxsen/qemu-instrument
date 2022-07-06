@@ -5,7 +5,7 @@
 #include "qemu/typedefs.h"
 /* #include "exec/translator.h" */
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns);
-void la_relocation(CPUState *cs, TranslationBlock *tb);
+void la_relocation(CPUState *cs);
 
 #include "qemu/osdep.h"
 #include "qemu/log.h"
