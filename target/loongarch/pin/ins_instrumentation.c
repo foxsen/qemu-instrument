@@ -371,7 +371,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
         cur = cur->prev;
     }
     ins->first_ins = cur;
-    ins->nr_ins_real += ins_nr;
+    ins->len += ins_nr;
 }
 
 VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
@@ -461,7 +461,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
         cur = cur->prev;
     }
     bbl->ins_head->first_ins = cur;
-    bbl->ins_head->nr_ins_real += ins_nr;
+    bbl->ins_head->len += ins_nr;
 }
 
 

@@ -347,7 +347,7 @@ int INS_append_exit(INS pin_ins, uint32_t index)
     num += ins_insert_before_li_d(end, reg_a0, ((uint64_t)tr_data.curr_tb | index));
 
     pin_ins->last_ins = end;
-    pin_ins->nr_ins_real += num;
+    pin_ins->len += num;
 
     return num;
 }

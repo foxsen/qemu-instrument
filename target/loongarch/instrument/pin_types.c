@@ -11,7 +11,7 @@ INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins)
     ins->origin_ins = la_ins;
     ins->first_ins = NULL;
     ins->last_ins = NULL;
-    ins->nr_ins_real = 0;
+    ins->len = 0;
     ins->next = NULL;
     ins->prev = NULL;
     return ins;
@@ -44,7 +44,7 @@ void INS_set_range(INS ins, Ins *start, Ins *end, int len)
 {
     ins->first_ins = start;
     ins->last_ins = end;
-    ins->nr_ins_real = len;
+    ins->len = len;
 }
 
 void BBL_append_ins(BBL bbl, INS ins)

@@ -40,7 +40,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         la_disasm_one_ins(opcode, la_ins);
         /* ins_append(la_ins); */  /* FIXME: maybe no use anymore */
 
-        /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->nr_ins_real */
+        /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->len */
         INS ins = INS_alloc(pc, opcode, la_ins);
         INS_translate(cs, ins);
         INS_instrument(ins);
@@ -57,10 +57,10 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         BBL_append_ins(bbl, ins);
 
         pc += 4;
-        real_ins_nr += ins->nr_ins_real;
+        real_ins_nr += ins->len;
 
 #ifdef CONFIG_LMJ_DEBUG
-        /* check length of ins list == PIN_INS.nr_ins_real  */
+        /* check length of ins list == PIN_INS.len  */
         int c1 = 0;
         for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
             c1++;
@@ -73,7 +73,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
                 fprintf(stderr, "i: %p, %s\n", i, msg);
                 ins_print(ins->last_ins, msg);
                 fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
-                fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->nr_ins_real, c1);
+                fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->len, c1);
                 /* move this to INS_dump() */
                 for (Ins *in = ins->first_ins; in != NULL; in = in->next) {
                     ins_print(in, msg);
@@ -82,7 +82,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
                 lsassert(0);
             }
         }
-        lsassertm(c1 == ins->nr_ins_real, "c1: %d, read: %d", c1, ins->nr_ins_real);
+        lsassertm(c1 == ins->len, "c1: %d, read: %d", c1, ins->len);
 #endif
 
         /* 现在一个trace只有一个bbl */
