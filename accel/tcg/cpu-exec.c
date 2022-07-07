@@ -992,9 +992,6 @@ int cpu_exec(CPUState *cpu)
                  * for the fast lookup
                  */
                 qatomic_set(&cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)], tb);
-#ifdef CONFIG_LMJ
-                tb_add_jmp_cache(pc, tb);
-#endif
             }
 
 #ifndef CONFIG_USER_ONLY

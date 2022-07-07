@@ -27,10 +27,15 @@ static inline int env_offset_of_pc(CPUState *cs)
     return (int)((uint64_t)(&cpu->pc) - (uint64_t)cpu);
 }
 
-/* TODO: maybe bug, fork之后偏移值可能会变? */
-static inline int env_offset_exception_index(CPUState *cs)
+/* note: the result is larger than 12 bits, so can not use ADDI_D */
+static inline int env_offset_of_tb_jmp_cache(CPUState *cs)
 {
-    /* CPUState *cpu_state = env_cpu(cpu); */
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cs->tb_jmp_cache) - (uint64_t)cpu);
+}
+
+static inline int env_offset_of_exception_index(CPUState *cs)
+{
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
     return (int)((uint64_t)(&cs->exception_index) - (uint64_t)cpu);
 }

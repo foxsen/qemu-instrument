@@ -1216,9 +1216,6 @@ static void do_tb_phys_invalidate(TranslationBlock *tb, bool rm_from_page_list)
             qatomic_set(&cpu->tb_jmp_cache[h], NULL);
         }
     }
-#ifdef CONFIG_LMJ
-    tb_remove_jmp_cache(tb->pc, tb);
-#endif
 
     /* suppress this TB from the two jump lists */
     tb_remove_from_jmp_list(tb, 0);

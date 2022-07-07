@@ -7,25 +7,6 @@
 #include "exec/exec-all.h"
 #include "translate.h"
 
-/* jump cache 记录最近执行过的tb，用于间接跳转快速查找下一tb */
-#define JMP_CACHE_BITS 10
-#define JMP_CACHE_SIZE (1 << JMP_CACHE_BITS)
-#define JMP_CACHE_MASK (JMP_CACHE_SIZE - 1)
-static TranslationBlock* tb_jmp_cache[JMP_CACHE_SIZE];
-
-void tb_add_jmp_cache(uint64_t pc, TranslationBlock* tb)
-{
-    tb_jmp_cache[(pc >> 3) & JMP_CACHE_MASK] = tb;
-}
-
-void tb_remove_jmp_cache(uint64_t pc, TranslationBlock* tb)
-{
-    int h = (pc >> 3) & JMP_CACHE_MASK;
-    if (tb_jmp_cache[h] == tb) {
-        tb_jmp_cache[h] = NULL;
-    }
-}
-
 int INS_translate(CPUState *cs, INS pin_ins)
 {
     /* 
@@ -270,30 +251,33 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         /* GR[rd] = PC + 4 */
         /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
-        if (gpr[0] != reg_zero) {
+        if (gpr[0] != -1 && gpr[0] != reg_zero) {
             uint64_t next_pc = ins->pc + 4;
             int li_nr = ins_insert_before_li_d(ins, rd, next_pc);
             ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, gpr[0])));
             insert_before_nr += li_nr + 1;
         }
 
-        /* 检查 tb_hashtable 中是否缓存了目标 tb */
+        /* IBTC: 检查 tb_jmp_cache 中是否缓存了目标 tb */
         int itemp_tb = reg_alloc_itemp();
         int itemp = reg_alloc_itemp();
-        li_nr = ins_insert_before_li_d(ins, itemp_tb, (uint64_t)tb_jmp_cache);
-        /* 1. offset = pc & 0x1ff8*/
-        ins_insert_before(ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, 3));
-        ins_insert_before(ins, ins_create_3(LISA_ANDI, itemp, itemp, JMP_CACHE_MASK));
+        /* 1. get cpu->tb_jmp_cache (here offset is larger than 12bits, so load the imm) */
+        li_nr = ins_insert_before_li_d(ins, itemp, env_offset_of_tb_jmp_cache(cs));
+        ins_insert_before(ins, ins_create_3(LISA_ADD_D, itemp_tb, reg_env, itemp));
+        /* 2. offset = hash(pc) << 3 */
+        ins_insert_before(ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, TB_JMP_CACHE_BITS));
+        ins_insert_before(ins, ins_create_3(LISA_XOR, itemp, itemp, reg_target));
+        ins_insert_before(ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
         ins_insert_before(ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 3));
-        /* 2. tb = *(hash + offset) */
+        /* 3. tb = *(tb_jmp_cache + offset) */
         ins_insert_before(ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));
-        /* 3. if (tb != 0 && tb->pc == target) JIRL tb->tc.ptr */
+        /* 4. if (tb != 0 && tb->pc == target) JIRL tb->tc.ptr */
         ins_insert_before(ins, ins_create_2(LISA_BEQZ, itemp_tb, 5));   /* magic num: 5 */
         ins_insert_before(ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, pc)));
         ins_insert_before(ins, ins_create_3(LISA_BNE, itemp, reg_target, 3));   /* magic num: 3 */
         ins_insert_before(ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, tc) + offsetof(struct tb_tc, ptr)));
         ins_insert_before(ins, ins_create_3(LISA_JIRL, 0, itemp, 0));
-        insert_before_nr += li_nr + 9;
+        insert_before_nr += li_nr + 11;
         reg_free_itemp(itemp_tb);
         reg_free_itemp(itemp);
 
@@ -326,7 +310,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         } else if (ins->op == LISA_BREAK){
             li_nr = ins_insert_before_li_d(ins, itemp, EXCCODE_BRK);
         }
-        ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_exception_index(cs)));
+        ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_exception_index(cs)));
         insert_before_nr += li_nr + 1;
 
         /* call cpu_loop_exit(CPUState *cpu) 
