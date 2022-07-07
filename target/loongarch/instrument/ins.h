@@ -32,7 +32,7 @@ typedef struct TRANSLATION_DATA {
     TRACE trace;
 } TRANSLATION_DATA;
 
-extern TRANSLATION_DATA tr_data;
+extern __thread TRANSLATION_DATA tr_data;
 /* FIXME: maybe too large，如果插桩，给每个INS的每个call需要(1+4*args)条指令 */
 #define MAX_INS_NR 5000
 

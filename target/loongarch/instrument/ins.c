@@ -5,7 +5,7 @@
 #include "translate.h"
 
 /* TODO: 应该放在 lsenv->tr_data */
-TRANSLATION_DATA tr_data;
+__thread TRANSLATION_DATA tr_data;
 
 void tr_init(void *tb)
 {
