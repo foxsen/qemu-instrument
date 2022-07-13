@@ -50,8 +50,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
             tr_data.is_jmp = TRANS_TOO_MANY;
             INS_append_exit(ins, 0);
         } else if (op_is_condition_jmp(la_ins->op)) {
-            /* 条件跳转也作为tb结束 */
-            INS_append_exit(ins, 1);
+            INS_append_exit(ins, 1); /* 条件跳转也作为tb结束, tb_link第二个跳转出口 */
         }
 
         BBL_append_ins(bbl, ins);
@@ -119,6 +118,7 @@ void la_relocation(CPUState *cs)
 {
     int ins_nr = 0;
     TranslationBlock *tb = tr_data.curr_tb;
+    bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
 
     for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
         if (ins->op == LISA_B) {
@@ -130,14 +130,16 @@ void la_relocation(CPUState *cs)
                 ins->opnd[0].val = exit_offset >> 2;
             }
 
-            /* 记录tb_link要patch的B的地址 */
-            if (tr_data.jmp_ins[0] == ins) {
-                tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
-            }
-            if (tr_data.jmp_ins[1] == ins) {
-                tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+            /* tb_link: 记录要patch的B的地址 */
+            if (enable_tb_link) {
+                if (tr_data.jmp_ins[0] == ins) {
+                    tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                    tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                }
+                if (tr_data.jmp_ins[1] == ins) {
+                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                }
             }
         }
         ins_nr++;

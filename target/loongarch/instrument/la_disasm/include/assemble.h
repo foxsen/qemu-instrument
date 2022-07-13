@@ -94,11 +94,34 @@ typedef struct lisa_insn_format {
     LISA_OPND_TYPE opnd[4];
 } lisa_insn_format;
 
+extern lisa_opnd_bit_field bit_field_table[];
+extern lisa_insn_format lisa_format_table[];
 
-extern lisa_opnd_bit_field disa_bit_field_table[];
-extern lisa_insn_format disa_lisa_format_table[];
 
-/* uint32_t lisa_assemble(IR2 *pir2); */
+typedef enum {
+    REG_ACCESS_INVALID,
+    GPR_READ,
+    GPR_WRITE,
+    GPR_READWRITE,
+    FPR_READ,
+    FPR_WRITE,
+    FPR_READWRITE,
+    CFR_READ,   /* 浮点的条件标志寄存器 */
+    REG_ACCESS_END,
+} LISA_REG_ACCESS_TYPE;
+
+typedef struct lisa_insn_reg_access_format {
+    IR2_INS_OP op;
+    LISA_REG_ACCESS_TYPE opnd[4];
+    bool valid; /* FIXME：valid用于表示该entry是否有效，等到表格全部完成时，取消该字段 */
+} lisa_insn_reg_access_format;
+
+extern lisa_insn_reg_access_format lisa_reg_access_table[];
+
+bool is_ir2_reg_access_type_valid(Ins *ins);
+LISA_REG_ACCESS_TYPE get_ir2_reg_access_type(Ins *ins, int i);
+
+
 uint32_t la_assemble(IR2 *pir2);
 
 #endif

@@ -54,6 +54,9 @@ bool op_is_load(IR2_INS_OP op);
 bool op_is_store(IR2_INS_OP op);
 
 bool opnd_is_gpr(Ins *ins, int i);
+bool opnd_is_gpr_read(Ins *ins, int i);
+bool opnd_is_gpr_write(Ins *ins, int i);
+bool opnd_is_gpr_readwrite(Ins *ins, int i);
 
 addr_t ins_target_addr(Ins *ins);
 

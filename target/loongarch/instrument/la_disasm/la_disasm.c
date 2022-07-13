@@ -2,6 +2,7 @@
 #include "./include/assemble.h"
 #include "./include/disasm.h"
 #include <stdio.h>
+#include <assert.h>
 
 static bool is_la_sign_opnd[] = {
     0,//OPD_INVALID
@@ -76,7 +77,7 @@ static bool is_la_sign_opnd[] = {
 };
 
 static int la_get_opnd_val(LISA_OPND_TYPE type, uint32_t insn) {
-    lisa_opnd_bit_field *bit_field = &disa_bit_field_table[type];
+    lisa_opnd_bit_field *bit_field = &bit_field_table[type];
     int bit_start = bit_field->bit_range_0.start;
     int bit_end = bit_field->bit_range_0.end;
     int bit_len = bit_end - bit_start + 1;
@@ -101,11 +102,12 @@ static int la_get_opnd_val(LISA_OPND_TYPE type, uint32_t insn) {
 void la_disasm_one_ins(uint32_t opcode, Ins *ins)
 {
     IR2_INS_OP op = get_ins_op(opcode);
+    assert(op != LISA_INVALID);
 
     ins->op = op; 
     ins->opnd_count = 0;
 
-    lisa_insn_format *format = &disa_lisa_format_table[op];
+    lisa_insn_format *format = &lisa_format_table[op];
 
     for (int i = 0; i < 4; i++) {
         LISA_OPND_TYPE la_opnd_type = format->opnd[i];

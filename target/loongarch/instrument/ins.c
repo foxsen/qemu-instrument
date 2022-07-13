@@ -220,7 +220,26 @@ bool opnd_is_gpr(Ins *ins, int i)
     return (type == IR2_OPND_GPR);
 }
 
+bool opnd_is_gpr_read(Ins *ins, int i)
+{
+    lsassert(opnd_is_gpr(ins, i));
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins, i);
+    return (type == GPR_READ);
+}
 
+bool opnd_is_gpr_write(Ins *ins, int i)
+{
+    lsassert(opnd_is_gpr(ins, i));
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins, i);
+    return (type == GPR_WRITE);
+}
+
+bool opnd_is_gpr_readwrite(Ins *ins, int i)
+{
+    lsassert(opnd_is_gpr(ins, i));
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins, i);
+    return (type == GPR_READWRITE);
+}
 
 #include "bitopts.h"
 uint64_t ins_target_addr(Ins *ins)

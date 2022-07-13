@@ -3301,15 +3301,19 @@ static const IR2_OPND_TYPE la_to_ir2_type[] = {
 
 IR2_OPND_TYPE get_ir2_opnd_type(Ins *ins, int i)
 {
-    lisa_insn_format *format = &disa_lisa_format_table[ins->op];
+    lisa_insn_format *format = &lisa_format_table[ins->op];
     LISA_OPND_TYPE la_opnd_type = format->opnd[i];
     IR2_OPND_TYPE ir2_opnd_type = la_to_ir2_type[la_opnd_type];
     return ir2_opnd_type;
 }
 
+void op_print(IR2_INS_OP op, char *msg) {
+    sprintf(msg, "%-15s\t", ir2_ins_name[op]);
+}
+
 void ins_print(IR2 *ir2, char * msg) {
     assert(ir2->op >= LISA_INVALID && ir2->op <= LISA_ENDING);
-    sprintf(msg,"%-15s\t", ir2_ins_name[ir2->op]);
+    sprintf(msg, "%-15s\t", ir2_ins_name[ir2->op]);
     for (int i = 0; i < ir2->opnd_count; i++) {
         if (i != 0)
             sprintf(msg + strlen(msg),", ");

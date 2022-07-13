@@ -3228,5 +3228,6 @@ typedef IR2 Ins;
 
 IR2_OPND_TYPE get_ir2_opnd_type(Ins *ins, int i);
 void ins_print(IR2 *pir2, char *disasm_message);
+void op_print(IR2_INS_OP op, char *msg);
 
 #endif
