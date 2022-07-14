@@ -184,9 +184,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
     ANALYSIS_CALL cb = parse_iarg(action, funptr, valist);
     va_end(valist);
 
-    /* Insert an analysis-call:
-     * set args, set target, jirl.
-     */
+    /* 1. 设置分析函数的参数 */
     Ins *cur = ins->first_ins;
     IR2_INS_OP op = ins->origin_ins->op;
     int ins_nr = 0;
@@ -208,7 +206,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             break;
         case IARG_REG_VALUE:
             /* only support gpr for now */
-            assert(reg_invalid < cb.arg[i].val && cb.arg[i].val < reg_end);
+            assert(cb.arg[i].val < reg_end);
             ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, cb.arg[i].val)));
             ++ins_nr;
             break;
@@ -360,11 +358,31 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             break;
         }
     }
+
+    /* 2. 对于直接映射的寄存器，保存映射到了t0~t8的寄存器（调用者保存的寄存器） */
+    for (int i = 0; i < 32; ++i) {
+        int gpr = reg_gpr_map[i];
+        if (reg_t0 <= gpr && gpr <= reg_t8) {
+            ins_insert_before(cur, ins_create_3(LISA_ST_D, gpr, reg_env, env_offset_of_gpr(current_cpu, i)));
+            ++ins_nr;
+        }
+    }
+
+    /* 3. 调用插桩函数 */
     int itemp_target = reg_alloc_itemp();
     ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)funptr);
     ins_insert_before(cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
     ++ins_nr;
     reg_free_itemp(itemp_target);
+
+    /* 4. 对于直接映射的寄存器，恢复映射到了t0~t8的寄存器（调用者保存的寄存器） */
+    for (int i = 0; i < 32; ++i) {
+        int gpr = reg_gpr_map[i];
+        if (reg_t0 <= gpr && gpr <= reg_t8) {
+            ins_insert_before(cur, ins_create_3(LISA_LD_D, gpr, reg_env, env_offset_of_gpr(current_cpu, i)));
+            ++ins_nr;
+        }
+    }
 
     /* update INS */
     for (int i = 0; i < ins_nr; ++i) {

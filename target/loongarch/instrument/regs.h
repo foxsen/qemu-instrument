@@ -70,6 +70,10 @@
 #define ITEMP7          7
 #define ITEMP8          8
 
+extern const int reg_gpr_map[];
+int gpr_is_mapped(int gpr);
+int reg_alloc_gpr(int gpr);
+
 int reg_alloc_itemp(void);
 void reg_free_itemp(int reg);
 int map_native_reg_to_itemp(int reg_native);

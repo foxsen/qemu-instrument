@@ -3,6 +3,39 @@
 #include "error.h"
 #include <stdint.h>
 
+/* 寄存器映射 */
+const int reg_gpr_map[] = {
+    [reg_t0] = reg_s0,
+    [reg_t1] = reg_s1,
+    [reg_t2] = reg_s2,
+    [reg_t3] = reg_s3,
+    [reg_t4] = reg_s4,
+    [reg_t5] = reg_s5,
+    [reg_a0] = reg_s6,
+    [reg_a1] = reg_s7,
+    [reg_s0] = reg_t8,
+    [31] = 0, /* make array has 32 entries */
+};
+
+#define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
+
+int gpr_is_mapped(int gpr) {
+    lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
+    return (reg_gpr_map[gpr] != 0);
+}
+
+/* 直接映射的寄存器，返回映射的寄存器
+ * TODO: 未映射的寄存器，分配一个临时寄存器 
+ */
+int reg_alloc_gpr(int gpr) {
+    if (gpr_is_mapped(gpr)) {
+        return reg_gpr_map[gpr];
+    }
+    lsassert(0);
+    return 0;
+}
+
+/* 临时寄存器 */
 const int reg_itemp_map[] = {
     [ITEMP0] = reg_t0,
     [ITEMP1] = reg_t1,
@@ -25,6 +58,7 @@ const int reg_itemp_reverse_map[] = {
     [reg_t5] = ITEMP5,
     [reg_t6] = ITEMP6,
     [reg_t7] = ITEMP7,
+    /* [reg_t8] = ITEMP8, */
 };
 
 #define ITEMP_NUM (sizeof(reg_itemp_map) / sizeof(int))
