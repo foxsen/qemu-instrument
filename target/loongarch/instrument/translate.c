@@ -10,6 +10,7 @@ extern int fullregs;
 extern int enable_jmp_cache;
 
 #include "instrument.h"
+#include "decoder/la_print.h"
 
 uint64_t context_switch_bt_to_native;
 uint64_t context_switch_native_to_bt_ret_0;
@@ -236,8 +237,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
             }
         }
 #ifdef CONFIG_LMJ_DEBUG
-        char msg[16];
-        op_print(ins->op, msg);
+        char msg[32];
+        sprint_op(ins->op, msg);
         fprintf(stderr, "Reg access type undefined: %s\n", msg);
 #endif
         for (int i = 0; i < 4; ++i) {

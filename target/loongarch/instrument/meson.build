@@ -8,4 +8,4 @@ loongarch_tcg_ss.add(files(
   'debug.c',
 ))
 
-subdir('la_disasm')
+subdir('decoder')

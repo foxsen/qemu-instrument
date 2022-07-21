@@ -15,7 +15,7 @@ BOOL INS_IsMemoryRead(INS ins)
 USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
 {
     /* memoryOp is not used */
-    IR2_INS_OP op = ins->origin_ins->op;
+    IR2_OPCODE op = ins->origin_ins->op;
     switch (op) {
     case LISA_LD_B:
     case LISA_ST_B:
@@ -84,7 +84,7 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
 BOOL INS_HasFallThrough(INS ins)
 {
     /* TODO: does syscall & break have fallthrough? */
-    IR2_INS_OP op = ins->origin_ins->op;
+    IR2_OPCODE op = ins->origin_ins->op;
     if (op_is_branch(op) && !op_is_condition_jmp(op))
         return false;
     return true;

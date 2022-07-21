@@ -1,6 +1,7 @@
 #include "types.h"
-#include "la_disasm/include/assemble.h"
-#include "la_disasm/include/disasm.h"
+#include "decoder/assemble.h"
+#include "decoder/disasm.h"
+#include "decoder/la_print.h"
 #include "ins.h"
 #include "instrument.h"
 #include "regs.h"
@@ -37,7 +38,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         /* disasm */
         uint32_t opcode = read_opcode(cs, pc);
         la_ins = ins_alloc(pc);
-        la_disasm_one_ins(opcode, la_ins);
+        la_disasm(opcode, la_ins);
         /* ins_append(la_ins); */  /* FIXME: maybe no use anymore */
 
         /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->len */
@@ -66,16 +67,16 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
             if (i->next == NULL && i != ins->last_ins) {
                 fprintf(stderr, "assert fail\n");
                 char msg[128];
-                ins_print(ins->origin_ins, msg);
+                sprint_ins(ins->origin_ins, msg);
                 fprintf(stderr, "origin: %p, %s\n", ins->origin_ins, msg);
-                ins_print(i, msg);
+                sprint_ins(i, msg);
                 fprintf(stderr, "i: %p, %s\n", i, msg);
-                ins_print(ins->last_ins, msg);
+                sprint_ins(ins->last_ins, msg);
                 fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
                 fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->len, c1);
                 /* move this to INS_dump() */
                 for (Ins *in = ins->first_ins; in != NULL; in = in->next) {
-                    ins_print(in, msg);
+                    sprint_ins(in, msg);
                     fprintf(stderr, "%p: %08x\t%s\n", in, opcode, msg);
                 }
                 lsassert(0);
@@ -215,14 +216,14 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
         uint32_t *pc = code_buf;
         for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
             for (INS ins = bbl->ins_head; ins != NULL; ins = ins->next) {
-                la_disasm_print(ins->opcode, ins_info);
+                sprint_disasm(ins->opcode, ins_info);
                 fprintf(stderr, "0x%-16lx: %08x\t%s\n", ins->pc, ins->opcode, ins_info);
 
                 fprintf(stderr, "------------------\n");
                 Ins *inst = ins->first_ins;
                 while (inst) {
                     uint32_t opcode = la_assemble(inst);
-                    la_disasm_print(opcode, ins_info);
+                    sprint_disasm(opcode, ins_info);
                     fprintf(stderr, "%-18p: %08x\t%s\n", pc, opcode, ins_info);
 
                     ++pc;

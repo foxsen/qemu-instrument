@@ -1,8 +1,6 @@
-#include "./include/ir2.h"
-#include "./include/assemble.h"
-#include "./include/disasm.h"
-#include <stdio.h>
-#include <assert.h>
+#include "disasm.h"
+#include <stdbool.h>
+#include "target/loongarch/instrument/error.h"
 
 static bool is_la_sign_opnd[] = {
     0,//OPD_INVALID
@@ -76,8 +74,9 @@ static bool is_la_sign_opnd[] = {
     0,//OPD_XK
 };
 
-static int la_get_opnd_val(LISA_OPND_TYPE type, uint32_t insn) {
-    lisa_opnd_bit_field *bit_field = &bit_field_table[type];
+int get_opnd_val(GM_OPERAND_TYPE type, uint32_t insn)
+{
+    GM_OPERAND_PLACE_RELATION *bit_field = &bit_field_table[type];
     int bit_start = bit_field->bit_range_0.start;
     int bit_end = bit_field->bit_range_0.end;
     int bit_len = bit_end - bit_start + 1;
@@ -99,30 +98,24 @@ static int la_get_opnd_val(LISA_OPND_TYPE type, uint32_t insn) {
     return val;
 }
 
-void la_disasm_one_ins(uint32_t opcode, Ins *ins)
+void la_disasm(uint32_t opcode, Ins *ins)
 {
-    IR2_INS_OP op = get_ins_op(opcode);
-    assert(op != LISA_INVALID);
+    IR2_OPCODE op = get_ins_op(opcode);
+    lsassertm(op != LISA_INVALID, "invalid opcode");
 
     ins->op = op; 
     ins->opnd_count = 0;
 
-    lisa_insn_format *format = &lisa_format_table[op];
+    GM_LA_OPCODE_FORMAT *format = &lisa_format_table[op];
 
     for (int i = 0; i < 4; i++) {
-        LISA_OPND_TYPE la_opnd_type = format->opnd[i];
-        if (la_opnd_type == OPD_INVALID)
+        GM_OPERAND_TYPE opnd_type = format->opnd[i];
+        if (opnd_type == OPD_INVALID)
             break;
 
-        int ir2_opnd_val = la_get_opnd_val(la_opnd_type, opcode);
+        int ir2_opnd_val = get_opnd_val(opnd_type, opcode);
         ins->opnd[i].val = ir2_opnd_val;
         ins->opnd_count++;
     }
 }
 
-void la_disasm_print(uint32_t opcode, char *msg) 
-{
-    Ins ins;
-    la_disasm_one_ins(opcode, &ins);
-    ins_print(&ins, msg);
-}

@@ -1,7 +1,6 @@
-#include "./include/disasm.h"
-#include "./include/ir2.h"
+#include "disasm.h"
 
-IR2_INS_OP get_ins_op(uint32_t insn) {
+IR2_OPCODE get_ins_op(uint32_t insn) {
     switch ((insn >> 26) & 0x3f) {
     case 0x0:
         /* 000000.. ........ ........ ........ */
@@ -1428,10 +1427,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0x4:
             /* 00000001 00...... ........ ........ */
             switch ((insn >> 15) & 0x7f) {
-            case 0x0:
-                /* 00000001 00000000 0....... ........ */
-                /* la.decode:257 */
-                return LISA_FADD_H;
+            /* case 0x0: */
+            /*     /1* 00000001 00000000 0....... ........ *1/ */
+            /*     /1* la.decode:257 *1/ */
+            /*     return LISA_FADD_H; */
             case 0x1:
                 /* 00000001 00000000 1....... ........ */
                 /* la.decode:258 */
@@ -1440,10 +1439,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00000001 0....... ........ */
                 /* la.decode:259 */
                 return LISA_FADD_D;
-            case 0x4:
-                /* 00000001 00000010 0....... ........ */
-                /* la.decode:260 */
-                return LISA_FSUB_H;
+            /* case 0x4: */
+            /*     /1* 00000001 00000010 0....... ........ *1/ */
+            /*     /1* la.decode:260 *1/ */
+            /*     return LISA_FSUB_H; */
             case 0x5:
                 /* 00000001 00000010 1....... ........ */
                 /* la.decode:261 */
@@ -1452,10 +1451,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00000011 0....... ........ */
                 /* la.decode:262 */
                 return LISA_FSUB_D;
-            case 0x8:
-                /* 00000001 00000100 0....... ........ */
-                /* la.decode:263 */
-                return LISA_FMUL_H;
+            /* case 0x8: */
+            /*     /1* 00000001 00000100 0....... ........ *1/ */
+            /*     /1* la.decode:263 *1/ */
+            /*     return LISA_FMUL_H; */
             case 0x9:
                 /* 00000001 00000100 1....... ........ */
                 /* la.decode:264 */
@@ -1464,10 +1463,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00000101 0....... ........ */
                 /* la.decode:265 */
                 return LISA_FMUL_D;
-            case 0xc:
-                /* 00000001 00000110 0....... ........ */
-                /* la.decode:266 */
-                return LISA_FDIV_H;
+            /* case 0xc: */
+            /*     /1* 00000001 00000110 0....... ........ *1/ */
+            /*     /1* la.decode:266 *1/ */
+            /*     return LISA_FDIV_H; */
             case 0xd:
                 /* 00000001 00000110 1....... ........ */
                 /* la.decode:267 */
@@ -1476,10 +1475,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00000111 0....... ........ */
                 /* la.decode:268 */
                 return LISA_FDIV_D;
-            case 0x10:
-                /* 00000001 00001000 0....... ........ */
-                /* la.decode:269 */
-                return LISA_FMAX_H;
+            /* case 0x10: */
+            /*     /1* 00000001 00001000 0....... ........ *1/ */
+            /*     /1* la.decode:269 *1/ */
+            /*     return LISA_FMAX_H; */
             case 0x11:
                 /* 00000001 00001000 1....... ........ */
                 /* la.decode:270 */
@@ -1488,10 +1487,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00001001 0....... ........ */
                 /* la.decode:271 */
                 return LISA_FMAX_D;
-            case 0x14:
-                /* 00000001 00001010 0....... ........ */
-                /* la.decode:272 */
-                return LISA_FMIN_H;
+            /* case 0x14: */
+            /*     /1* 00000001 00001010 0....... ........ *1/ */
+            /*     /1* la.decode:272 *1/ */
+            /*     return LISA_FMIN_H; */
             case 0x15:
                 /* 00000001 00001010 1....... ........ */
                 /* la.decode:273 */
@@ -1500,10 +1499,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00001011 0....... ........ */
                 /* la.decode:274 */
                 return LISA_FMIN_D;
-            case 0x18:
-                /* 00000001 00001100 0....... ........ */
-                /* la.decode:275 */
-                return LISA_FMAXA_H;
+            /* case 0x18: */
+            /*     /1* 00000001 00001100 0....... ........ *1/ */
+            /*     /1* la.decode:275 *1/ */
+            /*     return LISA_FMAXA_H; */
             case 0x19:
                 /* 00000001 00001100 1....... ........ */
                 /* la.decode:276 */
@@ -1512,10 +1511,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00001101 0....... ........ */
                 /* la.decode:277 */
                 return LISA_FMAXA_D;
-            case 0x1c:
-                /* 00000001 00001110 0....... ........ */
-                /* la.decode:278 */
-                return LISA_FMINA_H;
+            /* case 0x1c: */
+            /*     /1* 00000001 00001110 0....... ........ *1/ */
+            /*     /1* la.decode:278 *1/ */
+            /*     return LISA_FMINA_H; */
             case 0x1d:
                 /* 00000001 00001110 1....... ........ */
                 /* la.decode:279 */
@@ -1524,10 +1523,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00001111 0....... ........ */
                 /* la.decode:280 */
                 return LISA_FMINA_D;
-            case 0x20:
-                /* 00000001 00010000 0....... ........ */
-                /* la.decode:281 */
-                return LISA_FSCALEB_H;
+            /* case 0x20: */
+            /*     /1* 00000001 00010000 0....... ........ *1/ */
+            /*     /1* la.decode:281 *1/ */
+            /*     return LISA_FSCALEB_H; */
             case 0x21:
                 /* 00000001 00010000 1....... ........ */
                 /* la.decode:282 */
@@ -1536,10 +1535,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 00000001 00010001 0....... ........ */
                 /* la.decode:283 */
                 return LISA_FSCALEB_D;
-            case 0x24:
-                /* 00000001 00010010 0....... ........ */
-                /* la.decode:284 */
-                return LISA_FCOPYSIGN_H;
+            /* case 0x24: */
+            /*     /1* 00000001 00010010 0....... ........ *1/ */
+            /*     /1* la.decode:284 *1/ */
+            /*     return LISA_FCOPYSIGN_H; */
             case 0x25:
                 /* 00000001 00010010 1....... ........ */
                 /* la.decode:285 */
@@ -1551,10 +1550,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
             case 0x28:
                 /* 00000001 00010100 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00010100 000000.. ........ */
-                    /* la.decode:287 */
-                    return LISA_FABS_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00010100 000000.. ........ *1/ */
+                /*     /1* la.decode:287 *1/ */
+                /*     return LISA_FABS_H; */
                 case 0x1:
                     /* 00000001 00010100 000001.. ........ */
                     /* la.decode:288 */
@@ -1563,10 +1562,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 000010.. ........ */
                     /* la.decode:289 */
                     return LISA_FABS_D;
-                case 0x4:
-                    /* 00000001 00010100 000100.. ........ */
-                    /* la.decode:290 */
-                    return LISA_FNEG_H;
+                /* case 0x4: */
+                /*     /1* 00000001 00010100 000100.. ........ *1/ */
+                /*     /1* la.decode:290 *1/ */
+                /*     return LISA_FNEG_H; */
                 case 0x5:
                     /* 00000001 00010100 000101.. ........ */
                     /* la.decode:291 */
@@ -1575,10 +1574,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 000110.. ........ */
                     /* la.decode:292 */
                     return LISA_FNEG_D;
-                case 0x8:
-                    /* 00000001 00010100 001000.. ........ */
-                    /* la.decode:293 */
-                    return LISA_FLOGB_H;
+                /* case 0x8: */
+                /*     /1* 00000001 00010100 001000.. ........ *1/ */
+                /*     /1* la.decode:293 *1/ */
+                /*     return LISA_FLOGB_H; */
                 case 0x9:
                     /* 00000001 00010100 001001.. ........ */
                     /* la.decode:294 */
@@ -1587,10 +1586,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 001010.. ........ */
                     /* la.decode:295 */
                     return LISA_FLOGB_D;
-                case 0xc:
-                    /* 00000001 00010100 001100.. ........ */
-                    /* la.decode:296 */
-                    return LISA_FCLASS_H;
+                /* case 0xc: */
+                /*     /1* 00000001 00010100 001100.. ........ *1/ */
+                /*     /1* la.decode:296 *1/ */
+                /*     return LISA_FCLASS_H; */
                 case 0xd:
                     /* 00000001 00010100 001101.. ........ */
                     /* la.decode:297 */
@@ -1599,10 +1598,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 001110.. ........ */
                     /* la.decode:298 */
                     return LISA_FCLASS_D;
-                case 0x10:
-                    /* 00000001 00010100 010000.. ........ */
-                    /* la.decode:299 */
-                    return LISA_FSQRT_H;
+                /* case 0x10: */
+                /*     /1* 00000001 00010100 010000.. ........ *1/ */
+                /*     /1* la.decode:299 *1/ */
+                /*     return LISA_FSQRT_H; */
                 case 0x11:
                     /* 00000001 00010100 010001.. ........ */
                     /* la.decode:300 */
@@ -1611,10 +1610,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 010010.. ........ */
                     /* la.decode:301 */
                     return LISA_FSQRT_D;
-                case 0x14:
-                    /* 00000001 00010100 010100.. ........ */
-                    /* la.decode:302 */
-                    return LISA_FRECIP_H;
+                /* case 0x14: */
+                /*     /1* 00000001 00010100 010100.. ........ *1/ */
+                /*     /1* la.decode:302 *1/ */
+                /*     return LISA_FRECIP_H; */
                 case 0x15:
                     /* 00000001 00010100 010101.. ........ */
                     /* la.decode:303 */
@@ -1623,10 +1622,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 010110.. ........ */
                     /* la.decode:304 */
                     return LISA_FRECIP_D;
-                case 0x18:
-                    /* 00000001 00010100 011000.. ........ */
-                    /* la.decode:305 */
-                    return LISA_FRSQRT_H;
+                /* case 0x18: */
+                /*     /1* 00000001 00010100 011000.. ........ *1/ */
+                /*     /1* la.decode:305 *1/ */
+                /*     return LISA_FRSQRT_H; */
                 case 0x19:
                     /* 00000001 00010100 011001.. ........ */
                     /* la.decode:306 */
@@ -1635,39 +1634,39 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 011010.. ........ */
                     /* la.decode:307 */
                     return LISA_FRSQRT_D;
-                case 0x1c:
-                    /* 00000001 00010100 011100.. ........ */
-                    /* la.decode:308 */
-                    return LISA_FRECIPE_H;
-                case 0x1d:
-                    /* 00000001 00010100 011101.. ........ */
-                    /* la.decode:309 */
-                    return LISA_FRECIPE_S;
-                case 0x1e:
-                    /* 00000001 00010100 011110.. ........ */
-                    /* la.decode:310 */
-                    return LISA_FRECIPE_D;
+                /* case 0x1c: */
+                /*     /1* 00000001 00010100 011100.. ........ *1/ */
+                /*     /1* la.decode:308 *1/ */
+                /*     return LISA_FRECIPE_H; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00010100 011101.. ........ *1/ */
+                /*     /1* la.decode:309 *1/ */
+                /*     return LISA_FRECIPE_S; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00010100 011110.. ........ *1/ */
+                /*     /1* la.decode:310 *1/ */
+                /*     return LISA_FRECIPE_D; */
                 }
                 return LISA_INVALID;
             case 0x29:
                 /* 00000001 00010100 1....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00010100 100000.. ........ */
-                    /* la.decode:311 */
-                    return LISA_FRSQRTE_H;
-                case 0x1:
-                    /* 00000001 00010100 100001.. ........ */
-                    /* la.decode:312 */
-                    return LISA_FRSQRTE_S;
-                case 0x2:
-                    /* 00000001 00010100 100010.. ........ */
-                    /* la.decode:313 */
-                    return LISA_FRSQRTE_D;
-                case 0x4:
-                    /* 00000001 00010100 100100.. ........ */
-                    /* la.decode:314 */
-                    return LISA_FMOV_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00010100 100000.. ........ *1/ */
+                /*     /1* la.decode:311 *1/ */
+                /*     return LISA_FRSQRTE_H; */
+                /* case 0x1: */
+                /*     /1* 00000001 00010100 100001.. ........ *1/ */
+                /*     /1* la.decode:312 *1/ */
+                /*     return LISA_FRSQRTE_S; */
+                /* case 0x2: */
+                /*     /1* 00000001 00010100 100010.. ........ *1/ */
+                /*     /1* la.decode:313 *1/ */
+                /*     return LISA_FRSQRTE_D; */
+                /* case 0x4: */
+                /*     /1* 00000001 00010100 100100.. ........ *1/ */
+                /*     /1* la.decode:314 *1/ */
+                /*     return LISA_FMOV_H; */
                 case 0x5:
                     /* 00000001 00010100 100101.. ........ */
                     /* la.decode:315 */
@@ -1676,10 +1675,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 100110.. ........ */
                     /* la.decode:316 */
                     return LISA_FMOV_D;
-                case 0x8:
-                    /* 00000001 00010100 101000.. ........ */
-                    /* la.decode:317 */
-                    return LISA_MOVGR2FR_H;
+                /* case 0x8: */
+                /*     /1* 00000001 00010100 101000.. ........ *1/ */
+                /*     /1* la.decode:317 *1/ */
+                /*     return LISA_MOVGR2FR_H; */
                 case 0x9:
                     /* 00000001 00010100 101001.. ........ */
                     /* la.decode:318 */
@@ -1692,10 +1691,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00010100 101011.. ........ */
                     /* la.decode:320 */
                     return LISA_MOVGR2FRH_W;
-                case 0xc:
-                    /* 00000001 00010100 101100.. ........ */
-                    /* la.decode:321 */
-                    return LISA_MOVFR2GR_H;
+                /* case 0xc: */
+                /*     /1* 00000001 00010100 101100.. ........ *1/ */
+                /*     /1* la.decode:321 *1/ */
+                /*     return LISA_MOVFR2GR_H; */
                 case 0xd:
                     /* 00000001 00010100 101101.. ........ */
                     /* la.decode:322 */
@@ -1767,267 +1766,267 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* la.decode:333 */
                 return LISA_FCVT_D_LD;
             case 0x30:
-                /* 00000001 00011000 0....... ........ */
-                switch ((insn >> 10) & 0x1f) {
-                case 0x1:
-                    /* 00000001 00011000 000001.. ........ */
-                    /* la.decode:334 */
-                    return LISA_FCVTRM_H_S;
-                case 0x2:
-                    /* 00000001 00011000 000010.. ........ */
-                    /* la.decode:335 */
-                    return LISA_FCVTRM_H_D;
-                case 0x3:
-                    /* 00000001 00011000 000011.. ........ */
-                    /* la.decode:336 */
-                    return LISA_FCVTRM_H_Q;
-                case 0x4:
-                    /* 00000001 00011000 000100.. ........ */
-                    /* la.decode:337 */
-                    return LISA_FCVTRM_S_H;
-                case 0x6:
-                    /* 00000001 00011000 000110.. ........ */
-                    /* la.decode:338 */
-                    return LISA_FCVTRM_S_D;
-                case 0x7:
-                    /* 00000001 00011000 000111.. ........ */
-                    /* la.decode:339 */
-                    return LISA_FCVTRM_S_Q;
-                case 0x8:
-                    /* 00000001 00011000 001000.. ........ */
-                    /* la.decode:340 */
-                    return LISA_FCVTRM_D_H;
-                case 0x9:
-                    /* 00000001 00011000 001001.. ........ */
-                    /* la.decode:341 */
-                    return LISA_FCVTRM_D_S;
-                case 0xb:
-                    /* 00000001 00011000 001011.. ........ */
-                    /* la.decode:342 */
-                    return LISA_FCVTRM_D_Q;
-                case 0xc:
-                    /* 00000001 00011000 001100.. ........ */
-                    /* la.decode:343 */
-                    return LISA_FCVTRM_Q_H;
-                case 0xd:
-                    /* 00000001 00011000 001101.. ........ */
-                    /* la.decode:344 */
-                    return LISA_FCVTRM_Q_S;
-                case 0xe:
-                    /* 00000001 00011000 001110.. ........ */
-                    /* la.decode:345 */
-                    return LISA_FCVTRM_Q_D;
-                case 0x11:
-                    /* 00000001 00011000 010001.. ........ */
-                    /* la.decode:346 */
-                    return LISA_FCVTRP_H_S;
-                case 0x12:
-                    /* 00000001 00011000 010010.. ........ */
-                    /* la.decode:347 */
-                    return LISA_FCVTRP_H_D;
-                case 0x13:
-                    /* 00000001 00011000 010011.. ........ */
-                    /* la.decode:348 */
-                    return LISA_FCVTRP_H_Q;
-                case 0x14:
-                    /* 00000001 00011000 010100.. ........ */
-                    /* la.decode:349 */
-                    return LISA_FCVTRP_S_H;
-                case 0x16:
-                    /* 00000001 00011000 010110.. ........ */
-                    /* la.decode:350 */
-                    return LISA_FCVTRP_S_D;
-                case 0x17:
-                    /* 00000001 00011000 010111.. ........ */
-                    /* la.decode:351 */
-                    return LISA_FCVTRP_S_Q;
-                case 0x18:
-                    /* 00000001 00011000 011000.. ........ */
-                    /* la.decode:352 */
-                    return LISA_FCVTRP_D_H;
-                case 0x19:
-                    /* 00000001 00011000 011001.. ........ */
-                    /* la.decode:353 */
-                    return LISA_FCVTRP_D_S;
-                case 0x1b:
-                    /* 00000001 00011000 011011.. ........ */
-                    /* la.decode:354 */
-                    return LISA_FCVTRP_D_Q;
-                case 0x1c:
-                    /* 00000001 00011000 011100.. ........ */
-                    /* la.decode:355 */
-                    return LISA_FCVTRP_Q_H;
-                case 0x1d:
-                    /* 00000001 00011000 011101.. ........ */
-                    /* la.decode:356 */
-                    return LISA_FCVTRP_Q_S;
-                case 0x1e:
-                    /* 00000001 00011000 011110.. ........ */
-                    /* la.decode:357 */
-                    return LISA_FCVTRP_Q_D;
-                }
+                /* /1* 00000001 00011000 0....... ........ *1/ */
+                /* switch ((insn >> 10) & 0x1f) { */
+                /* case 0x1: */
+                /*     /1* 00000001 00011000 000001.. ........ *1/ */
+                /*     /1* la.decode:334 *1/ */
+                /*     return LISA_FCVTRM_H_S; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011000 000010.. ........ *1/ */
+                /*     /1* la.decode:335 *1/ */
+                /*     return LISA_FCVTRM_H_D; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011000 000011.. ........ *1/ */
+                /*     /1* la.decode:336 *1/ */
+                /*     return LISA_FCVTRM_H_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011000 000100.. ........ *1/ */
+                /*     /1* la.decode:337 *1/ */
+                /*     return LISA_FCVTRM_S_H; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011000 000110.. ........ *1/ */
+                /*     /1* la.decode:338 *1/ */
+                /*     return LISA_FCVTRM_S_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011000 000111.. ........ *1/ */
+                /*     /1* la.decode:339 *1/ */
+                /*     return LISA_FCVTRM_S_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011000 001000.. ........ *1/ */
+                /*     /1* la.decode:340 *1/ */
+                /*     return LISA_FCVTRM_D_H; */
+                /* case 0x9: */
+                /*     /1* 00000001 00011000 001001.. ........ *1/ */
+                /*     /1* la.decode:341 *1/ */
+                /*     return LISA_FCVTRM_D_S; */
+                /* case 0xb: */
+                /*     /1* 00000001 00011000 001011.. ........ *1/ */
+                /*     /1* la.decode:342 *1/ */
+                /*     return LISA_FCVTRM_D_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011000 001100.. ........ *1/ */
+                /*     /1* la.decode:343 *1/ */
+                /*     return LISA_FCVTRM_Q_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011000 001101.. ........ *1/ */
+                /*     /1* la.decode:344 *1/ */
+                /*     return LISA_FCVTRM_Q_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011000 001110.. ........ *1/ */
+                /*     /1* la.decode:345 *1/ */
+                /*     return LISA_FCVTRM_Q_D; */
+                /* case 0x11: */
+                /*     /1* 00000001 00011000 010001.. ........ *1/ */
+                /*     /1* la.decode:346 *1/ */
+                /*     return LISA_FCVTRP_H_S; */
+                /* case 0x12: */
+                /*     /1* 00000001 00011000 010010.. ........ *1/ */
+                /*     /1* la.decode:347 *1/ */
+                /*     return LISA_FCVTRP_H_D; */
+                /* case 0x13: */
+                /*     /1* 00000001 00011000 010011.. ........ *1/ */
+                /*     /1* la.decode:348 *1/ */
+                /*     return LISA_FCVTRP_H_Q; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011000 010100.. ........ *1/ */
+                /*     /1* la.decode:349 *1/ */
+                /*     return LISA_FCVTRP_S_H; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011000 010110.. ........ *1/ */
+                /*     /1* la.decode:350 *1/ */
+                /*     return LISA_FCVTRP_S_D; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011000 010111.. ........ *1/ */
+                /*     /1* la.decode:351 *1/ */
+                /*     return LISA_FCVTRP_S_Q; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011000 011000.. ........ *1/ */
+                /*     /1* la.decode:352 *1/ */
+                /*     return LISA_FCVTRP_D_H; */
+                /* case 0x19: */
+                /*     /1* 00000001 00011000 011001.. ........ *1/ */
+                /*     /1* la.decode:353 *1/ */
+                /*     return LISA_FCVTRP_D_S; */
+                /* case 0x1b: */
+                /*     /1* 00000001 00011000 011011.. ........ *1/ */
+                /*     /1* la.decode:354 *1/ */
+                /*     return LISA_FCVTRP_D_Q; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011000 011100.. ........ *1/ */
+                /*     /1* la.decode:355 *1/ */
+                /*     return LISA_FCVTRP_Q_H; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011000 011101.. ........ *1/ */
+                /*     /1* la.decode:356 *1/ */
+                /*     return LISA_FCVTRP_Q_S; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011000 011110.. ........ *1/ */
+                /*     /1* la.decode:357 *1/ */
+                /*     return LISA_FCVTRP_Q_D; */
+                /* } */
                 return LISA_INVALID;
             case 0x31:
-                /* 00000001 00011000 1....... ........ */
-                switch ((insn >> 10) & 0x1f) {
-                case 0x1:
-                    /* 00000001 00011000 100001.. ........ */
-                    /* la.decode:358 */
-                    return LISA_FCVTRZ_H_S;
-                case 0x2:
-                    /* 00000001 00011000 100010.. ........ */
-                    /* la.decode:359 */
-                    return LISA_FCVTRZ_H_D;
-                case 0x3:
-                    /* 00000001 00011000 100011.. ........ */
-                    /* la.decode:360 */
-                    return LISA_FCVTRZ_H_Q;
-                case 0x4:
-                    /* 00000001 00011000 100100.. ........ */
-                    /* la.decode:361 */
-                    return LISA_FCVTRZ_S_H;
-                case 0x6:
-                    /* 00000001 00011000 100110.. ........ */
-                    /* la.decode:362 */
-                    return LISA_FCVTRZ_S_D;
-                case 0x7:
-                    /* 00000001 00011000 100111.. ........ */
-                    /* la.decode:363 */
-                    return LISA_FCVTRZ_S_Q;
-                case 0x8:
-                    /* 00000001 00011000 101000.. ........ */
-                    /* la.decode:364 */
-                    return LISA_FCVTRZ_D_H;
-                case 0x9:
-                    /* 00000001 00011000 101001.. ........ */
-                    /* la.decode:365 */
-                    return LISA_FCVTRZ_D_S;
-                case 0xb:
-                    /* 00000001 00011000 101011.. ........ */
-                    /* la.decode:366 */
-                    return LISA_FCVTRZ_D_Q;
-                case 0xc:
-                    /* 00000001 00011000 101100.. ........ */
-                    /* la.decode:367 */
-                    return LISA_FCVTRZ_Q_H;
-                case 0xd:
-                    /* 00000001 00011000 101101.. ........ */
-                    /* la.decode:368 */
-                    return LISA_FCVTRZ_Q_S;
-                case 0xe:
-                    /* 00000001 00011000 101110.. ........ */
-                    /* la.decode:369 */
-                    return LISA_FCVTRZ_Q_D;
-                case 0x11:
-                    /* 00000001 00011000 110001.. ........ */
-                    /* la.decode:370 */
-                    return LISA_FCVTRNE_H_S;
-                case 0x12:
-                    /* 00000001 00011000 110010.. ........ */
-                    /* la.decode:371 */
-                    return LISA_FCVTRNE_H_D;
-                case 0x13:
-                    /* 00000001 00011000 110011.. ........ */
-                    /* la.decode:372 */
-                    return LISA_FCVTRNE_H_Q;
-                case 0x14:
-                    /* 00000001 00011000 110100.. ........ */
-                    /* la.decode:373 */
-                    return LISA_FCVTRNE_S_H;
-                case 0x16:
-                    /* 00000001 00011000 110110.. ........ */
-                    /* la.decode:374 */
-                    return LISA_FCVTRNE_S_D;
-                case 0x17:
-                    /* 00000001 00011000 110111.. ........ */
-                    /* la.decode:375 */
-                    return LISA_FCVTRNE_S_Q;
-                case 0x18:
-                    /* 00000001 00011000 111000.. ........ */
-                    /* la.decode:376 */
-                    return LISA_FCVTRNE_D_H;
-                case 0x19:
-                    /* 00000001 00011000 111001.. ........ */
-                    /* la.decode:377 */
-                    return LISA_FCVTRNE_D_S;
-                case 0x1b:
-                    /* 00000001 00011000 111011.. ........ */
-                    /* la.decode:378 */
-                    return LISA_FCVTRNE_D_Q;
-                case 0x1c:
-                    /* 00000001 00011000 111100.. ........ */
-                    /* la.decode:379 */
-                    return LISA_FCVTRNE_Q_H;
-                case 0x1d:
-                    /* 00000001 00011000 111101.. ........ */
-                    /* la.decode:380 */
-                    return LISA_FCVTRNE_Q_S;
-                case 0x1e:
-                    /* 00000001 00011000 111110.. ........ */
-                    /* la.decode:381 */
-                    return LISA_FCVTRNE_Q_D;
-                }
+                /* /1* 00000001 00011000 1....... ........ *1/ */
+                /* switch ((insn >> 10) & 0x1f) { */
+                /* case 0x1: */
+                /*     /1* 00000001 00011000 100001.. ........ *1/ */
+                /*     /1* la.decode:358 *1/ */
+                /*     return LISA_FCVTRZ_H_S; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011000 100010.. ........ *1/ */
+                /*     /1* la.decode:359 *1/ */
+                /*     return LISA_FCVTRZ_H_D; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011000 100011.. ........ *1/ */
+                /*     /1* la.decode:360 *1/ */
+                /*     return LISA_FCVTRZ_H_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011000 100100.. ........ *1/ */
+                /*     /1* la.decode:361 *1/ */
+                /*     return LISA_FCVTRZ_S_H; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011000 100110.. ........ *1/ */
+                /*     /1* la.decode:362 *1/ */
+                /*     return LISA_FCVTRZ_S_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011000 100111.. ........ *1/ */
+                /*     /1* la.decode:363 *1/ */
+                /*     return LISA_FCVTRZ_S_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011000 101000.. ........ *1/ */
+                /*     /1* la.decode:364 *1/ */
+                /*     return LISA_FCVTRZ_D_H; */
+                /* case 0x9: */
+                /*     /1* 00000001 00011000 101001.. ........ *1/ */
+                /*     /1* la.decode:365 *1/ */
+                /*     return LISA_FCVTRZ_D_S; */
+                /* case 0xb: */
+                /*     /1* 00000001 00011000 101011.. ........ *1/ */
+                /*     /1* la.decode:366 *1/ */
+                /*     return LISA_FCVTRZ_D_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011000 101100.. ........ *1/ */
+                /*     /1* la.decode:367 *1/ */
+                /*     return LISA_FCVTRZ_Q_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011000 101101.. ........ *1/ */
+                /*     /1* la.decode:368 *1/ */
+                /*     return LISA_FCVTRZ_Q_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011000 101110.. ........ *1/ */
+                /*     /1* la.decode:369 *1/ */
+                /*     return LISA_FCVTRZ_Q_D; */
+                /* case 0x11: */
+                /*     /1* 00000001 00011000 110001.. ........ *1/ */
+                /*     /1* la.decode:370 *1/ */
+                /*     return LISA_FCVTRNE_H_S; */
+                /* case 0x12: */
+                /*     /1* 00000001 00011000 110010.. ........ *1/ */
+                /*     /1* la.decode:371 *1/ */
+                /*     return LISA_FCVTRNE_H_D; */
+                /* case 0x13: */
+                /*     /1* 00000001 00011000 110011.. ........ *1/ */
+                /*     /1* la.decode:372 *1/ */
+                /*     return LISA_FCVTRNE_H_Q; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011000 110100.. ........ *1/ */
+                /*     /1* la.decode:373 *1/ */
+                /*     return LISA_FCVTRNE_S_H; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011000 110110.. ........ *1/ */
+                /*     /1* la.decode:374 *1/ */
+                /*     return LISA_FCVTRNE_S_D; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011000 110111.. ........ *1/ */
+                /*     /1* la.decode:375 *1/ */
+                /*     return LISA_FCVTRNE_S_Q; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011000 111000.. ........ *1/ */
+                /*     /1* la.decode:376 *1/ */
+                /*     return LISA_FCVTRNE_D_H; */
+                /* case 0x19: */
+                /*     /1* 00000001 00011000 111001.. ........ *1/ */
+                /*     /1* la.decode:377 *1/ */
+                /*     return LISA_FCVTRNE_D_S; */
+                /* case 0x1b: */
+                /*     /1* 00000001 00011000 111011.. ........ *1/ */
+                /*     /1* la.decode:378 *1/ */
+                /*     return LISA_FCVTRNE_D_Q; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011000 111100.. ........ *1/ */
+                /*     /1* la.decode:379 *1/ */
+                /*     return LISA_FCVTRNE_Q_H; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011000 111101.. ........ *1/ */
+                /*     /1* la.decode:380 *1/ */
+                /*     return LISA_FCVTRNE_Q_S; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011000 111110.. ........ *1/ */
+                /*     /1* la.decode:381 *1/ */
+                /*     return LISA_FCVTRNE_Q_D; */
+                /* } */
                 return LISA_INVALID;
             case 0x32:
                 /* 00000001 00011001 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x1:
-                    /* 00000001 00011001 000001.. ........ */
-                    /* la.decode:382 */
-                    return LISA_FCVT_H_S;
-                case 0x2:
-                    /* 00000001 00011001 000010.. ........ */
-                    /* la.decode:383 */
-                    return LISA_FCVT_H_D;
-                case 0x3:
-                    /* 00000001 00011001 000011.. ........ */
-                    /* la.decode:384 */
-                    return LISA_FCVT_H_Q;
-                case 0x4:
-                    /* 00000001 00011001 000100.. ........ */
-                    /* la.decode:385 */
-                    return LISA_FCVT_S_H;
+                /* case 0x1: */
+                /*     /1* 00000001 00011001 000001.. ........ *1/ */
+                /*     /1* la.decode:382 *1/ */
+                /*     return LISA_FCVT_H_S; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011001 000010.. ........ *1/ */
+                /*     /1* la.decode:383 *1/ */
+                /*     return LISA_FCVT_H_D; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011001 000011.. ........ *1/ */
+                /*     /1* la.decode:384 *1/ */
+                /*     return LISA_FCVT_H_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011001 000100.. ........ *1/ */
+                /*     /1* la.decode:385 *1/ */
+                /*     return LISA_FCVT_S_H; */
                 case 0x6:
                     /* 00000001 00011001 000110.. ........ */
                     /* la.decode:386 */
                     return LISA_FCVT_S_D;
-                case 0x7:
-                    /* 00000001 00011001 000111.. ........ */
-                    /* la.decode:387 */
-                    return LISA_FCVT_S_Q;
-                case 0x8:
-                    /* 00000001 00011001 001000.. ........ */
-                    /* la.decode:388 */
-                    return LISA_FCVT_D_H;
+                /* case 0x7: */
+                /*     /1* 00000001 00011001 000111.. ........ *1/ */
+                /*     /1* la.decode:387 *1/ */
+                /*     return LISA_FCVT_S_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011001 001000.. ........ *1/ */
+                /*     /1* la.decode:388 *1/ */
+                /*     return LISA_FCVT_D_H; */
                 case 0x9:
                     /* 00000001 00011001 001001.. ........ */
                     /* la.decode:389 */
                     return LISA_FCVT_D_S;
-                case 0xb:
-                    /* 00000001 00011001 001011.. ........ */
-                    /* la.decode:390 */
-                    return LISA_FCVT_D_Q;
-                case 0xc:
-                    /* 00000001 00011001 001100.. ........ */
-                    /* la.decode:391 */
-                    return LISA_FCVT_Q_H;
-                case 0xd:
-                    /* 00000001 00011001 001101.. ........ */
-                    /* la.decode:392 */
-                    return LISA_FCVT_Q_S;
-                case 0xe:
-                    /* 00000001 00011001 001110.. ........ */
-                    /* la.decode:393 */
-                    return LISA_FCVT_Q_D;
+                /* case 0xb: */
+                /*     /1* 00000001 00011001 001011.. ........ *1/ */
+                /*     /1* la.decode:390 *1/ */
+                /*     return LISA_FCVT_D_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011001 001100.. ........ *1/ */
+                /*     /1* la.decode:391 *1/ */
+                /*     return LISA_FCVT_Q_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011001 001101.. ........ *1/ */
+                /*     /1* la.decode:392 *1/ */
+                /*     return LISA_FCVT_Q_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011001 001110.. ........ *1/ */
+                /*     /1* la.decode:393 *1/ */
+                /*     return LISA_FCVT_Q_D; */
                 }
                 return LISA_INVALID;
             case 0x34:
                 /* 00000001 00011010 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011010 000000.. ........ */
-                    /* la.decode:394 */
-                    return LISA_FTINTRM_W_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00011010 000000.. ........ *1/ */
+                /*     /1* la.decode:394 *1/ */
+                /*     return LISA_FTINTRM_W_H; */
                 case 0x1:
                     /* 00000001 00011010 000001.. ........ */
                     /* la.decode:395 */
@@ -2036,30 +2035,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 000010.. ........ */
                     /* la.decode:396 */
                     return LISA_FTINTRM_W_D;
-                case 0x3:
-                    /* 00000001 00011010 000011.. ........ */
-                    /* la.decode:397 */
-                    return LISA_FTINTRM_W_Q;
-                case 0x4:
-                    /* 00000001 00011010 000100.. ........ */
-                    /* la.decode:398 */
-                    return LISA_FTINTRM_WU_H;
-                case 0x5:
-                    /* 00000001 00011010 000101.. ........ */
-                    /* la.decode:399 */
-                    return LISA_FTINTRM_WU_S;
-                case 0x6:
-                    /* 00000001 00011010 000110.. ........ */
-                    /* la.decode:400 */
-                    return LISA_FTINTRM_WU_D;
-                case 0x7:
-                    /* 00000001 00011010 000111.. ........ */
-                    /* la.decode:401 */
-                    return LISA_FTINTRM_WU_Q;
-                case 0x8:
-                    /* 00000001 00011010 001000.. ........ */
-                    /* la.decode:402 */
-                    return LISA_FTINTRM_L_H;
+                /* case 0x3: */
+                /*     /1* 00000001 00011010 000011.. ........ *1/ */
+                /*     /1* la.decode:397 *1/ */
+                /*     return LISA_FTINTRM_W_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011010 000100.. ........ *1/ */
+                /*     /1* la.decode:398 *1/ */
+                /*     return LISA_FTINTRM_WU_H; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011010 000101.. ........ *1/ */
+                /*     /1* la.decode:399 *1/ */
+                /*     return LISA_FTINTRM_WU_S; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011010 000110.. ........ *1/ */
+                /*     /1* la.decode:400 *1/ */
+                /*     return LISA_FTINTRM_WU_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011010 000111.. ........ *1/ */
+                /*     /1* la.decode:401 *1/ */
+                /*     return LISA_FTINTRM_WU_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011010 001000.. ........ *1/ */
+                /*     /1* la.decode:402 *1/ */
+                /*     return LISA_FTINTRM_L_H; */
                 case 0x9:
                     /* 00000001 00011010 001001.. ........ */
                     /* la.decode:403 */
@@ -2068,30 +2067,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 001010.. ........ */
                     /* la.decode:404 */
                     return LISA_FTINTRM_L_D;
-                case 0xb:
-                    /* 00000001 00011010 001011.. ........ */
-                    /* la.decode:405 */
-                    return LISA_FTINTRM_L_Q;
-                case 0xc:
-                    /* 00000001 00011010 001100.. ........ */
-                    /* la.decode:406 */
-                    return LISA_FTINTRM_LU_H;
-                case 0xd:
-                    /* 00000001 00011010 001101.. ........ */
-                    /* la.decode:407 */
-                    return LISA_FTINTRM_LU_S;
-                case 0xe:
-                    /* 00000001 00011010 001110.. ........ */
-                    /* la.decode:408 */
-                    return LISA_FTINTRM_LU_D;
-                case 0xf:
-                    /* 00000001 00011010 001111.. ........ */
-                    /* la.decode:409 */
-                    return LISA_FTINTRM_LU_Q;
-                case 0x10:
-                    /* 00000001 00011010 010000.. ........ */
-                    /* la.decode:410 */
-                    return LISA_FTINTRP_W_H;
+                /* case 0xb: */
+                /*     /1* 00000001 00011010 001011.. ........ *1/ */
+                /*     /1* la.decode:405 *1/ */
+                /*     return LISA_FTINTRM_L_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011010 001100.. ........ *1/ */
+                /*     /1* la.decode:406 *1/ */
+                /*     return LISA_FTINTRM_LU_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011010 001101.. ........ *1/ */
+                /*     /1* la.decode:407 *1/ */
+                /*     return LISA_FTINTRM_LU_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011010 001110.. ........ *1/ */
+                /*     /1* la.decode:408 *1/ */
+                /*     return LISA_FTINTRM_LU_D; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011010 001111.. ........ *1/ */
+                /*     /1* la.decode:409 *1/ */
+                /*     return LISA_FTINTRM_LU_Q; */
+                /* case 0x10: */
+                /*     /1* 00000001 00011010 010000.. ........ *1/ */
+                /*     /1* la.decode:410 *1/ */
+                /*     return LISA_FTINTRP_W_H; */
                 case 0x11:
                     /* 00000001 00011010 010001.. ........ */
                     /* la.decode:411 */
@@ -2100,30 +2099,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 010010.. ........ */
                     /* la.decode:412 */
                     return LISA_FTINTRP_W_D;
-                case 0x13:
-                    /* 00000001 00011010 010011.. ........ */
-                    /* la.decode:413 */
-                    return LISA_FTINTRP_W_Q;
-                case 0x14:
-                    /* 00000001 00011010 010100.. ........ */
-                    /* la.decode:414 */
-                    return LISA_FTINTRP_WU_H;
-                case 0x15:
-                    /* 00000001 00011010 010101.. ........ */
-                    /* la.decode:415 */
-                    return LISA_FTINTRP_WU_S;
-                case 0x16:
-                    /* 00000001 00011010 010110.. ........ */
-                    /* la.decode:416 */
-                    return LISA_FTINTRP_WU_D;
-                case 0x17:
-                    /* 00000001 00011010 010111.. ........ */
-                    /* la.decode:417 */
-                    return LISA_FTINTRP_WU_Q;
-                case 0x18:
-                    /* 00000001 00011010 011000.. ........ */
-                    /* la.decode:418 */
-                    return LISA_FTINTRP_L_H;
+                /* case 0x13: */
+                /*     /1* 00000001 00011010 010011.. ........ *1/ */
+                /*     /1* la.decode:413 *1/ */
+                /*     return LISA_FTINTRP_W_Q; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011010 010100.. ........ *1/ */
+                /*     /1* la.decode:414 *1/ */
+                /*     return LISA_FTINTRP_WU_H; */
+                /* case 0x15: */
+                /*     /1* 00000001 00011010 010101.. ........ *1/ */
+                /*     /1* la.decode:415 *1/ */
+                /*     return LISA_FTINTRP_WU_S; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011010 010110.. ........ *1/ */
+                /*     /1* la.decode:416 *1/ */
+                /*     return LISA_FTINTRP_WU_D; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011010 010111.. ........ *1/ */
+                /*     /1* la.decode:417 *1/ */
+                /*     return LISA_FTINTRP_WU_Q; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011010 011000.. ........ *1/ */
+                /*     /1* la.decode:418 *1/ */
+                /*     return LISA_FTINTRP_L_H; */
                 case 0x19:
                     /* 00000001 00011010 011001.. ........ */
                     /* la.decode:419 */
@@ -2132,35 +2131,35 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 011010.. ........ */
                     /* la.decode:420 */
                     return LISA_FTINTRP_L_D;
-                case 0x1b:
-                    /* 00000001 00011010 011011.. ........ */
-                    /* la.decode:421 */
-                    return LISA_FTINTRP_L_Q;
-                case 0x1c:
-                    /* 00000001 00011010 011100.. ........ */
-                    /* la.decode:422 */
-                    return LISA_FTINTRP_LU_H;
-                case 0x1d:
-                    /* 00000001 00011010 011101.. ........ */
-                    /* la.decode:423 */
-                    return LISA_FTINTRP_LU_S;
-                case 0x1e:
-                    /* 00000001 00011010 011110.. ........ */
-                    /* la.decode:424 */
-                    return LISA_FTINTRP_LU_D;
-                case 0x1f:
-                    /* 00000001 00011010 011111.. ........ */
-                    /* la.decode:425 */
-                    return LISA_FTINTRP_LU_Q;
+                /* case 0x1b: */
+                /*     /1* 00000001 00011010 011011.. ........ *1/ */
+                /*     /1* la.decode:421 *1/ */
+                /*     return LISA_FTINTRP_L_Q; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011010 011100.. ........ *1/ */
+                /*     /1* la.decode:422 *1/ */
+                /*     return LISA_FTINTRP_LU_H; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011010 011101.. ........ *1/ */
+                /*     /1* la.decode:423 *1/ */
+                /*     return LISA_FTINTRP_LU_S; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011010 011110.. ........ *1/ */
+                /*     /1* la.decode:424 *1/ */
+                /*     return LISA_FTINTRP_LU_D; */
+                /* case 0x1f: */
+                /*     /1* 00000001 00011010 011111.. ........ *1/ */
+                /*     /1* la.decode:425 *1/ */
+                /*     return LISA_FTINTRP_LU_Q; */
                 }
                 return LISA_INVALID;
             case 0x35:
                 /* 00000001 00011010 1....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011010 100000.. ........ */
-                    /* la.decode:426 */
-                    return LISA_FTINTRZ_W_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00011010 100000.. ........ *1/ */
+                /*     /1* la.decode:426 *1/ */
+                /*     return LISA_FTINTRZ_W_H; */
                 case 0x1:
                     /* 00000001 00011010 100001.. ........ */
                     /* la.decode:427 */
@@ -2169,30 +2168,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 100010.. ........ */
                     /* la.decode:428 */
                     return LISA_FTINTRZ_W_D;
-                case 0x3:
-                    /* 00000001 00011010 100011.. ........ */
-                    /* la.decode:429 */
-                    return LISA_FTINTRZ_W_Q;
-                case 0x4:
-                    /* 00000001 00011010 100100.. ........ */
-                    /* la.decode:430 */
-                    return LISA_FTINTRZ_WU_H;
-                case 0x5:
-                    /* 00000001 00011010 100101.. ........ */
-                    /* la.decode:431 */
-                    return LISA_FTINTRZ_WU_S;
-                case 0x6:
-                    /* 00000001 00011010 100110.. ........ */
-                    /* la.decode:432 */
-                    return LISA_FTINTRZ_WU_D;
-                case 0x7:
-                    /* 00000001 00011010 100111.. ........ */
-                    /* la.decode:433 */
-                    return LISA_FTINTRZ_WU_Q;
-                case 0x8:
-                    /* 00000001 00011010 101000.. ........ */
-                    /* la.decode:434 */
-                    return LISA_FTINTRZ_L_H;
+                /* case 0x3: */
+                /*     /1* 00000001 00011010 100011.. ........ *1/ */
+                /*     /1* la.decode:429 *1/ */
+                /*     return LISA_FTINTRZ_W_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011010 100100.. ........ *1/ */
+                /*     /1* la.decode:430 *1/ */
+                /*     return LISA_FTINTRZ_WU_H; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011010 100101.. ........ *1/ */
+                /*     /1* la.decode:431 *1/ */
+                /*     return LISA_FTINTRZ_WU_S; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011010 100110.. ........ *1/ */
+                /*     /1* la.decode:432 *1/ */
+                /*     return LISA_FTINTRZ_WU_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011010 100111.. ........ *1/ */
+                /*     /1* la.decode:433 *1/ */
+                /*     return LISA_FTINTRZ_WU_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011010 101000.. ........ *1/ */
+                /*     /1* la.decode:434 *1/ */
+                /*     return LISA_FTINTRZ_L_H; */
                 case 0x9:
                     /* 00000001 00011010 101001.. ........ */
                     /* la.decode:435 */
@@ -2201,30 +2200,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 101010.. ........ */
                     /* la.decode:436 */
                     return LISA_FTINTRZ_L_D;
-                case 0xb:
-                    /* 00000001 00011010 101011.. ........ */
-                    /* la.decode:437 */
-                    return LISA_FTINTRZ_L_Q;
-                case 0xc:
-                    /* 00000001 00011010 101100.. ........ */
-                    /* la.decode:438 */
-                    return LISA_FTINTRZ_LU_H;
-                case 0xd:
-                    /* 00000001 00011010 101101.. ........ */
-                    /* la.decode:439 */
-                    return LISA_FTINTRZ_LU_S;
-                case 0xe:
-                    /* 00000001 00011010 101110.. ........ */
-                    /* la.decode:440 */
-                    return LISA_FTINTRZ_LU_D;
-                case 0xf:
-                    /* 00000001 00011010 101111.. ........ */
-                    /* la.decode:441 */
-                    return LISA_FTINTRZ_LU_Q;
-                case 0x10:
-                    /* 00000001 00011010 110000.. ........ */
-                    /* la.decode:442 */
-                    return LISA_FTINTRNE_W_H;
+                /* case 0xb: */
+                /*     /1* 00000001 00011010 101011.. ........ *1/ */
+                /*     /1* la.decode:437 *1/ */
+                /*     return LISA_FTINTRZ_L_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011010 101100.. ........ *1/ */
+                /*     /1* la.decode:438 *1/ */
+                /*     return LISA_FTINTRZ_LU_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011010 101101.. ........ *1/ */
+                /*     /1* la.decode:439 *1/ */
+                /*     return LISA_FTINTRZ_LU_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011010 101110.. ........ *1/ */
+                /*     /1* la.decode:440 *1/ */
+                /*     return LISA_FTINTRZ_LU_D; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011010 101111.. ........ *1/ */
+                /*     /1* la.decode:441 *1/ */
+                /*     return LISA_FTINTRZ_LU_Q; */
+                /* case 0x10: */
+                /*     /1* 00000001 00011010 110000.. ........ *1/ */
+                /*     /1* la.decode:442 *1/ */
+                /*     return LISA_FTINTRNE_W_H; */
                 case 0x11:
                     /* 00000001 00011010 110001.. ........ */
                     /* la.decode:443 */
@@ -2233,30 +2232,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 110010.. ........ */
                     /* la.decode:444 */
                     return LISA_FTINTRNE_W_D;
-                case 0x13:
-                    /* 00000001 00011010 110011.. ........ */
-                    /* la.decode:445 */
-                    return LISA_FTINTRNE_W_Q;
-                case 0x14:
-                    /* 00000001 00011010 110100.. ........ */
-                    /* la.decode:446 */
-                    return LISA_FTINTRNE_WU_H;
-                case 0x15:
-                    /* 00000001 00011010 110101.. ........ */
-                    /* la.decode:447 */
-                    return LISA_FTINTRNE_WU_S;
-                case 0x16:
-                    /* 00000001 00011010 110110.. ........ */
-                    /* la.decode:448 */
-                    return LISA_FTINTRNE_WU_D;
-                case 0x17:
-                    /* 00000001 00011010 110111.. ........ */
-                    /* la.decode:449 */
-                    return LISA_FTINTRNE_WU_Q;
-                case 0x18:
-                    /* 00000001 00011010 111000.. ........ */
-                    /* la.decode:450 */
-                    return LISA_FTINTRNE_L_H;
+                /* case 0x13: */
+                /*     /1* 00000001 00011010 110011.. ........ *1/ */
+                /*     /1* la.decode:445 *1/ */
+                /*     return LISA_FTINTRNE_W_Q; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011010 110100.. ........ *1/ */
+                /*     /1* la.decode:446 *1/ */
+                /*     return LISA_FTINTRNE_WU_H; */
+                /* case 0x15: */
+                /*     /1* 00000001 00011010 110101.. ........ *1/ */
+                /*     /1* la.decode:447 *1/ */
+                /*     return LISA_FTINTRNE_WU_S; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011010 110110.. ........ *1/ */
+                /*     /1* la.decode:448 *1/ */
+                /*     return LISA_FTINTRNE_WU_D; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011010 110111.. ........ *1/ */
+                /*     /1* la.decode:449 *1/ */
+                /*     return LISA_FTINTRNE_WU_Q; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011010 111000.. ........ *1/ */
+                /*     /1* la.decode:450 *1/ */
+                /*     return LISA_FTINTRNE_L_H; */
                 case 0x19:
                     /* 00000001 00011010 111001.. ........ */
                     /* la.decode:451 */
@@ -2265,35 +2264,35 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011010 111010.. ........ */
                     /* la.decode:452 */
                     return LISA_FTINTRNE_L_D;
-                case 0x1b:
-                    /* 00000001 00011010 111011.. ........ */
-                    /* la.decode:453 */
-                    return LISA_FTINTRNE_L_Q;
-                case 0x1c:
-                    /* 00000001 00011010 111100.. ........ */
-                    /* la.decode:454 */
-                    return LISA_FTINTRNE_LU_H;
-                case 0x1d:
-                    /* 00000001 00011010 111101.. ........ */
-                    /* la.decode:455 */
-                    return LISA_FTINTRNE_LU_S;
-                case 0x1e:
-                    /* 00000001 00011010 111110.. ........ */
-                    /* la.decode:456 */
-                    return LISA_FTINTRNE_LU_D;
-                case 0x1f:
-                    /* 00000001 00011010 111111.. ........ */
-                    /* la.decode:457 */
-                    return LISA_FTINTRNE_LU_Q;
+                /* case 0x1b: */
+                /*     /1* 00000001 00011010 111011.. ........ *1/ */
+                /*     /1* la.decode:453 *1/ */
+                /*     return LISA_FTINTRNE_L_Q; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011010 111100.. ........ *1/ */
+                /*     /1* la.decode:454 *1/ */
+                /*     return LISA_FTINTRNE_LU_H; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011010 111101.. ........ *1/ */
+                /*     /1* la.decode:455 *1/ */
+                /*     return LISA_FTINTRNE_LU_S; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011010 111110.. ........ *1/ */
+                /*     /1* la.decode:456 *1/ */
+                /*     return LISA_FTINTRNE_LU_D; */
+                /* case 0x1f: */
+                /*     /1* 00000001 00011010 111111.. ........ *1/ */
+                /*     /1* la.decode:457 *1/ */
+                /*     return LISA_FTINTRNE_LU_Q; */
                 }
                 return LISA_INVALID;
             case 0x36:
                 /* 00000001 00011011 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011011 000000.. ........ */
-                    /* la.decode:458 */
-                    return LISA_FTINT_W_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00011011 000000.. ........ *1/ */
+                /*     /1* la.decode:458 *1/ */
+                /*     return LISA_FTINT_W_H; */
                 case 0x1:
                     /* 00000001 00011011 000001.. ........ */
                     /* la.decode:459 */
@@ -2302,30 +2301,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011011 000010.. ........ */
                     /* la.decode:460 */
                     return LISA_FTINT_W_D;
-                case 0x3:
-                    /* 00000001 00011011 000011.. ........ */
-                    /* la.decode:461 */
-                    return LISA_FTINT_W_Q;
-                case 0x4:
-                    /* 00000001 00011011 000100.. ........ */
-                    /* la.decode:462 */
-                    return LISA_FTINT_WU_H;
-                case 0x5:
-                    /* 00000001 00011011 000101.. ........ */
-                    /* la.decode:463 */
-                    return LISA_FTINT_WU_S;
-                case 0x6:
-                    /* 00000001 00011011 000110.. ........ */
-                    /* la.decode:464 */
-                    return LISA_FTINT_WU_D;
-                case 0x7:
-                    /* 00000001 00011011 000111.. ........ */
-                    /* la.decode:465 */
-                    return LISA_FTINT_WU_Q;
-                case 0x8:
-                    /* 00000001 00011011 001000.. ........ */
-                    /* la.decode:466 */
-                    return LISA_FTINT_L_H;
+                /* case 0x3: */
+                /*     /1* 00000001 00011011 000011.. ........ *1/ */
+                /*     /1* la.decode:461 *1/ */
+                /*     return LISA_FTINT_W_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011011 000100.. ........ *1/ */
+                /*     /1* la.decode:462 *1/ */
+                /*     return LISA_FTINT_WU_H; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011011 000101.. ........ *1/ */
+                /*     /1* la.decode:463 *1/ */
+                /*     return LISA_FTINT_WU_S; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011011 000110.. ........ *1/ */
+                /*     /1* la.decode:464 *1/ */
+                /*     return LISA_FTINT_WU_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011011 000111.. ........ *1/ */
+                /*     /1* la.decode:465 *1/ */
+                /*     return LISA_FTINT_WU_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011011 001000.. ........ *1/ */
+                /*     /1* la.decode:466 *1/ */
+                /*     return LISA_FTINT_L_H; */
                 case 0x9:
                     /* 00000001 00011011 001001.. ........ */
                     /* la.decode:467 */
@@ -2334,434 +2333,434 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011011 001010.. ........ */
                     /* la.decode:468 */
                     return LISA_FTINT_L_D;
-                case 0xb:
-                    /* 00000001 00011011 001011.. ........ */
-                    /* la.decode:469 */
-                    return LISA_FTINT_L_Q;
-                case 0xc:
-                    /* 00000001 00011011 001100.. ........ */
-                    /* la.decode:470 */
-                    return LISA_FTINT_LU_H;
-                case 0xd:
-                    /* 00000001 00011011 001101.. ........ */
-                    /* la.decode:471 */
-                    return LISA_FTINT_LU_S;
-                case 0xe:
-                    /* 00000001 00011011 001110.. ........ */
-                    /* la.decode:472 */
-                    return LISA_FTINT_LU_D;
-                case 0xf:
-                    /* 00000001 00011011 001111.. ........ */
-                    /* la.decode:473 */
-                    return LISA_FTINT_LU_Q;
+                /* case 0xb: */
+                /*     /1* 00000001 00011011 001011.. ........ *1/ */
+                /*     /1* la.decode:469 *1/ */
+                /*     return LISA_FTINT_L_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011011 001100.. ........ *1/ */
+                /*     /1* la.decode:470 *1/ */
+                /*     return LISA_FTINT_LU_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011011 001101.. ........ *1/ */
+                /*     /1* la.decode:471 *1/ */
+                /*     return LISA_FTINT_LU_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011011 001110.. ........ *1/ */
+                /*     /1* la.decode:472 *1/ */
+                /*     return LISA_FTINT_LU_D; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011011 001111.. ........ *1/ */
+                /*     /1* la.decode:473 *1/ */
+                /*     return LISA_FTINT_LU_Q; */
                 }
                 return LISA_INVALID;
             case 0x38:
                 /* 00000001 00011100 0....... ........ */
-                switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011100 000000.. ........ */
-                    /* la.decode:474 */
-                    return LISA_FFINTRM_H_W;
-                case 0x1:
-                    /* 00000001 00011100 000001.. ........ */
-                    /* la.decode:475 */
-                    return LISA_FFINTRM_H_WU;
-                case 0x2:
-                    /* 00000001 00011100 000010.. ........ */
-                    /* la.decode:476 */
-                    return LISA_FFINTRM_H_L;
-                case 0x3:
-                    /* 00000001 00011100 000011.. ........ */
-                    /* la.decode:477 */
-                    return LISA_FFINTRM_H_LU;
-                case 0x4:
-                    /* 00000001 00011100 000100.. ........ */
-                    /* la.decode:478 */
-                    return LISA_FFINTRM_S_W;
-                case 0x5:
-                    /* 00000001 00011100 000101.. ........ */
-                    /* la.decode:479 */
-                    return LISA_FFINTRM_S_WU;
-                case 0x6:
-                    /* 00000001 00011100 000110.. ........ */
-                    /* la.decode:480 */
-                    return LISA_FFINTRM_S_L;
-                case 0x7:
-                    /* 00000001 00011100 000111.. ........ */
-                    /* la.decode:481 */
-                    return LISA_FFINTRM_S_LU;
-                case 0x8:
-                    /* 00000001 00011100 001000.. ........ */
-                    /* la.decode:482 */
-                    return LISA_FFINTRM_D_W;
-                case 0x9:
-                    /* 00000001 00011100 001001.. ........ */
-                    /* la.decode:483 */
-                    return LISA_FFINTRM_D_WU;
-                case 0xa:
-                    /* 00000001 00011100 001010.. ........ */
-                    /* la.decode:484 */
-                    return LISA_FFINTRM_D_L;
-                case 0xb:
-                    /* 00000001 00011100 001011.. ........ */
-                    /* la.decode:485 */
-                    return LISA_FFINTRM_D_LU;
-                case 0xc:
-                    /* 00000001 00011100 001100.. ........ */
-                    /* la.decode:486 */
-                    return LISA_FFINTRM_Q_W;
-                case 0xd:
-                    /* 00000001 00011100 001101.. ........ */
-                    /* la.decode:487 */
-                    return LISA_FFINTRM_Q_WU;
-                case 0xe:
-                    /* 00000001 00011100 001110.. ........ */
-                    /* la.decode:488 */
-                    return LISA_FFINTRM_Q_L;
-                case 0xf:
-                    /* 00000001 00011100 001111.. ........ */
-                    /* la.decode:489 */
-                    return LISA_FFINTRM_Q_LU;
-                case 0x10:
-                    /* 00000001 00011100 010000.. ........ */
-                    /* la.decode:490 */
-                    return LISA_FFINTRP_H_W;
-                case 0x11:
-                    /* 00000001 00011100 010001.. ........ */
-                    /* la.decode:491 */
-                    return LISA_FFINTRP_H_WU;
-                case 0x12:
-                    /* 00000001 00011100 010010.. ........ */
-                    /* la.decode:492 */
-                    return LISA_FFINTRP_H_L;
-                case 0x13:
-                    /* 00000001 00011100 010011.. ........ */
-                    /* la.decode:493 */
-                    return LISA_FFINTRP_H_LU;
-                case 0x14:
-                    /* 00000001 00011100 010100.. ........ */
-                    /* la.decode:494 */
-                    return LISA_FFINTRP_S_W;
-                case 0x15:
-                    /* 00000001 00011100 010101.. ........ */
-                    /* la.decode:495 */
-                    return LISA_FFINTRP_S_WU;
-                case 0x16:
-                    /* 00000001 00011100 010110.. ........ */
-                    /* la.decode:496 */
-                    return LISA_FFINTRP_S_L;
-                case 0x17:
-                    /* 00000001 00011100 010111.. ........ */
-                    /* la.decode:497 */
-                    return LISA_FFINTRP_S_LU;
-                case 0x18:
-                    /* 00000001 00011100 011000.. ........ */
-                    /* la.decode:498 */
-                    return LISA_FFINTRP_D_W;
-                case 0x19:
-                    /* 00000001 00011100 011001.. ........ */
-                    /* la.decode:499 */
-                    return LISA_FFINTRP_D_WU;
-                case 0x1a:
-                    /* 00000001 00011100 011010.. ........ */
-                    /* la.decode:500 */
-                    return LISA_FFINTRP_D_L;
-                case 0x1b:
-                    /* 00000001 00011100 011011.. ........ */
-                    /* la.decode:501 */
-                    return LISA_FFINTRP_D_LU;
-                case 0x1c:
-                    /* 00000001 00011100 011100.. ........ */
-                    /* la.decode:502 */
-                    return LISA_FFINTRP_Q_W;
-                case 0x1d:
-                    /* 00000001 00011100 011101.. ........ */
-                    /* la.decode:503 */
-                    return LISA_FFINTRP_Q_WU;
-                case 0x1e:
-                    /* 00000001 00011100 011110.. ........ */
-                    /* la.decode:504 */
-                    return LISA_FFINTRP_Q_L;
-                case 0x1f:
-                    /* 00000001 00011100 011111.. ........ */
-                    /* la.decode:505 */
-                    return LISA_FFINTRP_Q_LU;
-                }
+                /* switch ((insn >> 10) & 0x1f) { */
+                /* case 0x0: */
+                /*     /1* 00000001 00011100 000000.. ........ *1/ */
+                /*     /1* la.decode:474 *1/ */
+                /*     return LISA_FFINTRM_H_W; */
+                /* case 0x1: */
+                /*     /1* 00000001 00011100 000001.. ........ *1/ */
+                /*     /1* la.decode:475 *1/ */
+                /*     return LISA_FFINTRM_H_WU; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011100 000010.. ........ *1/ */
+                /*     /1* la.decode:476 *1/ */
+                /*     return LISA_FFINTRM_H_L; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011100 000011.. ........ *1/ */
+                /*     /1* la.decode:477 *1/ */
+                /*     return LISA_FFINTRM_H_LU; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011100 000100.. ........ *1/ */
+                /*     /1* la.decode:478 *1/ */
+                /*     return LISA_FFINTRM_S_W; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011100 000101.. ........ *1/ */
+                /*     /1* la.decode:479 *1/ */
+                /*     return LISA_FFINTRM_S_WU; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011100 000110.. ........ *1/ */
+                /*     /1* la.decode:480 *1/ */
+                /*     return LISA_FFINTRM_S_L; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011100 000111.. ........ *1/ */
+                /*     /1* la.decode:481 *1/ */
+                /*     return LISA_FFINTRM_S_LU; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011100 001000.. ........ *1/ */
+                /*     /1* la.decode:482 *1/ */
+                /*     return LISA_FFINTRM_D_W; */
+                /* case 0x9: */
+                /*     /1* 00000001 00011100 001001.. ........ *1/ */
+                /*     /1* la.decode:483 *1/ */
+                /*     return LISA_FFINTRM_D_WU; */
+                /* case 0xa: */
+                /*     /1* 00000001 00011100 001010.. ........ *1/ */
+                /*     /1* la.decode:484 *1/ */
+                /*     return LISA_FFINTRM_D_L; */
+                /* case 0xb: */
+                /*     /1* 00000001 00011100 001011.. ........ *1/ */
+                /*     /1* la.decode:485 *1/ */
+                /*     return LISA_FFINTRM_D_LU; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011100 001100.. ........ *1/ */
+                /*     /1* la.decode:486 *1/ */
+                /*     return LISA_FFINTRM_Q_W; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011100 001101.. ........ *1/ */
+                /*     /1* la.decode:487 *1/ */
+                /*     return LISA_FFINTRM_Q_WU; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011100 001110.. ........ *1/ */
+                /*     /1* la.decode:488 *1/ */
+                /*     return LISA_FFINTRM_Q_L; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011100 001111.. ........ *1/ */
+                /*     /1* la.decode:489 *1/ */
+                /*     return LISA_FFINTRM_Q_LU; */
+                /* case 0x10: */
+                /*     /1* 00000001 00011100 010000.. ........ *1/ */
+                /*     /1* la.decode:490 *1/ */
+                /*     return LISA_FFINTRP_H_W; */
+                /* case 0x11: */
+                /*     /1* 00000001 00011100 010001.. ........ *1/ */
+                /*     /1* la.decode:491 *1/ */
+                /*     return LISA_FFINTRP_H_WU; */
+                /* case 0x12: */
+                /*     /1* 00000001 00011100 010010.. ........ *1/ */
+                /*     /1* la.decode:492 *1/ */
+                /*     return LISA_FFINTRP_H_L; */
+                /* case 0x13: */
+                /*     /1* 00000001 00011100 010011.. ........ *1/ */
+                /*     /1* la.decode:493 *1/ */
+                /*     return LISA_FFINTRP_H_LU; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011100 010100.. ........ *1/ */
+                /*     /1* la.decode:494 *1/ */
+                /*     return LISA_FFINTRP_S_W; */
+                /* case 0x15: */
+                /*     /1* 00000001 00011100 010101.. ........ *1/ */
+                /*     /1* la.decode:495 *1/ */
+                /*     return LISA_FFINTRP_S_WU; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011100 010110.. ........ *1/ */
+                /*     /1* la.decode:496 *1/ */
+                /*     return LISA_FFINTRP_S_L; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011100 010111.. ........ *1/ */
+                /*     /1* la.decode:497 *1/ */
+                /*     return LISA_FFINTRP_S_LU; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011100 011000.. ........ *1/ */
+                /*     /1* la.decode:498 *1/ */
+                /*     return LISA_FFINTRP_D_W; */
+                /* case 0x19: */
+                /*     /1* 00000001 00011100 011001.. ........ *1/ */
+                /*     /1* la.decode:499 *1/ */
+                /*     return LISA_FFINTRP_D_WU; */
+                /* case 0x1a: */
+                /*     /1* 00000001 00011100 011010.. ........ *1/ */
+                /*     /1* la.decode:500 *1/ */
+                /*     return LISA_FFINTRP_D_L; */
+                /* case 0x1b: */
+                /*     /1* 00000001 00011100 011011.. ........ *1/ */
+                /*     /1* la.decode:501 *1/ */
+                /*     return LISA_FFINTRP_D_LU; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011100 011100.. ........ *1/ */
+                /*     /1* la.decode:502 *1/ */
+                /*     return LISA_FFINTRP_Q_W; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011100 011101.. ........ *1/ */
+                /*     /1* la.decode:503 *1/ */
+                /*     return LISA_FFINTRP_Q_WU; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011100 011110.. ........ *1/ */
+                /*     /1* la.decode:504 *1/ */
+                /*     return LISA_FFINTRP_Q_L; */
+                /* case 0x1f: */
+                /*     /1* 00000001 00011100 011111.. ........ *1/ */
+                /*     /1* la.decode:505 *1/ */
+                /*     return LISA_FFINTRP_Q_LU; */
+                /* } */
                 return LISA_INVALID;
             case 0x39:
                 /* 00000001 00011100 1....... ........ */
-                switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011100 100000.. ........ */
-                    /* la.decode:506 */
-                    return LISA_FFINTRZ_H_W;
-                case 0x1:
-                    /* 00000001 00011100 100001.. ........ */
-                    /* la.decode:507 */
-                    return LISA_FFINTRZ_H_WU;
-                case 0x2:
-                    /* 00000001 00011100 100010.. ........ */
-                    /* la.decode:508 */
-                    return LISA_FFINTRZ_H_L;
-                case 0x3:
-                    /* 00000001 00011100 100011.. ........ */
-                    /* la.decode:509 */
-                    return LISA_FFINTRZ_H_LU;
-                case 0x4:
-                    /* 00000001 00011100 100100.. ........ */
-                    /* la.decode:510 */
-                    return LISA_FFINTRZ_S_W;
-                case 0x5:
-                    /* 00000001 00011100 100101.. ........ */
-                    /* la.decode:511 */
-                    return LISA_FFINTRZ_S_WU;
-                case 0x6:
-                    /* 00000001 00011100 100110.. ........ */
-                    /* la.decode:512 */
-                    return LISA_FFINTRZ_S_L;
-                case 0x7:
-                    /* 00000001 00011100 100111.. ........ */
-                    /* la.decode:513 */
-                    return LISA_FFINTRZ_S_LU;
-                case 0x8:
-                    /* 00000001 00011100 101000.. ........ */
-                    /* la.decode:514 */
-                    return LISA_FFINTRZ_D_W;
-                case 0x9:
-                    /* 00000001 00011100 101001.. ........ */
-                    /* la.decode:515 */
-                    return LISA_FFINTRZ_D_WU;
-                case 0xa:
-                    /* 00000001 00011100 101010.. ........ */
-                    /* la.decode:516 */
-                    return LISA_FFINTRZ_D_L;
-                case 0xb:
-                    /* 00000001 00011100 101011.. ........ */
-                    /* la.decode:517 */
-                    return LISA_FFINTRZ_D_LU;
-                case 0xc:
-                    /* 00000001 00011100 101100.. ........ */
-                    /* la.decode:518 */
-                    return LISA_FFINTRZ_Q_W;
-                case 0xd:
-                    /* 00000001 00011100 101101.. ........ */
-                    /* la.decode:519 */
-                    return LISA_FFINTRZ_Q_WU;
-                case 0xe:
-                    /* 00000001 00011100 101110.. ........ */
-                    /* la.decode:520 */
-                    return LISA_FFINTRZ_Q_L;
-                case 0xf:
-                    /* 00000001 00011100 101111.. ........ */
-                    /* la.decode:521 */
-                    return LISA_FFINTRZ_Q_LU;
-                case 0x10:
-                    /* 00000001 00011100 110000.. ........ */
-                    /* la.decode:522 */
-                    return LISA_FFINTRNE_H_W;
-                case 0x11:
-                    /* 00000001 00011100 110001.. ........ */
-                    /* la.decode:523 */
-                    return LISA_FFINTRNE_H_WU;
-                case 0x12:
-                    /* 00000001 00011100 110010.. ........ */
-                    /* la.decode:524 */
-                    return LISA_FFINTRNE_H_L;
-                case 0x13:
-                    /* 00000001 00011100 110011.. ........ */
-                    /* la.decode:525 */
-                    return LISA_FFINTRNE_H_LU;
-                case 0x14:
-                    /* 00000001 00011100 110100.. ........ */
-                    /* la.decode:526 */
-                    return LISA_FFINTRNE_S_W;
-                case 0x15:
-                    /* 00000001 00011100 110101.. ........ */
-                    /* la.decode:527 */
-                    return LISA_FFINTRNE_S_WU;
-                case 0x16:
-                    /* 00000001 00011100 110110.. ........ */
-                    /* la.decode:528 */
-                    return LISA_FFINTRNE_S_L;
-                case 0x17:
-                    /* 00000001 00011100 110111.. ........ */
-                    /* la.decode:529 */
-                    return LISA_FFINTRNE_S_LU;
-                case 0x18:
-                    /* 00000001 00011100 111000.. ........ */
-                    /* la.decode:530 */
-                    return LISA_FFINTRNE_D_W;
-                case 0x19:
-                    /* 00000001 00011100 111001.. ........ */
-                    /* la.decode:531 */
-                    return LISA_FFINTRNE_D_WU;
-                case 0x1a:
-                    /* 00000001 00011100 111010.. ........ */
-                    /* la.decode:532 */
-                    return LISA_FFINTRNE_D_L;
-                case 0x1b:
-                    /* 00000001 00011100 111011.. ........ */
-                    /* la.decode:533 */
-                    return LISA_FFINTRNE_D_LU;
-                case 0x1c:
-                    /* 00000001 00011100 111100.. ........ */
-                    /* la.decode:534 */
-                    return LISA_FFINTRNE_Q_W;
-                case 0x1d:
-                    /* 00000001 00011100 111101.. ........ */
-                    /* la.decode:535 */
-                    return LISA_FFINTRNE_Q_WU;
-                case 0x1e:
-                    /* 00000001 00011100 111110.. ........ */
-                    /* la.decode:536 */
-                    return LISA_FFINTRNE_Q_L;
-                case 0x1f:
-                    /* 00000001 00011100 111111.. ........ */
-                    /* la.decode:537 */
-                    return LISA_FFINTRNE_Q_LU;
-                }
+                /* switch ((insn >> 10) & 0x1f) { */
+                /* case 0x0: */
+                /*     /1* 00000001 00011100 100000.. ........ *1/ */
+                /*     /1* la.decode:506 *1/ */
+                /*     return LISA_FFINTRZ_H_W; */
+                /* case 0x1: */
+                /*     /1* 00000001 00011100 100001.. ........ *1/ */
+                /*     /1* la.decode:507 *1/ */
+                /*     return LISA_FFINTRZ_H_WU; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011100 100010.. ........ *1/ */
+                /*     /1* la.decode:508 *1/ */
+                /*     return LISA_FFINTRZ_H_L; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011100 100011.. ........ *1/ */
+                /*     /1* la.decode:509 *1/ */
+                /*     return LISA_FFINTRZ_H_LU; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011100 100100.. ........ *1/ */
+                /*     /1* la.decode:510 *1/ */
+                /*     return LISA_FFINTRZ_S_W; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011100 100101.. ........ *1/ */
+                /*     /1* la.decode:511 *1/ */
+                /*     return LISA_FFINTRZ_S_WU; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011100 100110.. ........ *1/ */
+                /*     /1* la.decode:512 *1/ */
+                /*     return LISA_FFINTRZ_S_L; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011100 100111.. ........ *1/ */
+                /*     /1* la.decode:513 *1/ */
+                /*     return LISA_FFINTRZ_S_LU; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011100 101000.. ........ *1/ */
+                /*     /1* la.decode:514 *1/ */
+                /*     return LISA_FFINTRZ_D_W; */
+                /* case 0x9: */
+                /*     /1* 00000001 00011100 101001.. ........ *1/ */
+                /*     /1* la.decode:515 *1/ */
+                /*     return LISA_FFINTRZ_D_WU; */
+                /* case 0xa: */
+                /*     /1* 00000001 00011100 101010.. ........ *1/ */
+                /*     /1* la.decode:516 *1/ */
+                /*     return LISA_FFINTRZ_D_L; */
+                /* case 0xb: */
+                /*     /1* 00000001 00011100 101011.. ........ *1/ */
+                /*     /1* la.decode:517 *1/ */
+                /*     return LISA_FFINTRZ_D_LU; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011100 101100.. ........ *1/ */
+                /*     /1* la.decode:518 *1/ */
+                /*     return LISA_FFINTRZ_Q_W; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011100 101101.. ........ *1/ */
+                /*     /1* la.decode:519 *1/ */
+                /*     return LISA_FFINTRZ_Q_WU; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011100 101110.. ........ *1/ */
+                /*     /1* la.decode:520 *1/ */
+                /*     return LISA_FFINTRZ_Q_L; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011100 101111.. ........ *1/ */
+                /*     /1* la.decode:521 *1/ */
+                /*     return LISA_FFINTRZ_Q_LU; */
+                /* case 0x10: */
+                /*     /1* 00000001 00011100 110000.. ........ *1/ */
+                /*     /1* la.decode:522 *1/ */
+                /*     return LISA_FFINTRNE_H_W; */
+                /* case 0x11: */
+                /*     /1* 00000001 00011100 110001.. ........ *1/ */
+                /*     /1* la.decode:523 *1/ */
+                /*     return LISA_FFINTRNE_H_WU; */
+                /* case 0x12: */
+                /*     /1* 00000001 00011100 110010.. ........ *1/ */
+                /*     /1* la.decode:524 *1/ */
+                /*     return LISA_FFINTRNE_H_L; */
+                /* case 0x13: */
+                /*     /1* 00000001 00011100 110011.. ........ *1/ */
+                /*     /1* la.decode:525 *1/ */
+                /*     return LISA_FFINTRNE_H_LU; */
+                /* case 0x14: */
+                /*     /1* 00000001 00011100 110100.. ........ *1/ */
+                /*     /1* la.decode:526 *1/ */
+                /*     return LISA_FFINTRNE_S_W; */
+                /* case 0x15: */
+                /*     /1* 00000001 00011100 110101.. ........ *1/ */
+                /*     /1* la.decode:527 *1/ */
+                /*     return LISA_FFINTRNE_S_WU; */
+                /* case 0x16: */
+                /*     /1* 00000001 00011100 110110.. ........ *1/ */
+                /*     /1* la.decode:528 *1/ */
+                /*     return LISA_FFINTRNE_S_L; */
+                /* case 0x17: */
+                /*     /1* 00000001 00011100 110111.. ........ *1/ */
+                /*     /1* la.decode:529 *1/ */
+                /*     return LISA_FFINTRNE_S_LU; */
+                /* case 0x18: */
+                /*     /1* 00000001 00011100 111000.. ........ *1/ */
+                /*     /1* la.decode:530 *1/ */
+                /*     return LISA_FFINTRNE_D_W; */
+                /* case 0x19: */
+                /*     /1* 00000001 00011100 111001.. ........ *1/ */
+                /*     /1* la.decode:531 *1/ */
+                /*     return LISA_FFINTRNE_D_WU; */
+                /* case 0x1a: */
+                /*     /1* 00000001 00011100 111010.. ........ *1/ */
+                /*     /1* la.decode:532 *1/ */
+                /*     return LISA_FFINTRNE_D_L; */
+                /* case 0x1b: */
+                /*     /1* 00000001 00011100 111011.. ........ *1/ */
+                /*     /1* la.decode:533 *1/ */
+                /*     return LISA_FFINTRNE_D_LU; */
+                /* case 0x1c: */
+                /*     /1* 00000001 00011100 111100.. ........ *1/ */
+                /*     /1* la.decode:534 *1/ */
+                /*     return LISA_FFINTRNE_Q_W; */
+                /* case 0x1d: */
+                /*     /1* 00000001 00011100 111101.. ........ *1/ */
+                /*     /1* la.decode:535 *1/ */
+                /*     return LISA_FFINTRNE_Q_WU; */
+                /* case 0x1e: */
+                /*     /1* 00000001 00011100 111110.. ........ *1/ */
+                /*     /1* la.decode:536 *1/ */
+                /*     return LISA_FFINTRNE_Q_L; */
+                /* case 0x1f: */
+                /*     /1* 00000001 00011100 111111.. ........ *1/ */
+                /*     /1* la.decode:537 *1/ */
+                /*     return LISA_FFINTRNE_Q_LU; */
+                /* } */
                 return LISA_INVALID;
             case 0x3a:
                 /* 00000001 00011101 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011101 000000.. ........ */
-                    /* la.decode:538 */
-                    return LISA_FFINT_H_W;
-                case 0x1:
-                    /* 00000001 00011101 000001.. ........ */
-                    /* la.decode:539 */
-                    return LISA_FFINT_H_WU;
-                case 0x2:
-                    /* 00000001 00011101 000010.. ........ */
-                    /* la.decode:540 */
-                    return LISA_FFINT_H_L;
-                case 0x3:
-                    /* 00000001 00011101 000011.. ........ */
-                    /* la.decode:541 */
-                    return LISA_FFINT_H_LU;
+                /* case 0x0: */
+                /*     /1* 00000001 00011101 000000.. ........ *1/ */
+                /*     /1* la.decode:538 *1/ */
+                /*     return LISA_FFINT_H_W; */
+                /* case 0x1: */
+                /*     /1* 00000001 00011101 000001.. ........ *1/ */
+                /*     /1* la.decode:539 *1/ */
+                /*     return LISA_FFINT_H_WU; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011101 000010.. ........ *1/ */
+                /*     /1* la.decode:540 *1/ */
+                /*     return LISA_FFINT_H_L; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011101 000011.. ........ *1/ */
+                /*     /1* la.decode:541 *1/ */
+                /*     return LISA_FFINT_H_LU; */
                 case 0x4:
                     /* 00000001 00011101 000100.. ........ */
                     /* la.decode:542 */
                     return LISA_FFINT_S_W;
-                case 0x5:
-                    /* 00000001 00011101 000101.. ........ */
-                    /* la.decode:543 */
-                    return LISA_FFINT_S_WU;
+                /* case 0x5: */
+                /*     /1* 00000001 00011101 000101.. ........ *1/ */
+                /*     /1* la.decode:543 *1/ */
+                /*     return LISA_FFINT_S_WU; */
                 case 0x6:
                     /* 00000001 00011101 000110.. ........ */
                     /* la.decode:544 */
                     return LISA_FFINT_S_L;
-                case 0x7:
-                    /* 00000001 00011101 000111.. ........ */
-                    /* la.decode:545 */
-                    return LISA_FFINT_S_LU;
+                /* case 0x7: */
+                /*     /1* 00000001 00011101 000111.. ........ *1/ */
+                /*     /1* la.decode:545 *1/ */
+                /*     return LISA_FFINT_S_LU; */
                 case 0x8:
                     /* 00000001 00011101 001000.. ........ */
                     /* la.decode:546 */
                     return LISA_FFINT_D_W;
-                case 0x9:
-                    /* 00000001 00011101 001001.. ........ */
-                    /* la.decode:547 */
-                    return LISA_FFINT_D_WU;
+                /* case 0x9: */
+                /*     /1* 00000001 00011101 001001.. ........ *1/ */
+                /*     /1* la.decode:547 *1/ */
+                /*     return LISA_FFINT_D_WU; */
                 case 0xa:
                     /* 00000001 00011101 001010.. ........ */
                     /* la.decode:548 */
                     return LISA_FFINT_D_L;
-                case 0xb:
-                    /* 00000001 00011101 001011.. ........ */
-                    /* la.decode:549 */
-                    return LISA_FFINT_D_LU;
-                case 0xc:
-                    /* 00000001 00011101 001100.. ........ */
-                    /* la.decode:550 */
-                    return LISA_FFINT_Q_W;
-                case 0xd:
-                    /* 00000001 00011101 001101.. ........ */
-                    /* la.decode:551 */
-                    return LISA_FFINT_Q_WU;
-                case 0xe:
-                    /* 00000001 00011101 001110.. ........ */
-                    /* la.decode:552 */
-                    return LISA_FFINT_Q_L;
-                case 0xf:
-                    /* 00000001 00011101 001111.. ........ */
-                    /* la.decode:553 */
-                    return LISA_FFINT_Q_LU;
+                /* case 0xb: */
+                /*     /1* 00000001 00011101 001011.. ........ *1/ */
+                /*     /1* la.decode:549 *1/ */
+                /*     return LISA_FFINT_D_LU; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011101 001100.. ........ *1/ */
+                /*     /1* la.decode:550 *1/ */
+                /*     return LISA_FFINT_Q_W; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011101 001101.. ........ *1/ */
+                /*     /1* la.decode:551 *1/ */
+                /*     return LISA_FFINT_Q_WU; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011101 001110.. ........ *1/ */
+                /*     /1* la.decode:552 *1/ */
+                /*     return LISA_FFINT_Q_L; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011101 001111.. ........ *1/ */
+                /*     /1* la.decode:553 *1/ */
+                /*     return LISA_FFINT_Q_LU; */
                 }
                 return LISA_INVALID;
             case 0x3c:
                 /* 00000001 00011110 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 00000001 00011110 000000.. ........ */
-                    /* la.decode:554 */
-                    return LISA_FRINTRM_H;
-                case 0x1:
-                    /* 00000001 00011110 000001.. ........ */
-                    /* la.decode:555 */
-                    return LISA_FRINTRM_S;
-                case 0x2:
-                    /* 00000001 00011110 000010.. ........ */
-                    /* la.decode:556 */
-                    return LISA_FRINTRM_D;
-                case 0x3:
-                    /* 00000001 00011110 000011.. ........ */
-                    /* la.decode:557 */
-                    return LISA_FRINTRM_Q;
-                case 0x4:
-                    /* 00000001 00011110 000100.. ........ */
-                    /* la.decode:558 */
-                    return LISA_FRINTRP_H;
-                case 0x5:
-                    /* 00000001 00011110 000101.. ........ */
-                    /* la.decode:559 */
-                    return LISA_FRINTRP_S;
-                case 0x6:
-                    /* 00000001 00011110 000110.. ........ */
-                    /* la.decode:560 */
-                    return LISA_FRINTRP_D;
-                case 0x7:
-                    /* 00000001 00011110 000111.. ........ */
-                    /* la.decode:561 */
-                    return LISA_FRINTRP_Q;
-                case 0x8:
-                    /* 00000001 00011110 001000.. ........ */
-                    /* la.decode:562 */
-                    return LISA_FRINTRZ_H;
-                case 0x9:
-                    /* 00000001 00011110 001001.. ........ */
-                    /* la.decode:563 */
-                    return LISA_FRINTRZ_S;
-                case 0xa:
-                    /* 00000001 00011110 001010.. ........ */
-                    /* la.decode:564 */
-                    return LISA_FRINTRZ_D;
-                case 0xb:
-                    /* 00000001 00011110 001011.. ........ */
-                    /* la.decode:565 */
-                    return LISA_FRINTRZ_Q;
-                case 0xc:
-                    /* 00000001 00011110 001100.. ........ */
-                    /* la.decode:566 */
-                    return LISA_FRINTRNE_H;
-                case 0xd:
-                    /* 00000001 00011110 001101.. ........ */
-                    /* la.decode:567 */
-                    return LISA_FRINTRNE_S;
-                case 0xe:
-                    /* 00000001 00011110 001110.. ........ */
-                    /* la.decode:568 */
-                    return LISA_FRINTRNE_D;
-                case 0xf:
-                    /* 00000001 00011110 001111.. ........ */
-                    /* la.decode:569 */
-                    return LISA_FRINTRNE_Q;
-                case 0x10:
-                    /* 00000001 00011110 010000.. ........ */
-                    /* la.decode:570 */
-                    return LISA_FRINT_H;
+                /* case 0x0: */
+                /*     /1* 00000001 00011110 000000.. ........ *1/ */
+                /*     /1* la.decode:554 *1/ */
+                /*     return LISA_FRINTRM_H; */
+                /* case 0x1: */
+                /*     /1* 00000001 00011110 000001.. ........ *1/ */
+                /*     /1* la.decode:555 *1/ */
+                /*     return LISA_FRINTRM_S; */
+                /* case 0x2: */
+                /*     /1* 00000001 00011110 000010.. ........ *1/ */
+                /*     /1* la.decode:556 *1/ */
+                /*     return LISA_FRINTRM_D; */
+                /* case 0x3: */
+                /*     /1* 00000001 00011110 000011.. ........ *1/ */
+                /*     /1* la.decode:557 *1/ */
+                /*     return LISA_FRINTRM_Q; */
+                /* case 0x4: */
+                /*     /1* 00000001 00011110 000100.. ........ *1/ */
+                /*     /1* la.decode:558 *1/ */
+                /*     return LISA_FRINTRP_H; */
+                /* case 0x5: */
+                /*     /1* 00000001 00011110 000101.. ........ *1/ */
+                /*     /1* la.decode:559 *1/ */
+                /*     return LISA_FRINTRP_S; */
+                /* case 0x6: */
+                /*     /1* 00000001 00011110 000110.. ........ *1/ */
+                /*     /1* la.decode:560 *1/ */
+                /*     return LISA_FRINTRP_D; */
+                /* case 0x7: */
+                /*     /1* 00000001 00011110 000111.. ........ *1/ */
+                /*     /1* la.decode:561 *1/ */
+                /*     return LISA_FRINTRP_Q; */
+                /* case 0x8: */
+                /*     /1* 00000001 00011110 001000.. ........ *1/ */
+                /*     /1* la.decode:562 *1/ */
+                /*     return LISA_FRINTRZ_H; */
+                /* case 0x9: */
+                /*     /1* 00000001 00011110 001001.. ........ *1/ */
+                /*     /1* la.decode:563 *1/ */
+                /*     return LISA_FRINTRZ_S; */
+                /* case 0xa: */
+                /*     /1* 00000001 00011110 001010.. ........ *1/ */
+                /*     /1* la.decode:564 *1/ */
+                /*     return LISA_FRINTRZ_D; */
+                /* case 0xb: */
+                /*     /1* 00000001 00011110 001011.. ........ *1/ */
+                /*     /1* la.decode:565 *1/ */
+                /*     return LISA_FRINTRZ_Q; */
+                /* case 0xc: */
+                /*     /1* 00000001 00011110 001100.. ........ *1/ */
+                /*     /1* la.decode:566 *1/ */
+                /*     return LISA_FRINTRNE_H; */
+                /* case 0xd: */
+                /*     /1* 00000001 00011110 001101.. ........ *1/ */
+                /*     /1* la.decode:567 *1/ */
+                /*     return LISA_FRINTRNE_S; */
+                /* case 0xe: */
+                /*     /1* 00000001 00011110 001110.. ........ *1/ */
+                /*     /1* la.decode:568 *1/ */
+                /*     return LISA_FRINTRNE_D; */
+                /* case 0xf: */
+                /*     /1* 00000001 00011110 001111.. ........ *1/ */
+                /*     /1* la.decode:569 *1/ */
+                /*     return LISA_FRINTRNE_Q; */
+                /* case 0x10: */
+                /*     /1* 00000001 00011110 010000.. ........ *1/ */
+                /*     /1* la.decode:570 *1/ */
+                /*     return LISA_FRINT_H; */
                 case 0x11:
                     /* 00000001 00011110 010001.. ........ */
                     /* la.decode:571 */
@@ -2770,10 +2769,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 00000001 00011110 010010.. ........ */
                     /* la.decode:572 */
                     return LISA_FRINT_D;
-                case 0x13:
-                    /* 00000001 00011110 010011.. ........ */
-                    /* la.decode:573 */
-                    return LISA_FRINT_Q;
+                /* case 0x13: */
+                /*     /1* 00000001 00011110 010011.. ........ *1/ */
+                /*     /1* la.decode:573 *1/ */
+                /*     return LISA_FRINT_Q; */
                 }
                 return LISA_INVALID;
             }
@@ -2814,399 +2813,436 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         return LISA_INVALID;
     case 0x1:
         /* 000001.. ........ ........ ........ */
-        switch ((insn >> 24) & 0x3) {
-        case 0x0:
-            /* 00000100 ........ ........ ........ */
-            if ((insn & 0x000003e0) == 0x00000000) {
-                /* 00000100 ........ ......00 000..... */
-                /* la.decode:583 */
-                return LISA_CSRRD;
-            }
-            if ((insn & 0x000003e0) == 0x00000020) {
-                /* 00000100 ........ ......00 001..... */
-                /* la.decode:584 */
-                return LISA_CSRWR;
-            }
-            /* la.decode:585 */
-            return LISA_CSRXCHG;
+        /* switch ((insn >> 24) & 0x3) { */
+        /* case 0x0: */
+        /*     /1* 00000100 ........ ........ ........ *1/ */
+        /*     if ((insn & 0x000003e0) == 0x00000000) { */
+        /*         /1* 00000100 ........ ......00 000..... *1/ */
+        /*         /1* la.decode:583 *1/ */
+        /*         return LISA_CSRRD; */
+        /*     } */
+        /*     if ((insn & 0x000003e0) == 0x00000020) { */
+        /*         /1* 00000100 ........ ......00 001..... *1/ */
+        /*         /1* la.decode:584 *1/ */
+        /*         return LISA_CSRWR; */
+        /*     } */
+        /*     /1* la.decode:585 *1/ */
+        /*     return LISA_CSRXCHG; */
+        /* case 0x1: */
+        /*     /1* 00000101 ........ ........ ........ *1/ */
+        /*     if ((insn & 0x000003e0) == 0x00000000) { */
+        /*         /1* 00000101 ........ ......00 000..... *1/ */
+        /*         /1* la.decode:588 *1/ */
+        /*         return LISA_GCSRRD; */
+        /*     } */
+        /*     if ((insn & 0x000003e0) == 0x00000020) { */
+        /*         /1* 00000101 ........ ......00 001..... *1/ */
+        /*         /1* la.decode:589 *1/ */
+        /*         return LISA_GCSRWR; */
+        /*     } */
+        /*     /1* la.decode:590 *1/ */
+        /*     return LISA_GCSRXCHG; */
+        /* case 0x2: */
+        /*     /1* 00000110 ........ ........ ........ *1/ */
+        /*     switch ((insn >> 22) & 0x3) { */
+        /*     case 0x0: */
+        /*         /1* 00000110 00...... ........ ........ *1/ */
+        /*         /1* la.decode:592 *1/ */
+        /*         return LISA_CACHE; */
+        /*     case 0x1: */
+        /*         /1* 00000110 01...... ........ ........ *1/ */
+        /*         switch ((insn >> 18) & 0xf) { */
+        /*         case 0x0: */
+        /*             /1* 00000110 010000.. ........ ........ *1/ */
+        /*             /1* la.decode:593 *1/ */
+        /*             return LISA_LDDIR; */
+        /*         case 0x1: */
+        /*             /1* 00000110 010001.. ........ ........ *1/ */
+        /*             switch (insn & 0x0000001f) { */
+        /*             case 0x00000000: */
+        /*                 /1* 00000110 010001.. ........ ...00000 *1/ */
+        /*                 /1* la.decode:594 *1/ */
+        /*                 return LISA_LDPTE; */
+        /*             } */
+        /*             return LISA_INVALID; */
+        /*         case 0x2: */
+        /*             /1* 00000110 010010.. ........ ........ *1/ */
+        /*             switch ((insn >> 15) & 0x7) { */
+        /*             case 0x0: */
+        /*                 /1* 00000110 01001000 0....... ........ *1/ */
+        /*                 switch ((insn >> 10) & 0x1f) { */
+        /*                 case 0x0: */
+        /*                     /1* 00000110 01001000 000000.. ........ *1/ */
+        /*                     /1* la.decode:595 *1/ */
+        /*                     return LISA_IOCSRRD_B; */
+        /*                 case 0x1: */
+        /*                     /1* 00000110 01001000 000001.. ........ *1/ */
+        /*                     /1* la.decode:596 *1/ */
+        /*                     return LISA_IOCSRRD_H; */
+        /*                 case 0x2: */
+        /*                     /1* 00000110 01001000 000010.. ........ *1/ */
+        /*                     /1* la.decode:597 *1/ */
+        /*                     return LISA_IOCSRRD_W; */
+        /*                 case 0x3: */
+        /*                     /1* 00000110 01001000 000011.. ........ *1/ */
+        /*                     /1* la.decode:598 *1/ */
+        /*                     return LISA_IOCSRRD_D; */
+        /*                 case 0x4: */
+        /*                     /1* 00000110 01001000 000100.. ........ *1/ */
+        /*                     /1* la.decode:599 *1/ */
+        /*                     return LISA_IOCSRWR_B; */
+        /*                 case 0x5: */
+        /*                     /1* 00000110 01001000 000101.. ........ *1/ */
+        /*                     /1* la.decode:600 *1/ */
+        /*                     return LISA_IOCSRWR_H; */
+        /*                 case 0x6: */
+        /*                     /1* 00000110 01001000 000110.. ........ *1/ */
+        /*                     /1* la.decode:601 *1/ */
+        /*                     return LISA_IOCSRWR_W; */
+        /*                 case 0x7: */
+        /*                     /1* 00000110 01001000 000111.. ........ *1/ */
+        /*                     /1* la.decode:602 *1/ */
+        /*                     return LISA_IOCSRWR_D; */
+        /*                 case 0x8: */
+        /*                     /1* 00000110 01001000 001000.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00100000 00000000 *1/ */
+        /*                         /1* la.decode:603 *1/ */
+        /*                         return LISA_TLBINV; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00100000 00000001 *1/ */
+        /*                         /1* la.decode:604 *1/ */
+        /*                         return LISA_GTLBINV; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0x9: */
+        /*                     /1* 00000110 01001000 001001.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00100100 00000000 *1/ */
+        /*                         /1* la.decode:605 *1/ */
+        /*                         return LISA_TLBFLUSH; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00100100 00000001 *1/ */
+        /*                         /1* la.decode:606 *1/ */
+        /*                         return LISA_GTLBFLUSH; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xa: */
+        /*                     /1* 00000110 01001000 001010.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00101000 00000000 *1/ */
+        /*                         /1* la.decode:607 *1/ */
+        /*                         return LISA_TLBP; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00101000 00000001 *1/ */
+        /*                         /1* la.decode:608 *1/ */
+        /*                         return LISA_GTLBP; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xb: */
+        /*                     /1* 00000110 01001000 001011.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00101100 00000000 *1/ */
+        /*                         /1* la.decode:609 *1/ */
+        /*                         return LISA_TLBR; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00101100 00000001 *1/ */
+        /*                         /1* la.decode:610 *1/ */
+        /*                         return LISA_GTLBR; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xc: */
+        /*                     /1* 00000110 01001000 001100.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00110000 00000000 *1/ */
+        /*                         /1* la.decode:611 *1/ */
+        /*                         return LISA_TLBWI; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00110000 00000001 *1/ */
+        /*                         /1* la.decode:612 *1/ */
+        /*                         return LISA_GTLBWI; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xd: */
+        /*                     /1* 00000110 01001000 001101.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00110100 00000000 *1/ */
+        /*                         /1* la.decode:613 *1/ */
+        /*                         return LISA_TLBWR; */
+        /*                     case 0x00000001: */
+        /*                         /1* 00000110 01001000 00110100 00000001 *1/ */
+        /*                         /1* la.decode:614 *1/ */
+        /*                         return LISA_GTLBWR; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xe: */
+        /*                     /1* 00000110 01001000 001110.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00111000 00000000 *1/ */
+        /*                         /1* la.decode:615 *1/ */
+        /*                         return LISA_ERET; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 case 0xf: */
+        /*                     /1* 00000110 01001000 001111.. ........ *1/ */
+        /*                     switch (insn & 0x000003ff) { */
+        /*                     case 0x00000000: */
+        /*                         /1* 00000110 01001000 00111100 00000000 *1/ */
+        /*                         /1* la.decode:616 *1/ */
+        /*                         return LISA_DERET; */
+        /*                     } */
+        /*                     return LISA_INVALID; */
+        /*                 } */
+        /*                 return LISA_INVALID; */
+        /*             case 0x1: */
+        /*                 /1* 00000110 01001000 1....... ........ *1/ */
+        /*                 /1* la.decode:617 *1/ */
+        /*                 return LISA_WAIT; */
+        /*             } */
+        /*             return LISA_INVALID; */
+        /*         } */
+        /*         return LISA_INVALID; */
+        /*     } */
+        /*     return LISA_INVALID; */
+        /* } */
+        return LISA_INVALID;
+    case 0x2:
+        /* 000010.. ........ ........ ........ */
+        switch ((insn >> 20) & 0x3f) {
         case 0x1:
-            /* 00000101 ........ ........ ........ */
-            if ((insn & 0x000003e0) == 0x00000000) {
-                /* 00000101 ........ ......00 000..... */
-                /* la.decode:588 */
-                return LISA_GCSRRD;
-            }
-            if ((insn & 0x000003e0) == 0x00000020) {
-                /* 00000101 ........ ......00 001..... */
-                /* la.decode:589 */
-                return LISA_GCSRWR;
-            }
-            /* la.decode:590 */
-            return LISA_GCSRXCHG;
+            /* 00001000 0001.... ........ ........ */
+            /* ../target/loongarch/insns.decode:328 */
+            return LISA_FMADD_S;
         case 0x2:
-            /* 00000110 ........ ........ ........ */
-            switch ((insn >> 22) & 0x3) {
-            case 0x0:
-                /* 00000110 00...... ........ ........ */
-                /* la.decode:592 */
-                return LISA_CACHE;
-            case 0x1:
-                /* 00000110 01...... ........ ........ */
-                switch ((insn >> 18) & 0xf) {
-                case 0x0:
-                    /* 00000110 010000.. ........ ........ */
-                    /* la.decode:593 */
-                    return LISA_LDDIR;
-                case 0x1:
-                    /* 00000110 010001.. ........ ........ */
-                    switch (insn & 0x0000001f) {
-                    case 0x00000000:
-                        /* 00000110 010001.. ........ ...00000 */
-                        /* la.decode:594 */
-                        return LISA_LDPTE;
-                    }
-                    return LISA_INVALID;
-                case 0x2:
-                    /* 00000110 010010.. ........ ........ */
-                    switch ((insn >> 15) & 0x7) {
-                    case 0x0:
-                        /* 00000110 01001000 0....... ........ */
-                        switch ((insn >> 10) & 0x1f) {
-                        case 0x0:
-                            /* 00000110 01001000 000000.. ........ */
-                            /* la.decode:595 */
-                            return LISA_IOCSRRD_B;
-                        case 0x1:
-                            /* 00000110 01001000 000001.. ........ */
-                            /* la.decode:596 */
-                            return LISA_IOCSRRD_H;
-                        case 0x2:
-                            /* 00000110 01001000 000010.. ........ */
-                            /* la.decode:597 */
-                            return LISA_IOCSRRD_W;
-                        case 0x3:
-                            /* 00000110 01001000 000011.. ........ */
-                            /* la.decode:598 */
-                            return LISA_IOCSRRD_D;
-                        case 0x4:
-                            /* 00000110 01001000 000100.. ........ */
-                            /* la.decode:599 */
-                            return LISA_IOCSRWR_B;
-                        case 0x5:
-                            /* 00000110 01001000 000101.. ........ */
-                            /* la.decode:600 */
-                            return LISA_IOCSRWR_H;
-                        case 0x6:
-                            /* 00000110 01001000 000110.. ........ */
-                            /* la.decode:601 */
-                            return LISA_IOCSRWR_W;
-                        case 0x7:
-                            /* 00000110 01001000 000111.. ........ */
-                            /* la.decode:602 */
-                            return LISA_IOCSRWR_D;
-                        case 0x8:
-                            /* 00000110 01001000 001000.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00100000 00000000 */
-                                /* la.decode:603 */
-                                return LISA_TLBINV;
-                            case 0x00000001:
-                                /* 00000110 01001000 00100000 00000001 */
-                                /* la.decode:604 */
-                                return LISA_GTLBINV;
-                            }
-                            return LISA_INVALID;
-                        case 0x9:
-                            /* 00000110 01001000 001001.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00100100 00000000 */
-                                /* la.decode:605 */
-                                return LISA_TLBFLUSH;
-                            case 0x00000001:
-                                /* 00000110 01001000 00100100 00000001 */
-                                /* la.decode:606 */
-                                return LISA_GTLBFLUSH;
-                            }
-                            return LISA_INVALID;
-                        case 0xa:
-                            /* 00000110 01001000 001010.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00101000 00000000 */
-                                /* la.decode:607 */
-                                return LISA_TLBP;
-                            case 0x00000001:
-                                /* 00000110 01001000 00101000 00000001 */
-                                /* la.decode:608 */
-                                return LISA_GTLBP;
-                            }
-                            return LISA_INVALID;
-                        case 0xb:
-                            /* 00000110 01001000 001011.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00101100 00000000 */
-                                /* la.decode:609 */
-                                return LISA_TLBR;
-                            case 0x00000001:
-                                /* 00000110 01001000 00101100 00000001 */
-                                /* la.decode:610 */
-                                return LISA_GTLBR;
-                            }
-                            return LISA_INVALID;
-                        case 0xc:
-                            /* 00000110 01001000 001100.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00110000 00000000 */
-                                /* la.decode:611 */
-                                return LISA_TLBWI;
-                            case 0x00000001:
-                                /* 00000110 01001000 00110000 00000001 */
-                                /* la.decode:612 */
-                                return LISA_GTLBWI;
-                            }
-                            return LISA_INVALID;
-                        case 0xd:
-                            /* 00000110 01001000 001101.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00110100 00000000 */
-                                /* la.decode:613 */
-                                return LISA_TLBWR;
-                            case 0x00000001:
-                                /* 00000110 01001000 00110100 00000001 */
-                                /* la.decode:614 */
-                                return LISA_GTLBWR;
-                            }
-                            return LISA_INVALID;
-                        case 0xe:
-                            /* 00000110 01001000 001110.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00111000 00000000 */
-                                /* la.decode:615 */
-                                return LISA_ERET;
-                            }
-                            return LISA_INVALID;
-                        case 0xf:
-                            /* 00000110 01001000 001111.. ........ */
-                            switch (insn & 0x000003ff) {
-                            case 0x00000000:
-                                /* 00000110 01001000 00111100 00000000 */
-                                /* la.decode:616 */
-                                return LISA_DERET;
-                            }
-                            return LISA_INVALID;
-                        }
-                        return LISA_INVALID;
-                    case 0x1:
-                        /* 00000110 01001000 1....... ........ */
-                        /* la.decode:617 */
-                        return LISA_WAIT;
-                    }
-                    return LISA_INVALID;
-                }
-                return LISA_INVALID;
-            }
-            return LISA_INVALID;
+            /* 00001000 0010.... ........ ........ */
+            /* ../target/loongarch/insns.decode:329 */
+            return LISA_FMADD_D;
+        case 0x5:
+            /* 00001000 0101.... ........ ........ */
+            /* ../target/loongarch/insns.decode:330 */
+            return LISA_FMSUB_S;
+        case 0x6:
+            /* 00001000 0110.... ........ ........ */
+            /* ../target/loongarch/insns.decode:331 */
+            return LISA_FMSUB_D;
+        case 0x9:
+            /* 00001000 1001.... ........ ........ */
+            /* ../target/loongarch/insns.decode:332 */
+            return LISA_FNMADD_S;
+        case 0xa:
+            /* 00001000 1010.... ........ ........ */
+            /* ../target/loongarch/insns.decode:333 */
+            return LISA_FNMADD_D;
+        case 0xd:
+            /* 00001000 1101.... ........ ........ */
+            /* ../target/loongarch/insns.decode:334 */
+            return LISA_FNMSUB_S;
+        case 0xe:
+            /* 00001000 1110.... ........ ........ */
+            /* ../target/loongarch/insns.decode:335 */
+            return LISA_FNMSUB_D;
         }
         return LISA_INVALID;
     case 0x3:
         /* 000011.. ........ ........ ........ */
         switch (insn & 0x03f00018) {
-        case 0x00000000:
-            /* 00001100 0000.... ........ ...00... */
-            /* la.decode:618 */
-            return LISA_FCMP_COND_H;
+        /* case 0x00000000: */
+        /*     /1* 00001100 0000.... ........ ...00... *1/ */
+        /*     /1* la.decode:618 *1/ */
+        /*     return LISA_FCMP_COND_H; */
         case 0x00100000:
             /* 00001100 0001.... ........ ...00... */
-            switch ((insn >> 15) & 0x1f) {
-            case 0x0:
-                /* 00001100 00010000 0....... ...00... */
-                /* la.decode:641 */
-                return LISA_FCMP_CAF_S;
-            case 0x1:
-                /* 00001100 00010000 1....... ...00... */
-                /* la.decode:652 */
-                return LISA_FCMP_SAF_S;
-            case 0x2:
-                /* 00001100 00010001 0....... ...00... */
-                /* la.decode:645 */
-                return LISA_FCMP_CLT_S;
-            case 0x3:
-                /* 00001100 00010001 1....... ...00... */
-                /* la.decode:656 */
-                return LISA_FCMP_SLT_S;
-            case 0x4:
-                /* 00001100 00010010 0....... ...00... */
-                /* la.decode:643 */
-                return LISA_FCMP_CEQ_S;
-            case 0x5:
-                /* 00001100 00010010 1....... ...00... */
-                /* la.decode:654 */
-                return LISA_FCMP_SEQ_S;
-            case 0x6:
-                /* 00001100 00010011 0....... ...00... */
-                /* la.decode:647 */
-                return LISA_FCMP_CLE_S;
-            case 0x7:
-                /* 00001100 00010011 1....... ...00... */
-                /* la.decode:658 */
-                return LISA_FCMP_SLE_S;
-            case 0x8:
-                /* 00001100 00010100 0....... ...00... */
-                /* la.decode:642 */
-                return LISA_FCMP_CUN_S;
-            case 0x9:
-                /* 00001100 00010100 1....... ...00... */
-                /* la.decode:653 */
-                return LISA_FCMP_SUN_S;
-            case 0xa:
-                /* 00001100 00010101 0....... ...00... */
-                /* la.decode:646 */
-                return LISA_FCMP_CULT_S;
-            case 0xb:
-                /* 00001100 00010101 1....... ...00... */
-                /* la.decode:657 */
-                return LISA_FCMP_SULT_S;
-            case 0xc:
-                /* 00001100 00010110 0....... ...00... */
-                /* la.decode:644 */
-                return LISA_FCMP_CUEQ_S;
-            case 0xd:
-                /* 00001100 00010110 1....... ...00... */
-                /* la.decode:655 */
-                return LISA_FCMP_SUEQ_S;
-            case 0xe:
-                /* 00001100 00010111 0....... ...00... */
-                /* la.decode:648 */
-                return LISA_FCMP_CULE_S;
-            case 0xf:
-                /* 00001100 00010111 1....... ...00... */
-                /* la.decode:659 */
-                return LISA_FCMP_SULE_S;
-            case 0x10:
-                /* 00001100 00011000 0....... ...00... */
-                /* la.decode:649 */
-                return LISA_FCMP_CNE_S;
-            case 0x11:
-                /* 00001100 00011000 1....... ...00... */
-                /* la.decode:660 */
-                return LISA_FCMP_SNE_S;
-            case 0x14:
-                /* 00001100 00011010 0....... ...00... */
-                /* la.decode:650 */
-                return LISA_FCMP_COR_S;
-            case 0x15:
-                /* 00001100 00011010 1....... ...00... */
-                /* la.decode:661 */
-                return LISA_FCMP_SOR_S;
-            case 0x18:
-                /* 00001100 00011100 0....... ...00... */
-                /* la.decode:651 */
-                return LISA_FCMP_CUNE_S;
-            case 0x19:
-                /* 00001100 00011100 1....... ...00... */
-                /* la.decode:662 */
-                return LISA_FCMP_SUNE_S;
-            }
-            return LISA_INVALID;
+            /* switch ((insn >> 15) & 0x1f) { */
+            /* case 0x0: */
+            /*     /1* 00001100 00010000 0....... ...00... *1/ */
+            /*     /1* la.decode:641 *1/ */
+            /*     return LISA_FCMP_CAF_S; */
+            /* case 0x1: */
+            /*     /1* 00001100 00010000 1....... ...00... *1/ */
+            /*     /1* la.decode:652 *1/ */
+            /*     return LISA_FCMP_SAF_S; */
+            /* case 0x2: */
+            /*     /1* 00001100 00010001 0....... ...00... *1/ */
+            /*     /1* la.decode:645 *1/ */
+            /*     return LISA_FCMP_CLT_S; */
+            /* case 0x3: */
+            /*     /1* 00001100 00010001 1....... ...00... *1/ */
+            /*     /1* la.decode:656 *1/ */
+            /*     return LISA_FCMP_SLT_S; */
+            /* case 0x4: */
+            /*     /1* 00001100 00010010 0....... ...00... *1/ */
+            /*     /1* la.decode:643 *1/ */
+            /*     return LISA_FCMP_CEQ_S; */
+            /* case 0x5: */
+            /*     /1* 00001100 00010010 1....... ...00... *1/ */
+            /*     /1* la.decode:654 *1/ */
+            /*     return LISA_FCMP_SEQ_S; */
+            /* case 0x6: */
+            /*     /1* 00001100 00010011 0....... ...00... *1/ */
+            /*     /1* la.decode:647 *1/ */
+            /*     return LISA_FCMP_CLE_S; */
+            /* case 0x7: */
+            /*     /1* 00001100 00010011 1....... ...00... *1/ */
+            /*     /1* la.decode:658 *1/ */
+            /*     return LISA_FCMP_SLE_S; */
+            /* case 0x8: */
+            /*     /1* 00001100 00010100 0....... ...00... *1/ */
+            /*     /1* la.decode:642 *1/ */
+            /*     return LISA_FCMP_CUN_S; */
+            /* case 0x9: */
+            /*     /1* 00001100 00010100 1....... ...00... *1/ */
+            /*     /1* la.decode:653 *1/ */
+            /*     return LISA_FCMP_SUN_S; */
+            /* case 0xa: */
+            /*     /1* 00001100 00010101 0....... ...00... *1/ */
+            /*     /1* la.decode:646 *1/ */
+            /*     return LISA_FCMP_CULT_S; */
+            /* case 0xb: */
+            /*     /1* 00001100 00010101 1....... ...00... *1/ */
+            /*     /1* la.decode:657 *1/ */
+            /*     return LISA_FCMP_SULT_S; */
+            /* case 0xc: */
+            /*     /1* 00001100 00010110 0....... ...00... *1/ */
+            /*     /1* la.decode:644 *1/ */
+            /*     return LISA_FCMP_CUEQ_S; */
+            /* case 0xd: */
+            /*     /1* 00001100 00010110 1....... ...00... *1/ */
+            /*     /1* la.decode:655 *1/ */
+            /*     return LISA_FCMP_SUEQ_S; */
+            /* case 0xe: */
+            /*     /1* 00001100 00010111 0....... ...00... *1/ */
+            /*     /1* la.decode:648 *1/ */
+            /*     return LISA_FCMP_CULE_S; */
+            /* case 0xf: */
+            /*     /1* 00001100 00010111 1....... ...00... *1/ */
+            /*     /1* la.decode:659 *1/ */
+            /*     return LISA_FCMP_SULE_S; */
+            /* case 0x10: */
+            /*     /1* 00001100 00011000 0....... ...00... *1/ */
+            /*     /1* la.decode:649 *1/ */
+            /*     return LISA_FCMP_CNE_S; */
+            /* case 0x11: */
+            /*     /1* 00001100 00011000 1....... ...00... *1/ */
+            /*     /1* la.decode:660 *1/ */
+            /*     return LISA_FCMP_SNE_S; */
+            /* case 0x14: */
+            /*     /1* 00001100 00011010 0....... ...00... *1/ */
+            /*     /1* la.decode:650 *1/ */
+            /*     return LISA_FCMP_COR_S; */
+            /* case 0x15: */
+            /*     /1* 00001100 00011010 1....... ...00... *1/ */
+            /*     /1* la.decode:661 *1/ */
+            /*     return LISA_FCMP_SOR_S; */
+            /* case 0x18: */
+            /*     /1* 00001100 00011100 0....... ...00... *1/ */
+            /*     /1* la.decode:651 *1/ */
+            /*     return LISA_FCMP_CUNE_S; */
+            /* case 0x19: */
+            /*     /1* 00001100 00011100 1....... ...00... *1/ */
+            /*     /1* la.decode:662 *1/ */
+            /*     return LISA_FCMP_SUNE_S; */
+            /* } */
+            return LISA_FCMP_COND_S;
         case 0x00200000:
             /* 00001100 0010.... ........ ...00... */
-            switch ((insn >> 15) & 0x1f) {
-            case 0x0:
-                /* 00001100 00100000 0....... ...00... */
-                /* la.decode:619 */
-                return LISA_FCMP_CAF_D;
-            case 0x1:
-                /* 00001100 00100000 1....... ...00... */
-                /* la.decode:630 */
-                return LISA_FCMP_SAF_D;
-            case 0x2:
-                /* 00001100 00100001 0....... ...00... */
-                /* la.decode:623 */
-                return LISA_FCMP_CLT_D;
-            case 0x3:
-                /* 00001100 00100001 1....... ...00... */
-                /* la.decode:634 */
-                return LISA_FCMP_SLT_D;
-            case 0x4:
-                /* 00001100 00100010 0....... ...00... */
-                /* la.decode:621 */
-                return LISA_FCMP_CEQ_D;
-            case 0x5:
-                /* 00001100 00100010 1....... ...00... */
-                /* la.decode:632 */
-                return LISA_FCMP_SEQ_D;
-            case 0x6:
-                /* 00001100 00100011 0....... ...00... */
-                /* la.decode:625 */
-                return LISA_FCMP_CLE_D;
-            case 0x7:
-                /* 00001100 00100011 1....... ...00... */
-                /* la.decode:636 */
-                return LISA_FCMP_SLE_D;
-            case 0x8:
-                /* 00001100 00100100 0....... ...00... */
-                /* la.decode:620 */
-                return LISA_FCMP_CUN_D;
-            case 0x9:
-                /* 00001100 00100100 1....... ...00... */
-                /* la.decode:631 */
-                return LISA_FCMP_SUN_D;
-            case 0xa:
-                /* 00001100 00100101 0....... ...00... */
-                /* la.decode:624 */
-                return LISA_FCMP_CULT_D;
-            case 0xb:
-                /* 00001100 00100101 1....... ...00... */
-                /* la.decode:635 */
-                return LISA_FCMP_SULT_D;
-            case 0xc:
-                /* 00001100 00100110 0....... ...00... */
-                /* la.decode:622 */
-                return LISA_FCMP_CUEQ_D;
-            case 0xd:
-                /* 00001100 00100110 1....... ...00... */
-                /* la.decode:633 */
-                return LISA_FCMP_SUEQ_D;
-            case 0xe:
-                /* 00001100 00100111 0....... ...00... */
-                /* la.decode:626 */
-                return LISA_FCMP_CULE_D;
-            case 0xf:
-                /* 00001100 00100111 1....... ...00... */
-                /* la.decode:637 */
-                return LISA_FCMP_SULE_D;
-            case 0x10:
-                /* 00001100 00101000 0....... ...00... */
-                /* la.decode:627 */
-                return LISA_FCMP_CNE_D;
-            case 0x11:
-                /* 00001100 00101000 1....... ...00... */
-                /* la.decode:638 */
-                return LISA_FCMP_SNE_D;
-            case 0x14:
-                /* 00001100 00101010 0....... ...00... */
-                /* la.decode:628 */
-                return LISA_FCMP_COR_D;
-            case 0x15:
-                /* 00001100 00101010 1....... ...00... */
-                /* la.decode:639 */
-                return LISA_FCMP_SOR_D;
-            case 0x18:
-                /* 00001100 00101100 0....... ...00... */
-                /* la.decode:629 */
-                return LISA_FCMP_CUNE_D;
-            case 0x19:
-                /* 00001100 00101100 1....... ...00... */
-                /* la.decode:640 */
-                return LISA_FCMP_SUNE_D;
-            }
-            return LISA_INVALID;
+            /* switch ((insn >> 15) & 0x1f) { */
+            /* case 0x0: */
+            /*     /1* 00001100 00100000 0....... ...00... *1/ */
+            /*     /1* la.decode:619 *1/ */
+            /*     return LISA_FCMP_CAF_D; */
+            /* case 0x1: */
+            /*     /1* 00001100 00100000 1....... ...00... *1/ */
+            /*     /1* la.decode:630 *1/ */
+            /*     return LISA_FCMP_SAF_D; */
+            /* case 0x2: */
+            /*     /1* 00001100 00100001 0....... ...00... *1/ */
+            /*     /1* la.decode:623 *1/ */
+            /*     return LISA_FCMP_CLT_D; */
+            /* case 0x3: */
+            /*     /1* 00001100 00100001 1....... ...00... *1/ */
+            /*     /1* la.decode:634 *1/ */
+            /*     return LISA_FCMP_SLT_D; */
+            /* case 0x4: */
+            /*     /1* 00001100 00100010 0....... ...00... *1/ */
+            /*     /1* la.decode:621 *1/ */
+            /*     return LISA_FCMP_CEQ_D; */
+            /* case 0x5: */
+            /*     /1* 00001100 00100010 1....... ...00... *1/ */
+            /*     /1* la.decode:632 *1/ */
+            /*     return LISA_FCMP_SEQ_D; */
+            /* case 0x6: */
+            /*     /1* 00001100 00100011 0....... ...00... *1/ */
+            /*     /1* la.decode:625 *1/ */
+            /*     return LISA_FCMP_CLE_D; */
+            /* case 0x7: */
+            /*     /1* 00001100 00100011 1....... ...00... *1/ */
+            /*     /1* la.decode:636 *1/ */
+            /*     return LISA_FCMP_SLE_D; */
+            /* case 0x8: */
+            /*     /1* 00001100 00100100 0....... ...00... *1/ */
+            /*     /1* la.decode:620 *1/ */
+            /*     return LISA_FCMP_CUN_D; */
+            /* case 0x9: */
+            /*     /1* 00001100 00100100 1....... ...00... *1/ */
+            /*     /1* la.decode:631 *1/ */
+            /*     return LISA_FCMP_SUN_D; */
+            /* case 0xa: */
+            /*     /1* 00001100 00100101 0....... ...00... *1/ */
+            /*     /1* la.decode:624 *1/ */
+            /*     return LISA_FCMP_CULT_D; */
+            /* case 0xb: */
+            /*     /1* 00001100 00100101 1....... ...00... *1/ */
+            /*     /1* la.decode:635 *1/ */
+            /*     return LISA_FCMP_SULT_D; */
+            /* case 0xc: */
+            /*     /1* 00001100 00100110 0....... ...00... *1/ */
+            /*     /1* la.decode:622 *1/ */
+            /*     return LISA_FCMP_CUEQ_D; */
+            /* case 0xd: */
+            /*     /1* 00001100 00100110 1....... ...00... *1/ */
+            /*     /1* la.decode:633 *1/ */
+            /*     return LISA_FCMP_SUEQ_D; */
+            /* case 0xe: */
+            /*     /1* 00001100 00100111 0....... ...00... *1/ */
+            /*     /1* la.decode:626 *1/ */
+            /*     return LISA_FCMP_CULE_D; */
+            /* case 0xf: */
+            /*     /1* 00001100 00100111 1....... ...00... *1/ */
+            /*     /1* la.decode:637 *1/ */
+            /*     return LISA_FCMP_SULE_D; */
+            /* case 0x10: */
+            /*     /1* 00001100 00101000 0....... ...00... *1/ */
+            /*     /1* la.decode:627 *1/ */
+            /*     return LISA_FCMP_CNE_D; */
+            /* case 0x11: */
+            /*     /1* 00001100 00101000 1....... ...00... *1/ */
+            /*     /1* la.decode:638 *1/ */
+            /*     return LISA_FCMP_SNE_D; */
+            /* case 0x14: */
+            /*     /1* 00001100 00101010 0....... ...00... *1/ */
+            /*     /1* la.decode:628 *1/ */
+            /*     return LISA_FCMP_COR_D; */
+            /* case 0x15: */
+            /*     /1* 00001100 00101010 1....... ...00... *1/ */
+            /*     /1* la.decode:639 *1/ */
+            /*     return LISA_FCMP_SOR_D; */
+            /* case 0x18: */
+            /*     /1* 00001100 00101100 0....... ...00... *1/ */
+            /*     /1* la.decode:629 *1/ */
+            /*     return LISA_FCMP_CUNE_D; */
+            /* case 0x19: */
+            /*     /1* 00001100 00101100 1....... ...00... *1/ */
+            /*     /1* la.decode:640 *1/ */
+            /*     return LISA_FCMP_SUNE_D; */
+            /* } */
+            return LISA_FCMP_COND_D;
         }
         return LISA_INVALID;
     case 0x4:
@@ -4113,10 +4149,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00001111 0....... ........ */
                 /* la.decode:850 */
                 return LISA_VADDW_D_D_W;
-            case 0x7:
-                /* 01110000 00001111 1....... ........ */
-                /* la.decode:851 */
-                return LISA_VADDW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110000 00001111 1....... ........ *1/ */
+            /*     /1* la.decode:851 *1/ */
+            /*     return LISA_VADDW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x4:
@@ -4134,10 +4170,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00010001 0....... ........ */
                 /* la.decode:854 */
                 return LISA_VADDW_D_D_WU;
-            case 0x3:
-                /* 01110000 00010001 1....... ........ */
-                /* la.decode:855 */
-                return LISA_VADDW_Q_Q_DU;
+            /* case 0x3: */
+            /*     /1* 01110000 00010001 1....... ........ *1/ */
+            /*     /1* la.decode:855 *1/ */
+            /*     return LISA_VADDW_Q_Q_DU; */
             case 0x4:
                 /* 01110000 00010010 0....... ........ */
                 /* la.decode:856 */
@@ -4150,10 +4186,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00010011 0....... ........ */
                 /* la.decode:858 */
                 return LISA_VSUBW_D_D_W;
-            case 0x7:
-                /* 01110000 00010011 1....... ........ */
-                /* la.decode:859 */
-                return LISA_VSUBW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110000 00010011 1....... ........ *1/ */
+            /*     /1* la.decode:859 *1/ */
+            /*     return LISA_VSUBW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x5:
@@ -4171,10 +4207,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00010101 0....... ........ */
                 /* la.decode:862 */
                 return LISA_VSUBW_D_D_WU;
-            case 0x3:
-                /* 01110000 00010101 1....... ........ */
-                /* la.decode:863 */
-                return LISA_VSUBW_Q_Q_DU;
+            /* case 0x3: */
+            /*     /1* 01110000 00010101 1....... ........ *1/ */
+            /*     /1* la.decode:863 *1/ */
+            /*     return LISA_VSUBW_Q_Q_DU; */
             case 0x4:
                 /* 01110000 00010110 0....... ........ */
                 /* la.decode:864 */
@@ -4187,10 +4223,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00010111 0....... ........ */
                 /* la.decode:866 */
                 return LISA_VSADDW_D_D_W;
-            case 0x7:
-                /* 01110000 00010111 1....... ........ */
-                /* la.decode:867 */
-                return LISA_VSADDW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110000 00010111 1....... ........ *1/ */
+            /*     /1* la.decode:867 *1/ */
+            /*     return LISA_VSADDW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x6:
@@ -4208,10 +4244,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00011001 0....... ........ */
                 /* la.decode:870 */
                 return LISA_VSADDW_DU_DU_WU;
-            case 0x3:
-                /* 01110000 00011001 1....... ........ */
-                /* la.decode:871 */
-                return LISA_VSADDW_QU_QU_DU;
+            /* case 0x3: */
+            /*     /1* 01110000 00011001 1....... ........ *1/ */
+            /*     /1* la.decode:871 *1/ */
+            /*     return LISA_VSADDW_QU_QU_DU; */
             case 0x4:
                 /* 01110000 00011010 0....... ........ */
                 /* la.decode:872 */
@@ -4224,10 +4260,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00011011 0....... ........ */
                 /* la.decode:874 */
                 return LISA_VSSUBW_D_D_W;
-            case 0x7:
-                /* 01110000 00011011 1....... ........ */
-                /* la.decode:875 */
-                return LISA_VSSUBW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110000 00011011 1....... ........ *1/ */
+            /*     /1* la.decode:875 *1/ */
+            /*     return LISA_VSSUBW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x7:
@@ -4245,10 +4281,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110000 00011101 0....... ........ */
                 /* la.decode:878 */
                 return LISA_VSSUBW_DU_DU_WU;
-            case 0x3:
-                /* 01110000 00011101 1....... ........ */
-                /* la.decode:879 */
-                return LISA_VSSUBW_QU_QU_DU;
+            /* case 0x3: */
+            /*     /1* 01110000 00011101 1....... ........ *1/ */
+            /*     /1* la.decode:879 *1/ */
+            /*     return LISA_VSSUBW_QU_QU_DU; */
             case 0x4:
                 /* 01110000 00011110 0....... ........ */
                 /* la.decode:880 */
@@ -6690,10 +6726,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0x4c:
             /* 01110001 001100.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 00110000 0....... ........ */
-                /* la.decode:1404 */
-                return LISA_VFADD_H;
+            /* case 0x0: */
+            /*     /1* 01110001 00110000 0....... ........ *1/ */
+            /*     /1* la.decode:1404 *1/ */
+            /*     return LISA_VFADD_H; */
             case 0x1:
                 /* 01110001 00110000 1....... ........ */
                 /* la.decode:1405 */
@@ -6702,14 +6738,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00110001 0....... ........ */
                 /* la.decode:1406 */
                 return LISA_VFADD_D;
-            case 0x3:
-                /* 01110001 00110001 1....... ........ */
-                /* la.decode:1407 */
-                return LISA_VFADD_Q;
-            case 0x4:
-                /* 01110001 00110010 0....... ........ */
-                /* la.decode:1408 */
-                return LISA_VFSUB_H;
+            /* case 0x3: */
+            /*     /1* 01110001 00110001 1....... ........ *1/ */
+            /*     /1* la.decode:1407 *1/ */
+            /*     return LISA_VFADD_Q; */
+            /* case 0x4: */
+            /*     /1* 01110001 00110010 0....... ........ *1/ */
+            /*     /1* la.decode:1408 *1/ */
+            /*     return LISA_VFSUB_H; */
             case 0x5:
                 /* 01110001 00110010 1....... ........ */
                 /* la.decode:1409 */
@@ -6718,19 +6754,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00110011 0....... ........ */
                 /* la.decode:1410 */
                 return LISA_VFSUB_D;
-            case 0x7:
-                /* 01110001 00110011 1....... ........ */
-                /* la.decode:1411 */
-                return LISA_VFSUB_Q;
+            /* case 0x7: */
+            /*     /1* 01110001 00110011 1....... ........ *1/ */
+            /*     /1* la.decode:1411 *1/ */
+            /*     return LISA_VFSUB_Q; */
             }
             return LISA_INVALID;
         case 0x4d:
             /* 01110001 001101.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 00110100 0....... ........ */
-                /* la.decode:1412 */
-                return LISA_VFADDSUB_H;
+            /* case 0x0: */
+            /*     /1* 01110001 00110100 0....... ........ *1/ */
+            /*     /1* la.decode:1412 *1/ */
+            /*     return LISA_VFADDSUB_H; */
             case 0x1:
                 /* 01110001 00110100 1....... ........ */
                 /* la.decode:1413 */
@@ -6739,14 +6775,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00110101 0....... ........ */
                 /* la.decode:1414 */
                 return LISA_VFADDSUB_D;
-            case 0x3:
-                /* 01110001 00110101 1....... ........ */
-                /* la.decode:1415 */
-                return LISA_VFADDSUB_Q;
-            case 0x4:
-                /* 01110001 00110110 0....... ........ */
-                /* la.decode:1416 */
-                return LISA_VFSUBADD_H;
+            /* case 0x3: */
+            /*     /1* 01110001 00110101 1....... ........ *1/ */
+            /*     /1* la.decode:1415 *1/ */
+            /*     return LISA_VFADDSUB_Q; */
+            /* case 0x4: */
+            /*     /1* 01110001 00110110 0....... ........ *1/ */
+            /*     /1* la.decode:1416 *1/ */
+            /*     return LISA_VFSUBADD_H; */
             case 0x5:
                 /* 01110001 00110110 1....... ........ */
                 /* la.decode:1417 */
@@ -6755,19 +6791,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00110111 0....... ........ */
                 /* la.decode:1418 */
                 return LISA_VFSUBADD_D;
-            case 0x7:
-                /* 01110001 00110111 1....... ........ */
-                /* la.decode:1419 */
-                return LISA_VFSUBADD_Q;
+            /* case 0x7: */
+            /*     /1* 01110001 00110111 1....... ........ *1/ */
+            /*     /1* la.decode:1419 *1/ */
+            /*     return LISA_VFSUBADD_Q; */
             }
             return LISA_INVALID;
         case 0x4e:
             /* 01110001 001110.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 00111000 0....... ........ */
-                /* la.decode:1420 */
-                return LISA_VFMUL_H;
+            /* case 0x0: */
+            /*     /1* 01110001 00111000 0....... ........ *1/ */
+            /*     /1* la.decode:1420 *1/ */
+            /*     return LISA_VFMUL_H; */
             case 0x1:
                 /* 01110001 00111000 1....... ........ */
                 /* la.decode:1421 */
@@ -6776,15 +6812,15 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00111001 0....... ........ */
                 /* la.decode:1422 */
                 return LISA_VFMUL_D;
-            case 0x3:
-                /* 01110001 00111001 1....... ........ */
-                /* la.decode:1423 */
-                return LISA_VFMUL_Q;
-            case 0x4:
-                /* 01110001 00111010 0....... ........ */
-                /* la.decode:1424 */
-                return LISA_VFDIV_H;
-            case 0x5:
+            /* case 0x3: */
+            /*     /1* 01110001 00111001 1....... ........ *1/ */
+            /*     /1* la.decode:1423 *1/ */
+            /*     return LISA_VFMUL_Q; */
+            /* case 0x4: */
+            /*     /1* 01110001 00111010 0....... ........ *1/ */
+            /*     /1* la.decode:1424 *1/ */
+            /*     return LISA_VFDIV_H; */
+            /* case 0x5: */
                 /* 01110001 00111010 1....... ........ */
                 /* la.decode:1425 */
                 return LISA_VFDIV_S;
@@ -6792,19 +6828,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00111011 0....... ........ */
                 /* la.decode:1426 */
                 return LISA_VFDIV_D;
-            case 0x7:
-                /* 01110001 00111011 1....... ........ */
-                /* la.decode:1427 */
-                return LISA_VFDIV_Q;
+            /* case 0x7: */
+            /*     /1* 01110001 00111011 1....... ........ *1/ */
+            /*     /1* la.decode:1427 *1/ */
+            /*     return LISA_VFDIV_Q; */
             }
             return LISA_INVALID;
         case 0x4f:
             /* 01110001 001111.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 00111100 0....... ........ */
-                /* la.decode:1428 */
-                return LISA_VFMAX_H;
+            /* case 0x0: */
+            /*     /1* 01110001 00111100 0....... ........ *1/ */
+            /*     /1* la.decode:1428 *1/ */
+            /*     return LISA_VFMAX_H; */
             case 0x1:
                 /* 01110001 00111100 1....... ........ */
                 /* la.decode:1429 */
@@ -6813,14 +6849,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00111101 0....... ........ */
                 /* la.decode:1430 */
                 return LISA_VFMAX_D;
-            case 0x3:
-                /* 01110001 00111101 1....... ........ */
-                /* la.decode:1431 */
-                return LISA_VFMAX_Q;
-            case 0x4:
-                /* 01110001 00111110 0....... ........ */
-                /* la.decode:1432 */
-                return LISA_VFMIN_H;
+            /* case 0x3: */
+            /*     /1* 01110001 00111101 1....... ........ *1/ */
+            /*     /1* la.decode:1431 *1/ */
+            /*     return LISA_VFMAX_Q; */
+            /* case 0x4: */
+            /*     /1* 01110001 00111110 0....... ........ *1/ */
+            /*     /1* la.decode:1432 *1/ */
+            /*     return LISA_VFMIN_H; */
             case 0x5:
                 /* 01110001 00111110 1....... ........ */
                 /* la.decode:1433 */
@@ -6829,19 +6865,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 00111111 0....... ........ */
                 /* la.decode:1434 */
                 return LISA_VFMIN_D;
-            case 0x7:
-                /* 01110001 00111111 1....... ........ */
-                /* la.decode:1435 */
-                return LISA_VFMIN_Q;
+            /* case 0x7: */
+            /*     /1* 01110001 00111111 1....... ........ *1/ */
+            /*     /1* la.decode:1435 *1/ */
+            /*     return LISA_VFMIN_Q; */
             }
             return LISA_INVALID;
         case 0x50:
             /* 01110001 010000.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 01000000 0....... ........ */
-                /* la.decode:1436 */
-                return LISA_VFMAXA_H;
+            /* case 0x0: */
+            /*     /1* 01110001 01000000 0....... ........ *1/ */
+            /*     /1* la.decode:1436 *1/ */
+            /*     return LISA_VFMAXA_H; */
             case 0x1:
                 /* 01110001 01000000 1....... ........ */
                 /* la.decode:1437 */
@@ -6850,14 +6886,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 01000001 0....... ........ */
                 /* la.decode:1438 */
                 return LISA_VFMAXA_D;
-            case 0x3:
-                /* 01110001 01000001 1....... ........ */
-                /* la.decode:1439 */
-                return LISA_VFMAXA_Q;
-            case 0x4:
-                /* 01110001 01000010 0....... ........ */
-                /* la.decode:1440 */
-                return LISA_VFMINA_H;
+            /* case 0x3: */
+            /*     /1* 01110001 01000001 1....... ........ *1/ */
+            /*     /1* la.decode:1439 *1/ */
+            /*     return LISA_VFMAXA_Q; */
+            /* case 0x4: */
+            /*     /1* 01110001 01000010 0....... ........ *1/ */
+            /*     /1* la.decode:1440 *1/ */
+            /*     return LISA_VFMINA_H; */
             case 0x5:
                 /* 01110001 01000010 1....... ........ */
                 /* la.decode:1441 */
@@ -6866,19 +6902,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 01000011 0....... ........ */
                 /* la.decode:1442 */
                 return LISA_VFMINA_D;
-            case 0x7:
-                /* 01110001 01000011 1....... ........ */
-                /* la.decode:1443 */
-                return LISA_VFMINA_Q;
+            /* case 0x7: */
+            /*     /1* 01110001 01000011 1....... ........ *1/ */
+            /*     /1* la.decode:1443 *1/ */
+            /*     return LISA_VFMINA_Q; */
             }
             return LISA_INVALID;
         case 0x51:
             /* 01110001 010001.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 01000100 0....... ........ */
-                /* la.decode:1444 */
-                return LISA_VFSCALEB_H;
+            /* case 0x0: */
+            /*     /1* 01110001 01000100 0....... ........ *1/ */
+            /*     /1* la.decode:1444 *1/ */
+            /*     return LISA_VFSCALEB_H; */
             case 0x1:
                 /* 01110001 01000100 1....... ........ */
                 /* la.decode:1445 */
@@ -6887,10 +6923,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 01000101 0....... ........ */
                 /* la.decode:1446 */
                 return LISA_VFSCALEB_D;
-            case 0x3:
-                /* 01110001 01000101 1....... ........ */
-                /* la.decode:1447 */
-                return LISA_VFSCALEB_Q;
+            /* case 0x3: */
+            /*     /1* 01110001 01000101 1....... ........ *1/ */
+            /*     /1* la.decode:1447 *1/ */
+            /*     return LISA_VFSCALEB_Q; */
             case 0x4:
                 /* 01110001 01000110 0....... ........ */
                 /* la.decode:1448 */
@@ -6899,14 +6935,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 01000110 1....... ........ */
                 /* la.decode:1449 */
                 return LISA_VFCVT_S_D;
-            case 0x6:
-                /* 01110001 01000111 0....... ........ */
-                /* la.decode:1450 */
-                return LISA_VFCVT_D_Q;
-            case 0x7:
-                /* 01110001 01000111 1....... ........ */
-                /* la.decode:1451 */
-                return LISA_VFFINT_H_W;
+            /* case 0x6: */
+            /*     /1* 01110001 01000111 0....... ........ *1/ */
+            /*     /1* la.decode:1450 *1/ */
+            /*     return LISA_VFCVT_D_Q; */
+            /* case 0x7: */
+            /*     /1* 01110001 01000111 1....... ........ *1/ */
+            /*     /1* la.decode:1451 *1/ */
+            /*     return LISA_VFFINT_H_W; */
             }
             return LISA_INVALID;
         case 0x52:
@@ -6916,14 +6952,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110001 01001000 0....... ........ */
                 /* la.decode:1452 */
                 return LISA_VFFINT_S_L;
-            case 0x1:
-                /* 01110001 01001000 1....... ........ */
-                /* la.decode:1453 */
-                return LISA_VFFINT_H_WU;
-            case 0x2:
-                /* 01110001 01001001 0....... ........ */
-                /* la.decode:1454 */
-                return LISA_VFFINT_S_LU;
+            /* case 0x1: */
+            /*     /1* 01110001 01001000 1....... ........ *1/ */
+            /*     /1* la.decode:1453 *1/ */
+            /*     return LISA_VFFINT_H_WU; */
+            /* case 0x2: */
+            /*     /1* 01110001 01001001 0....... ........ *1/ */
+            /*     /1* la.decode:1454 *1/ */
+            /*     return LISA_VFFINT_S_LU; */
             case 0x3:
                 /* 01110001 01001001 1....... ........ */
                 /* la.decode:1455 */
@@ -6946,43 +6982,43 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 return LISA_VFTINTRNE_W_D;
             }
             return LISA_INVALID;
-        case 0x53:
-            /* 01110001 010011.. ........ ........ */
-            switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110001 01001100 0....... ........ */
-                /* la.decode:1460 */
-                return LISA_VFTINT_WU_D;
-            case 0x1:
-                /* 01110001 01001100 1....... ........ */
-                /* la.decode:1461 */
-                return LISA_VFTINTRM_WU_D;
-            case 0x2:
-                /* 01110001 01001101 0....... ........ */
-                /* la.decode:1462 */
-                return LISA_VFTINTRP_WU_D;
-            case 0x3:
-                /* 01110001 01001101 1....... ........ */
-                /* la.decode:1463 */
-                return LISA_VFTINTRZ_WU_D;
-            case 0x4:
-                /* 01110001 01001110 0....... ........ */
-                /* la.decode:1464 */
-                return LISA_VFTINTRNE_WU_D;
-            case 0x5:
-                /* 01110001 01001110 1....... ........ */
-                /* la.decode:1465 */
-                return LISA_VHADD4_H_BU;
-            case 0x6:
-                /* 01110001 01001111 0....... ........ */
-                /* la.decode:1466 */
-                return LISA_VSHUF4_W;
-            case 0x7:
-                /* 01110001 01001111 1....... ........ */
-                /* la.decode:1467 */
-                return LISA_VSHUF2_D;
-            }
-            return LISA_INVALID;
+        /* case 0x53: */
+        /*     /1* 01110001 010011.. ........ ........ *1/ */
+        /*     switch ((insn >> 15) & 0x7) { */
+        /*     case 0x0: */
+        /*         /1* 01110001 01001100 0....... ........ *1/ */
+        /*         /1* la.decode:1460 *1/ */
+        /*         return LISA_VFTINT_WU_D; */
+        /*     case 0x1: */
+        /*         /1* 01110001 01001100 1....... ........ *1/ */
+        /*         /1* la.decode:1461 *1/ */
+        /*         return LISA_VFTINTRM_WU_D; */
+        /*     case 0x2: */
+        /*         /1* 01110001 01001101 0....... ........ *1/ */
+        /*         /1* la.decode:1462 *1/ */
+        /*         return LISA_VFTINTRP_WU_D; */
+        /*     case 0x3: */
+        /*         /1* 01110001 01001101 1....... ........ *1/ */
+        /*         /1* la.decode:1463 *1/ */
+        /*         return LISA_VFTINTRZ_WU_D; */
+        /*     case 0x4: */
+        /*         /1* 01110001 01001110 0....... ........ *1/ */
+        /*         /1* la.decode:1464 *1/ */
+        /*         return LISA_VFTINTRNE_WU_D; */
+        /*     case 0x5: */
+        /*         /1* 01110001 01001110 1....... ........ *1/ */
+        /*         /1* la.decode:1465 *1/ */
+        /*         return LISA_VHADD4_H_BU; */
+        /*     case 0x6: */
+        /*         /1* 01110001 01001111 0....... ........ *1/ */
+        /*         /1* la.decode:1466 *1/ */
+        /*         return LISA_VSHUF4_W; */
+        /*     case 0x7: */
+        /*         /1* 01110001 01001111 1....... ........ *1/ */
+        /*         /1* la.decode:1467 *1/ */
+        /*         return LISA_VSHUF2_D; */
+        /*     } */
+        /*     return LISA_INVALID; */
         case 0x54:
             /* 01110001 010100.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
@@ -7673,66 +7709,66 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011100 010100.. ........ */
                 /* la.decode:1610 */
                 return LISA_VMSKGEZ_B;
-            case 0x15:
-                /* 01110010 10011100 010101.. ........ */
-                /* la.decode:1611 */
-                return LISA_VMSKGEZ_H;
-            case 0x16:
-                /* 01110010 10011100 010110.. ........ */
-                /* la.decode:1612 */
-                return LISA_VMSKGEZ_W;
-            case 0x17:
-                /* 01110010 10011100 010111.. ........ */
-                /* la.decode:1613 */
-                return LISA_VMSKGEZ_D;
+            /* case 0x15: */
+            /*     /1* 01110010 10011100 010101.. ........ *1/ */
+            /*     /1* la.decode:1611 *1/ */
+            /*     return LISA_VMSKGEZ_H; */
+            /* case 0x16: */
+            /*     /1* 01110010 10011100 010110.. ........ *1/ */
+            /*     /1* la.decode:1612 *1/ */
+            /*     return LISA_VMSKGEZ_W; */
+            /* case 0x17: */
+            /*     /1* 01110010 10011100 010111.. ........ *1/ */
+            /*     /1* la.decode:1613 *1/ */
+            /*     return LISA_VMSKGEZ_D; */
             case 0x18:
                 /* 01110010 10011100 011000.. ........ */
                 /* la.decode:1614 */
                 return LISA_VMSKNZ_B;
-            case 0x19:
-                /* 01110010 10011100 011001.. ........ */
-                /* la.decode:1615 */
-                return LISA_VMSKNZ_H;
-            case 0x1a:
-                /* 01110010 10011100 011010.. ........ */
-                /* la.decode:1616 */
-                return LISA_VMSKNZ_W;
-            case 0x1b:
-                /* 01110010 10011100 011011.. ........ */
-                /* la.decode:1617 */
-                return LISA_VMSKNZ_D;
+            /* case 0x19: */
+            /*     /1* 01110010 10011100 011001.. ........ *1/ */
+            /*     /1* la.decode:1615 *1/ */
+            /*     return LISA_VMSKNZ_H; */
+            /* case 0x1a: */
+            /*     /1* 01110010 10011100 011010.. ........ *1/ */
+            /*     /1* la.decode:1616 *1/ */
+            /*     return LISA_VMSKNZ_W; */
+            /* case 0x1b: */
+            /*     /1* 01110010 10011100 011011.. ........ *1/ */
+            /*     /1* la.decode:1617 *1/ */
+            /*     return LISA_VMSKNZ_D; */
             case 0x1c:
                 /* 01110010 10011100 011100.. ........ */
                 /* la.decode:1618 */
                 return LISA_VMSKCOPY_B;
-            case 0x1d:
-                /* 01110010 10011100 011101.. ........ */
-                /* la.decode:1619 */
-                return LISA_VMSKCOPY_H;
-            case 0x1e:
-                /* 01110010 10011100 011110.. ........ */
-                /* la.decode:1620 */
-                return LISA_VMSKCOPY_W;
-            case 0x1f:
-                /* 01110010 10011100 011111.. ........ */
-                /* la.decode:1621 */
-                return LISA_VMSKCOPY_D;
+            /* case 0x1d: */
+            /*     /1* 01110010 10011100 011101.. ........ *1/ */
+            /*     /1* la.decode:1619 *1/ */
+            /*     return LISA_VMSKCOPY_H; */
+            /* case 0x1e: */
+            /*     /1* 01110010 10011100 011110.. ........ *1/ */
+            /*     /1* la.decode:1620 *1/ */
+            /*     return LISA_VMSKCOPY_W; */
+            /* case 0x1f: */
+            /*     /1* 01110010 10011100 011111.. ........ *1/ */
+            /*     /1* la.decode:1621 *1/ */
+            /*     return LISA_VMSKCOPY_D; */
             case 0x20:
                 /* 01110010 10011100 100000.. ........ */
                 /* la.decode:1622 */
                 return LISA_VMSKFILL_B;
-            case 0x21:
-                /* 01110010 10011100 100001.. ........ */
-                /* la.decode:1623 */
-                return LISA_VMSKFILL_H;
-            case 0x22:
-                /* 01110010 10011100 100010.. ........ */
-                /* la.decode:1624 */
-                return LISA_VMSKFILL_W;
-            case 0x23:
-                /* 01110010 10011100 100011.. ........ */
-                /* la.decode:1625 */
-                return LISA_VMSKFILL_D;
+            /* case 0x21: */
+            /*     /1* 01110010 10011100 100001.. ........ *1/ */
+            /*     /1* la.decode:1623 *1/ */
+            /*     return LISA_VMSKFILL_H; */
+            /* case 0x22: */
+            /*     /1* 01110010 10011100 100010.. ........ *1/ */
+            /*     /1* la.decode:1624 *1/ */
+            /*     return LISA_VMSKFILL_W; */
+            /* case 0x23: */
+            /*     /1* 01110010 10011100 100011.. ........ *1/ */
+            /*     /1* la.decode:1625 *1/ */
+            /*     return LISA_VMSKFILL_D; */
             case 0x24:
                 /* 01110010 10011100 100100.. ........ */
                 /* la.decode:1626 */
@@ -7831,10 +7867,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     return LISA_VSETALLNEZ_D;
                 }
                 return LISA_INVALID;
-            case 0x30:
-                /* 01110010 10011100 110000.. ........ */
-                /* la.decode:1638 */
-                return LISA_VFLOGB_H;
+            /* case 0x30: */
+            /*     /1* 01110010 10011100 110000.. ........ *1/ */
+            /*     /1* la.decode:1638 *1/ */
+            /*     return LISA_VFLOGB_H; */
             case 0x31:
                 /* 01110010 10011100 110001.. ........ */
                 /* la.decode:1639 */
@@ -7843,14 +7879,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011100 110010.. ........ */
                 /* la.decode:1640 */
                 return LISA_VFLOGB_D;
-            case 0x33:
-                /* 01110010 10011100 110011.. ........ */
-                /* la.decode:1641 */
-                return LISA_VFLOGB_Q;
-            case 0x34:
-                /* 01110010 10011100 110100.. ........ */
-                /* la.decode:1642 */
-                return LISA_VFCLASS_H;
+            /* case 0x33: */
+            /*     /1* 01110010 10011100 110011.. ........ *1/ */
+            /*     /1* la.decode:1641 *1/ */
+            /*     return LISA_VFLOGB_Q; */
+            /* case 0x34: */
+            /*     /1* 01110010 10011100 110100.. ........ *1/ */
+            /*     /1* la.decode:1642 *1/ */
+            /*     return LISA_VFCLASS_H; */
             case 0x35:
                 /* 01110010 10011100 110101.. ........ */
                 /* la.decode:1643 */
@@ -7859,14 +7895,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011100 110110.. ........ */
                 /* la.decode:1644 */
                 return LISA_VFCLASS_D;
-            case 0x37:
-                /* 01110010 10011100 110111.. ........ */
-                /* la.decode:1645 */
-                return LISA_VFCLASS_Q;
-            case 0x38:
-                /* 01110010 10011100 111000.. ........ */
-                /* la.decode:1646 */
-                return LISA_VFSQRT_H;
+            /* case 0x37: */
+            /*     /1* 01110010 10011100 110111.. ........ *1/ */
+            /*     /1* la.decode:1645 *1/ */
+            /*     return LISA_VFCLASS_Q; */
+            /* case 0x38: */
+            /*     /1* 01110010 10011100 111000.. ........ *1/ */
+            /*     /1* la.decode:1646 *1/ */
+            /*     return LISA_VFSQRT_H; */
             case 0x39:
                 /* 01110010 10011100 111001.. ........ */
                 /* la.decode:1647 */
@@ -7875,14 +7911,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011100 111010.. ........ */
                 /* la.decode:1648 */
                 return LISA_VFSQRT_D;
-            case 0x3b:
-                /* 01110010 10011100 111011.. ........ */
-                /* la.decode:1649 */
-                return LISA_VFSQRT_Q;
-            case 0x3c:
-                /* 01110010 10011100 111100.. ........ */
-                /* la.decode:1650 */
-                return LISA_VFRECIP_H;
+            /* case 0x3b: */
+            /*     /1* 01110010 10011100 111011.. ........ *1/ */
+            /*     /1* la.decode:1649 *1/ */
+            /*     return LISA_VFSQRT_Q; */
+            /* case 0x3c: */
+            /*     /1* 01110010 10011100 111100.. ........ *1/ */
+            /*     /1* la.decode:1650 *1/ */
+            /*     return LISA_VFRECIP_H; */
             case 0x3d:
                 /* 01110010 10011100 111101.. ........ */
                 /* la.decode:1651 */
@@ -7891,14 +7927,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011100 111110.. ........ */
                 /* la.decode:1652 */
                 return LISA_VFRECIP_D;
-            case 0x3f:
-                /* 01110010 10011100 111111.. ........ */
-                /* la.decode:1653 */
-                return LISA_VFRECIP_Q;
-            case 0x40:
-                /* 01110010 10011101 000000.. ........ */
-                /* la.decode:1654 */
-                return LISA_VFRSQRT_H;
+            /* case 0x3f: */
+            /*     /1* 01110010 10011100 111111.. ........ *1/ */
+            /*     /1* la.decode:1653 *1/ */
+            /*     return LISA_VFRECIP_Q; */
+            /* case 0x40: */
+            /*     /1* 01110010 10011101 000000.. ........ *1/ */
+            /*     /1* la.decode:1654 *1/ */
+            /*     return LISA_VFRSQRT_H; */
             case 0x41:
                 /* 01110010 10011101 000001.. ........ */
                 /* la.decode:1655 */
@@ -7907,46 +7943,46 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 000010.. ........ */
                 /* la.decode:1656 */
                 return LISA_VFRSQRT_D;
-            case 0x43:
-                /* 01110010 10011101 000011.. ........ */
-                /* la.decode:1657 */
-                return LISA_VFRSQRT_Q;
-            case 0x44:
-                /* 01110010 10011101 000100.. ........ */
-                /* la.decode:1658 */
-                return LISA_VFRECIPE_H;
-            case 0x45:
-                /* 01110010 10011101 000101.. ........ */
-                /* la.decode:1659 */
-                return LISA_VFRECIPE_S;
-            case 0x46:
-                /* 01110010 10011101 000110.. ........ */
-                /* la.decode:1660 */
-                return LISA_VFRECIPE_D;
-            case 0x47:
-                /* 01110010 10011101 000111.. ........ */
-                /* la.decode:1661 */
-                return LISA_VFRECIPE_Q;
-            case 0x48:
-                /* 01110010 10011101 001000.. ........ */
-                /* la.decode:1662 */
-                return LISA_VFRSQRTE_H;
-            case 0x49:
-                /* 01110010 10011101 001001.. ........ */
-                /* la.decode:1663 */
-                return LISA_VFRSQRTE_S;
-            case 0x4a:
-                /* 01110010 10011101 001010.. ........ */
-                /* la.decode:1664 */
-                return LISA_VFRSQRTE_D;
-            case 0x4b:
-                /* 01110010 10011101 001011.. ........ */
-                /* la.decode:1665 */
-                return LISA_VFRSQRTE_Q;
-            case 0x4c:
-                /* 01110010 10011101 001100.. ........ */
-                /* la.decode:1666 */
-                return LISA_VFRINT_H;
+            /* case 0x43: */
+            /*     /1* 01110010 10011101 000011.. ........ *1/ */
+            /*     /1* la.decode:1657 *1/ */
+            /*     return LISA_VFRSQRT_Q; */
+            /* case 0x44: */
+            /*     /1* 01110010 10011101 000100.. ........ *1/ */
+            /*     /1* la.decode:1658 *1/ */
+            /*     return LISA_VFRECIPE_H; */
+            /* case 0x45: */
+            /*     /1* 01110010 10011101 000101.. ........ *1/ */
+            /*     /1* la.decode:1659 *1/ */
+            /*     return LISA_VFRECIPE_S; */
+            /* case 0x46: */
+            /*     /1* 01110010 10011101 000110.. ........ *1/ */
+            /*     /1* la.decode:1660 *1/ */
+            /*     return LISA_VFRECIPE_D; */
+            /* case 0x47: */
+            /*     /1* 01110010 10011101 000111.. ........ *1/ */
+            /*     /1* la.decode:1661 *1/ */
+            /*     return LISA_VFRECIPE_Q; */
+            /* case 0x48: */
+            /*     /1* 01110010 10011101 001000.. ........ *1/ */
+            /*     /1* la.decode:1662 *1/ */
+            /*     return LISA_VFRSQRTE_H; */
+            /* case 0x49: */
+            /*     /1* 01110010 10011101 001001.. ........ *1/ */
+            /*     /1* la.decode:1663 *1/ */
+            /*     return LISA_VFRSQRTE_S; */
+            /* case 0x4a: */
+            /*     /1* 01110010 10011101 001010.. ........ *1/ */
+            /*     /1* la.decode:1664 *1/ */
+            /*     return LISA_VFRSQRTE_D; */
+            /* case 0x4b: */
+            /*     /1* 01110010 10011101 001011.. ........ *1/ */
+            /*     /1* la.decode:1665 *1/ */
+            /*     return LISA_VFRSQRTE_Q; */
+            /* case 0x4c: */
+            /*     /1* 01110010 10011101 001100.. ........ *1/ */
+            /*     /1* la.decode:1666 *1/ */
+            /*     return LISA_VFRINT_H; */
             case 0x4d:
                 /* 01110010 10011101 001101.. ........ */
                 /* la.decode:1667 */
@@ -7955,14 +7991,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 001110.. ........ */
                 /* la.decode:1668 */
                 return LISA_VFRINT_D;
-            case 0x4f:
-                /* 01110010 10011101 001111.. ........ */
-                /* la.decode:1669 */
-                return LISA_VFRINT_Q;
-            case 0x50:
-                /* 01110010 10011101 010000.. ........ */
-                /* la.decode:1670 */
-                return LISA_VFRINTRM_H;
+            /* case 0x4f: */
+            /*     /1* 01110010 10011101 001111.. ........ *1/ */
+            /*     /1* la.decode:1669 *1/ */
+            /*     return LISA_VFRINT_Q; */
+            /* case 0x50: */
+            /*     /1* 01110010 10011101 010000.. ........ *1/ */
+            /*     /1* la.decode:1670 *1/ */
+            /*     return LISA_VFRINTRM_H; */
             case 0x51:
                 /* 01110010 10011101 010001.. ........ */
                 /* la.decode:1671 */
@@ -7971,14 +8007,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 010010.. ........ */
                 /* la.decode:1672 */
                 return LISA_VFRINTRM_D;
-            case 0x53:
-                /* 01110010 10011101 010011.. ........ */
-                /* la.decode:1673 */
-                return LISA_VFRINTRM_Q;
-            case 0x54:
-                /* 01110010 10011101 010100.. ........ */
-                /* la.decode:1674 */
-                return LISA_VFRINTRP_H;
+            /* case 0x53: */
+            /*     /1* 01110010 10011101 010011.. ........ *1/ */
+            /*     /1* la.decode:1673 *1/ */
+            /*     return LISA_VFRINTRM_Q; */
+            /* case 0x54: */
+            /*     /1* 01110010 10011101 010100.. ........ *1/ */
+            /*     /1* la.decode:1674 *1/ */
+            /*     return LISA_VFRINTRP_H; */
             case 0x55:
                 /* 01110010 10011101 010101.. ........ */
                 /* la.decode:1675 */
@@ -7987,14 +8023,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 010110.. ........ */
                 /* la.decode:1676 */
                 return LISA_VFRINTRP_D;
-            case 0x57:
-                /* 01110010 10011101 010111.. ........ */
-                /* la.decode:1677 */
-                return LISA_VFRINTRP_Q;
-            case 0x58:
-                /* 01110010 10011101 011000.. ........ */
-                /* la.decode:1678 */
-                return LISA_VFRINTRZ_H;
+            /* case 0x57: */
+            /*     /1* 01110010 10011101 010111.. ........ *1/ */
+            /*     /1* la.decode:1677 *1/ */
+            /*     return LISA_VFRINTRP_Q; */
+            /* case 0x58: */
+            /*     /1* 01110010 10011101 011000.. ........ *1/ */
+            /*     /1* la.decode:1678 *1/ */
+            /*     return LISA_VFRINTRZ_H; */
             case 0x59:
                 /* 01110010 10011101 011001.. ........ */
                 /* la.decode:1679 */
@@ -8003,14 +8039,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 011010.. ........ */
                 /* la.decode:1680 */
                 return LISA_VFRINTRZ_D;
-            case 0x5b:
-                /* 01110010 10011101 011011.. ........ */
-                /* la.decode:1681 */
-                return LISA_VFRINTRZ_Q;
-            case 0x5c:
-                /* 01110010 10011101 011100.. ........ */
-                /* la.decode:1682 */
-                return LISA_VFRINTRNE_H;
+            /* case 0x5b: */
+            /*     /1* 01110010 10011101 011011.. ........ *1/ */
+            /*     /1* la.decode:1681 *1/ */
+            /*     return LISA_VFRINTRZ_Q; */
+            /* case 0x5c: */
+            /*     /1* 01110010 10011101 011100.. ........ *1/ */
+            /*     /1* la.decode:1682 *1/ */
+            /*     return LISA_VFRINTRNE_H; */
             case 0x5d:
                 /* 01110010 10011101 011101.. ........ */
                 /* la.decode:1683 */
@@ -8019,10 +8055,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 011110.. ........ */
                 /* la.decode:1684 */
                 return LISA_VFRINTRNE_D;
-            case 0x5f:
-                /* 01110010 10011101 011111.. ........ */
-                /* la.decode:1685 */
-                return LISA_VFRINTRNE_Q;
+            /* case 0x5f: */
+            /*     /1* 01110010 10011101 011111.. ........ *1/ */
+            /*     /1* la.decode:1685 *1/ */
+            /*     return LISA_VFRINTRNE_Q; */
             case 0x61:
                 /* 01110010 10011101 100001.. ........ */
                 /* la.decode:1686 */
@@ -8031,22 +8067,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 100010.. ........ */
                 /* la.decode:1687 */
                 return LISA_VEXTL_D_B;
-            case 0x63:
-                /* 01110010 10011101 100011.. ........ */
-                /* la.decode:1688 */
-                return LISA_VEXTL_Q_B;
+            /* case 0x63: */
+            /*     /1* 01110010 10011101 100011.. ........ *1/ */
+            /*     /1* la.decode:1688 *1/ */
+            /*     return LISA_VEXTL_Q_B; */
             case 0x65:
                 /* 01110010 10011101 100101.. ........ */
                 /* la.decode:1689 */
                 return LISA_VEXTL_D_H;
-            case 0x66:
-                /* 01110010 10011101 100110.. ........ */
-                /* la.decode:1690 */
-                return LISA_VEXTL_Q_H;
-            case 0x68:
-                /* 01110010 10011101 101000.. ........ */
-                /* la.decode:1691 */
-                return LISA_VEXTL_Q_W;
+            /* case 0x66: */
+            /*     /1* 01110010 10011101 100110.. ........ *1/ */
+            /*     /1* la.decode:1690 *1/ */
+            /*     return LISA_VEXTL_Q_H; */
+            /* case 0x68: */
+            /*     /1* 01110010 10011101 101000.. ........ *1/ */
+            /*     /1* la.decode:1691 *1/ */
+            /*     return LISA_VEXTL_Q_W; */
             case 0x6b:
                 /* 01110010 10011101 101011.. ........ */
                 /* la.decode:1692 */
@@ -8055,22 +8091,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 101100.. ........ */
                 /* la.decode:1693 */
                 return LISA_VEXTL_D_BU;
-            case 0x6d:
-                /* 01110010 10011101 101101.. ........ */
-                /* la.decode:1694 */
-                return LISA_VEXTL_Q_BU;
+            /* case 0x6d: */
+            /*     /1* 01110010 10011101 101101.. ........ *1/ */
+            /*     /1* la.decode:1694 *1/ */
+            /*     return LISA_VEXTL_Q_BU; */
             case 0x6f:
                 /* 01110010 10011101 101111.. ........ */
                 /* la.decode:1695 */
                 return LISA_VEXTL_D_HU;
-            case 0x70:
-                /* 01110010 10011101 110000.. ........ */
-                /* la.decode:1696 */
-                return LISA_VEXTL_Q_HU;
-            case 0x72:
-                /* 01110010 10011101 110010.. ........ */
-                /* la.decode:1697 */
-                return LISA_VEXTL_Q_WU;
+            /* case 0x70: */
+            /*     /1* 01110010 10011101 110000.. ........ *1/ */
+            /*     /1* la.decode:1696 *1/ */
+            /*     return LISA_VEXTL_Q_HU; */
+            /* case 0x72: */
+            /*     /1* 01110010 10011101 110010.. ........ *1/ */
+            /*     /1* la.decode:1697 *1/ */
+            /*     return LISA_VEXTL_Q_WU; */
             case 0x74:
                 /* 01110010 10011101 110100.. ........ */
                 /* la.decode:1698 */
@@ -8111,14 +8147,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011101 111101.. ........ */
                 /* la.decode:1707 */
                 return LISA_VFCVTH_D_S;
-            case 0x7e:
-                /* 01110010 10011101 111110.. ........ */
-                /* la.decode:1708 */
-                return LISA_VFCVTL_Q_D;
-            case 0x7f:
-                /* 01110010 10011101 111111.. ........ */
-                /* la.decode:1709 */
-                return LISA_VFCVTH_Q_D;
+            /* case 0x7e: */
+            /*     /1* 01110010 10011101 111110.. ........ *1/ */
+            /*     /1* la.decode:1708 *1/ */
+            /*     return LISA_VFCVTL_Q_D; */
+            /* case 0x7f: */
+            /*     /1* 01110010 10011101 111111.. ........ *1/ */
+            /*     /1* la.decode:1709 *1/ */
+            /*     return LISA_VFCVTH_Q_D; */
             case 0x80:
                 /* 01110010 10011110 000000.. ........ */
                 /* la.decode:1710 */
@@ -8143,30 +8179,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011110 000101.. ........ */
                 /* la.decode:1715 */
                 return LISA_VFFINTH_D_W;
-            case 0x86:
-                /* 01110010 10011110 000110.. ........ */
-                /* la.decode:1716 */
-                return LISA_VFFINTL_Q_L;
-            case 0x87:
-                /* 01110010 10011110 000111.. ........ */
-                /* la.decode:1717 */
-                return LISA_VFFINTH_Q_L;
-            case 0x88:
-                /* 01110010 10011110 001000.. ........ */
-                /* la.decode:1718 */
-                return LISA_VFFINTL_D_WU;
-            case 0x89:
-                /* 01110010 10011110 001001.. ........ */
-                /* la.decode:1719 */
-                return LISA_VFFINTH_D_WU;
-            case 0x8a:
-                /* 01110010 10011110 001010.. ........ */
-                /* la.decode:1720 */
-                return LISA_VFFINTL_Q_LU;
-            case 0x8b:
-                /* 01110010 10011110 001011.. ........ */
-                /* la.decode:1721 */
-                return LISA_VFFINTH_Q_LU;
+            /* case 0x86: */
+            /*     /1* 01110010 10011110 000110.. ........ *1/ */
+            /*     /1* la.decode:1716 *1/ */
+            /*     return LISA_VFFINTL_Q_L; */
+            /* case 0x87: */
+            /*     /1* 01110010 10011110 000111.. ........ *1/ */
+            /*     /1* la.decode:1717 *1/ */
+            /*     return LISA_VFFINTH_Q_L; */
+            /* case 0x88: */
+            /*     /1* 01110010 10011110 001000.. ........ *1/ */
+            /*     /1* la.decode:1718 *1/ */
+            /*     return LISA_VFFINTL_D_WU; */
+            /* case 0x89: */
+            /*     /1* 01110010 10011110 001001.. ........ *1/ */
+            /*     /1* la.decode:1719 *1/ */
+            /*     return LISA_VFFINTH_D_WU; */
+            /* case 0x8a: */
+            /*     /1* 01110010 10011110 001010.. ........ *1/ */
+            /*     /1* la.decode:1720 *1/ */
+            /*     return LISA_VFFINTL_Q_LU; */
+            /* case 0x8b: */
+            /*     /1* 01110010 10011110 001011.. ........ *1/ */
+            /*     /1* la.decode:1721 *1/ */
+            /*     return LISA_VFFINTH_Q_LU; */
             case 0x8c:
                 /* 01110010 10011110 001100.. ........ */
                 /* la.decode:1722 */
@@ -8215,22 +8251,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011110 010111.. ........ */
                 /* la.decode:1733 */
                 return LISA_VFTINT_LU_D;
-            case 0x98:
-                /* 01110010 10011110 011000.. ........ */
-                /* la.decode:1734 */
-                return LISA_VFTINTRM_WU_S;
-            case 0x99:
-                /* 01110010 10011110 011001.. ........ */
-                /* la.decode:1735 */
-                return LISA_VFTINTRM_LU_D;
-            case 0x9a:
-                /* 01110010 10011110 011010.. ........ */
-                /* la.decode:1736 */
-                return LISA_VFTINTRP_WU_S;
-            case 0x9b:
-                /* 01110010 10011110 011011.. ........ */
-                /* la.decode:1737 */
-                return LISA_VFTINTRP_LU_D;
+            /* case 0x98: */
+            /*     /1* 01110010 10011110 011000.. ........ *1/ */
+            /*     /1* la.decode:1734 *1/ */
+            /*     return LISA_VFTINTRM_WU_S; */
+            /* case 0x99: */
+            /*     /1* 01110010 10011110 011001.. ........ *1/ */
+            /*     /1* la.decode:1735 *1/ */
+            /*     return LISA_VFTINTRM_LU_D; */
+            /* case 0x9a: */
+            /*     /1* 01110010 10011110 011010.. ........ *1/ */
+            /*     /1* la.decode:1736 *1/ */
+            /*     return LISA_VFTINTRP_WU_S; */
+            /* case 0x9b: */
+            /*     /1* 01110010 10011110 011011.. ........ *1/ */
+            /*     /1* la.decode:1737 *1/ */
+            /*     return LISA_VFTINTRP_LU_D; */
             case 0x9c:
                 /* 01110010 10011110 011100.. ........ */
                 /* la.decode:1738 */
@@ -8239,14 +8275,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011110 011101.. ........ */
                 /* la.decode:1739 */
                 return LISA_VFTINTRZ_LU_D;
-            case 0x9e:
-                /* 01110010 10011110 011110.. ........ */
-                /* la.decode:1740 */
-                return LISA_VFTINTRNE_WU_S;
-            case 0x9f:
-                /* 01110010 10011110 011111.. ........ */
-                /* la.decode:1741 */
-                return LISA_VFTINTRNE_LU_D;
+            /* case 0x9e: */
+            /*     /1* 01110010 10011110 011110.. ........ *1/ */
+            /*     /1* la.decode:1740 *1/ */
+            /*     return LISA_VFTINTRNE_WU_S; */
+            /* case 0x9f: */
+            /*     /1* 01110010 10011110 011111.. ........ *1/ */
+            /*     /1* la.decode:1741 *1/ */
+            /*     return LISA_VFTINTRNE_LU_D; */
             case 0xa0:
                 /* 01110010 10011110 100000.. ........ */
                 /* la.decode:1742 */
@@ -8287,46 +8323,46 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110010 10011110 101001.. ........ */
                 /* la.decode:1751 */
                 return LISA_VFTINTRNEH_L_S;
-            case 0xaa:
-                /* 01110010 10011110 101010.. ........ */
-                /* la.decode:1752 */
-                return LISA_VFTINTL_LU_S;
-            case 0xab:
-                /* 01110010 10011110 101011.. ........ */
-                /* la.decode:1753 */
-                return LISA_VFTINTH_LU_S;
-            case 0xac:
-                /* 01110010 10011110 101100.. ........ */
-                /* la.decode:1754 */
-                return LISA_VFTINTRML_LU_S;
-            case 0xad:
-                /* 01110010 10011110 101101.. ........ */
-                /* la.decode:1755 */
-                return LISA_VFTINTRMH_LU_S;
-            case 0xae:
-                /* 01110010 10011110 101110.. ........ */
-                /* la.decode:1756 */
-                return LISA_VFTINTRPL_LU_S;
-            case 0xaf:
-                /* 01110010 10011110 101111.. ........ */
-                /* la.decode:1757 */
-                return LISA_VFTINTRPH_LU_S;
-            case 0xb0:
-                /* 01110010 10011110 110000.. ........ */
-                /* la.decode:1758 */
-                return LISA_VFTINTRZL_LU_S;
-            case 0xb1:
-                /* 01110010 10011110 110001.. ........ */
-                /* la.decode:1759 */
-                return LISA_VFTINTRZH_LU_S;
-            case 0xb2:
-                /* 01110010 10011110 110010.. ........ */
-                /* la.decode:1760 */
-                return LISA_VFTINTRNEL_LU_S;
-            case 0xb3:
-                /* 01110010 10011110 110011.. ........ */
-                /* la.decode:1761 */
-                return LISA_VFTINTRNEH_LU_S;
+            /* case 0xaa: */
+            /*     /1* 01110010 10011110 101010.. ........ *1/ */
+            /*     /1* la.decode:1752 *1/ */
+            /*     return LISA_VFTINTL_LU_S; */
+            /* case 0xab: */
+            /*     /1* 01110010 10011110 101011.. ........ *1/ */
+            /*     /1* la.decode:1753 *1/ */
+            /*     return LISA_VFTINTH_LU_S; */
+            /* case 0xac: */
+            /*     /1* 01110010 10011110 101100.. ........ *1/ */
+            /*     /1* la.decode:1754 *1/ */
+            /*     return LISA_VFTINTRML_LU_S; */
+            /* case 0xad: */
+            /*     /1* 01110010 10011110 101101.. ........ *1/ */
+            /*     /1* la.decode:1755 *1/ */
+            /*     return LISA_VFTINTRMH_LU_S; */
+            /* case 0xae: */
+            /*     /1* 01110010 10011110 101110.. ........ *1/ */
+            /*     /1* la.decode:1756 *1/ */
+            /*     return LISA_VFTINTRPL_LU_S; */
+            /* case 0xaf: */
+            /*     /1* 01110010 10011110 101111.. ........ *1/ */
+            /*     /1* la.decode:1757 *1/ */
+            /*     return LISA_VFTINTRPH_LU_S; */
+            /* case 0xb0: */
+            /*     /1* 01110010 10011110 110000.. ........ *1/ */
+            /*     /1* la.decode:1758 *1/ */
+            /*     return LISA_VFTINTRZL_LU_S; */
+            /* case 0xb1: */
+            /*     /1* 01110010 10011110 110001.. ........ *1/ */
+            /*     /1* la.decode:1759 *1/ */
+            /*     return LISA_VFTINTRZH_LU_S; */
+            /* case 0xb2: */
+            /*     /1* 01110010 10011110 110010.. ........ *1/ */
+            /*     /1* la.decode:1760 *1/ */
+            /*     return LISA_VFTINTRNEL_LU_S; */
+            /* case 0xb3: */
+            /*     /1* 01110010 10011110 110011.. ........ *1/ */
+            /*     /1* la.decode:1761 *1/ */
+            /*     return LISA_VFTINTRNEH_LU_S; */
             case 0xb8:
                 /* 01110010 10011110 111000.. ........ */
                 /* la.decode:1762 */
@@ -8702,8 +8738,8 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* la.decode:1810 */
                     return LISA_VEXTL_Q_D;
                 }
-                /* la.decode:1811 */
-                return LISA_VSLLWIL_Q_D;
+                /* /1* la.decode:1811 *1/ */
+                /* return LISA_VSLLWIL_Q_D; */
             }
             return LISA_INVALID;
         case 0xc3:
@@ -8743,8 +8779,8 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* la.decode:1817 */
                     return LISA_VEXTL_QU_DU;
                 }
-                /* la.decode:1818 */
-                return LISA_VSLLWIL_QU_DU;
+                /* /1* la.decode:1818 *1/ */
+                /* return LISA_VSLLWIL_QU_DU; */
             }
             return LISA_INVALID;
         case 0xc4:
@@ -10006,10 +10042,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00001111 0....... ........ */
                 /* la.decode:1988 */
                 return LISA_XVADDW_D_D_W;
-            case 0x7:
-                /* 01110100 00001111 1....... ........ */
-                /* la.decode:1989 */
-                return LISA_XVADDW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110100 00001111 1....... ........ *1/ */
+            /*     /1* la.decode:1989 *1/ */
+            /*     return LISA_XVADDW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x4:
@@ -10027,10 +10063,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00010001 0....... ........ */
                 /* la.decode:1992 */
                 return LISA_XVADDW_D_D_WU;
-            case 0x3:
-                /* 01110100 00010001 1....... ........ */
-                /* la.decode:1993 */
-                return LISA_XVADDW_Q_Q_DU;
+            /* case 0x3: */
+            /*     /1* 01110100 00010001 1....... ........ *1/ */
+            /*     /1* la.decode:1993 *1/ */
+            /*     return LISA_XVADDW_Q_Q_DU; */
             case 0x4:
                 /* 01110100 00010010 0....... ........ */
                 /* la.decode:1994 */
@@ -10043,10 +10079,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00010011 0....... ........ */
                 /* la.decode:1996 */
                 return LISA_XVSUBW_D_D_W;
-            case 0x7:
-                /* 01110100 00010011 1....... ........ */
-                /* la.decode:1997 */
-                return LISA_XVSUBW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110100 00010011 1....... ........ *1/ */
+            /*     /1* la.decode:1997 *1/ */
+            /*     return LISA_XVSUBW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x5:
@@ -10064,10 +10100,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00010101 0....... ........ */
                 /* la.decode:2000 */
                 return LISA_XVSUBW_D_D_WU;
-            case 0x3:
-                /* 01110100 00010101 1....... ........ */
-                /* la.decode:2001 */
-                return LISA_XVSUBW_Q_Q_DU;
+            /* case 0x3: */
+            /*     /1* 01110100 00010101 1....... ........ *1/ */
+            /*     /1* la.decode:2001 *1/ */
+            /*     return LISA_XVSUBW_Q_Q_DU; */
             case 0x4:
                 /* 01110100 00010110 0....... ........ */
                 /* la.decode:2002 */
@@ -10080,10 +10116,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00010111 0....... ........ */
                 /* la.decode:2004 */
                 return LISA_XVSADDW_D_D_W;
-            case 0x7:
-                /* 01110100 00010111 1....... ........ */
-                /* la.decode:2005 */
-                return LISA_XVSADDW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110100 00010111 1....... ........ *1/ */
+            /*     /1* la.decode:2005 *1/ */
+            /*     return LISA_XVSADDW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x6:
@@ -10101,10 +10137,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00011001 0....... ........ */
                 /* la.decode:2008 */
                 return LISA_XVSADDW_DU_DU_WU;
-            case 0x3:
-                /* 01110100 00011001 1....... ........ */
-                /* la.decode:2009 */
-                return LISA_XVSADDW_QU_QU_DU;
+            /* case 0x3: */
+            /*     /1* 01110100 00011001 1....... ........ *1/ */
+            /*     /1* la.decode:2009 *1/ */
+            /*     return LISA_XVSADDW_QU_QU_DU; */
             case 0x4:
                 /* 01110100 00011010 0....... ........ */
                 /* la.decode:2010 */
@@ -10117,10 +10153,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00011011 0....... ........ */
                 /* la.decode:2012 */
                 return LISA_XVSSUBW_D_D_W;
-            case 0x7:
-                /* 01110100 00011011 1....... ........ */
-                /* la.decode:2013 */
-                return LISA_XVSSUBW_Q_Q_D;
+            /* case 0x7: */
+            /*     /1* 01110100 00011011 1....... ........ *1/ */
+            /*     /1* la.decode:2013 *1/ */
+            /*     return LISA_XVSSUBW_Q_Q_D; */
             }
             return LISA_INVALID;
         case 0x7:
@@ -10138,10 +10174,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110100 00011101 0....... ........ */
                 /* la.decode:2016 */
                 return LISA_XVSSUBW_DU_DU_WU;
-            case 0x3:
-                /* 01110100 00011101 1....... ........ */
-                /* la.decode:2017 */
-                return LISA_XVSSUBW_QU_QU_DU;
+            /* case 0x3: */
+            /*     /1* 01110100 00011101 1....... ........ *1/ */
+            /*     /1* la.decode:2017 *1/ */
+            /*     return LISA_XVSSUBW_QU_QU_DU; */
             case 0x4:
                 /* 01110100 00011110 0....... ........ */
                 /* la.decode:2018 */
@@ -12583,10 +12619,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0x4c:
             /* 01110101 001100.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 00110000 0....... ........ */
-                /* la.decode:2542 */
-                return LISA_XVFADD_H;
+            /* case 0x0: */
+            /*     /1* 01110101 00110000 0....... ........ *1/ */
+            /*     /1* la.decode:2542 *1/ */
+            /*     return LISA_XVFADD_H; */
             case 0x1:
                 /* 01110101 00110000 1....... ........ */
                 /* la.decode:2543 */
@@ -12595,14 +12631,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00110001 0....... ........ */
                 /* la.decode:2544 */
                 return LISA_XVFADD_D;
-            case 0x3:
-                /* 01110101 00110001 1....... ........ */
-                /* la.decode:2545 */
-                return LISA_XVFADD_Q;
-            case 0x4:
-                /* 01110101 00110010 0....... ........ */
-                /* la.decode:2546 */
-                return LISA_XVFSUB_H;
+            /* case 0x3: */
+            /*     /1* 01110101 00110001 1....... ........ *1/ */
+            /*     /1* la.decode:2545 *1/ */
+            /*     return LISA_XVFADD_Q; */
+            /* case 0x4: */
+            /*     /1* 01110101 00110010 0....... ........ *1/ */
+            /*     /1* la.decode:2546 *1/ */
+            /*     return LISA_XVFSUB_H; */
             case 0x5:
                 /* 01110101 00110010 1....... ........ */
                 /* la.decode:2547 */
@@ -12611,19 +12647,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00110011 0....... ........ */
                 /* la.decode:2548 */
                 return LISA_XVFSUB_D;
-            case 0x7:
-                /* 01110101 00110011 1....... ........ */
-                /* la.decode:2549 */
-                return LISA_XVFSUB_Q;
+            /* case 0x7: */
+            /*     /1* 01110101 00110011 1....... ........ *1/ */
+            /*     /1* la.decode:2549 *1/ */
+            /*     return LISA_XVFSUB_Q; */
             }
             return LISA_INVALID;
         case 0x4d:
             /* 01110101 001101.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 00110100 0....... ........ */
-                /* la.decode:2550 */
-                return LISA_XVFADDSUB_H;
+            /* case 0x0: */
+            /*     /1* 01110101 00110100 0....... ........ *1/ */
+            /*     /1* la.decode:2550 *1/ */
+            /*     return LISA_XVFADDSUB_H; */
             case 0x1:
                 /* 01110101 00110100 1....... ........ */
                 /* la.decode:2551 */
@@ -12632,14 +12668,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00110101 0....... ........ */
                 /* la.decode:2552 */
                 return LISA_XVFADDSUB_D;
-            case 0x3:
-                /* 01110101 00110101 1....... ........ */
-                /* la.decode:2553 */
-                return LISA_XVFADDSUB_Q;
-            case 0x4:
-                /* 01110101 00110110 0....... ........ */
-                /* la.decode:2554 */
-                return LISA_XVFSUBADD_H;
+            /* case 0x3: */
+            /*     /1* 01110101 00110101 1....... ........ *1/ */
+            /*     /1* la.decode:2553 *1/ */
+            /*     return LISA_XVFADDSUB_Q; */
+            /* case 0x4: */
+            /*     /1* 01110101 00110110 0....... ........ *1/ */
+            /*     /1* la.decode:2554 *1/ */
+            /*     return LISA_XVFSUBADD_H; */
             case 0x5:
                 /* 01110101 00110110 1....... ........ */
                 /* la.decode:2555 */
@@ -12648,19 +12684,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00110111 0....... ........ */
                 /* la.decode:2556 */
                 return LISA_XVFSUBADD_D;
-            case 0x7:
-                /* 01110101 00110111 1....... ........ */
-                /* la.decode:2557 */
-                return LISA_XVFSUBADD_Q;
+            /* case 0x7: */
+            /*     /1* 01110101 00110111 1....... ........ *1/ */
+            /*     /1* la.decode:2557 *1/ */
+            /*     return LISA_XVFSUBADD_Q; */
             }
             return LISA_INVALID;
         case 0x4e:
             /* 01110101 001110.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 00111000 0....... ........ */
-                /* la.decode:2558 */
-                return LISA_XVFMUL_H;
+            /* case 0x0: */
+            /*     /1* 01110101 00111000 0....... ........ *1/ */
+            /*     /1* la.decode:2558 *1/ */
+            /*     return LISA_XVFMUL_H; */
             case 0x1:
                 /* 01110101 00111000 1....... ........ */
                 /* la.decode:2559 */
@@ -12669,14 +12705,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00111001 0....... ........ */
                 /* la.decode:2560 */
                 return LISA_XVFMUL_D;
-            case 0x3:
-                /* 01110101 00111001 1....... ........ */
-                /* la.decode:2561 */
-                return LISA_XVFMUL_Q;
-            case 0x4:
-                /* 01110101 00111010 0....... ........ */
-                /* la.decode:2562 */
-                return LISA_XVFDIV_H;
+            /* case 0x3: */
+            /*     /1* 01110101 00111001 1....... ........ *1/ */
+            /*     /1* la.decode:2561 *1/ */
+            /*     return LISA_XVFMUL_Q; */
+            /* case 0x4: */
+            /*     /1* 01110101 00111010 0....... ........ *1/ */
+            /*     /1* la.decode:2562 *1/ */
+            /*     return LISA_XVFDIV_H; */
             case 0x5:
                 /* 01110101 00111010 1....... ........ */
                 /* la.decode:2563 */
@@ -12685,19 +12721,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00111011 0....... ........ */
                 /* la.decode:2564 */
                 return LISA_XVFDIV_D;
-            case 0x7:
-                /* 01110101 00111011 1....... ........ */
-                /* la.decode:2565 */
-                return LISA_XVFDIV_Q;
+            /* case 0x7: */
+            /*     /1* 01110101 00111011 1....... ........ *1/ */
+            /*     /1* la.decode:2565 *1/ */
+            /*     return LISA_XVFDIV_Q; */
             }
             return LISA_INVALID;
         case 0x4f:
             /* 01110101 001111.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 00111100 0....... ........ */
-                /* la.decode:2566 */
-                return LISA_XVFMAX_H;
+            /* case 0x0: */
+            /*     /1* 01110101 00111100 0....... ........ *1/ */
+            /*     /1* la.decode:2566 *1/ */
+            /*     return LISA_XVFMAX_H; */
             case 0x1:
                 /* 01110101 00111100 1....... ........ */
                 /* la.decode:2567 */
@@ -12706,14 +12742,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00111101 0....... ........ */
                 /* la.decode:2568 */
                 return LISA_XVFMAX_D;
-            case 0x3:
-                /* 01110101 00111101 1....... ........ */
-                /* la.decode:2569 */
-                return LISA_XVFMAX_Q;
-            case 0x4:
-                /* 01110101 00111110 0....... ........ */
-                /* la.decode:2570 */
-                return LISA_XVFMIN_H;
+            /* case 0x3: */
+            /*     /1* 01110101 00111101 1....... ........ *1/ */
+            /*     /1* la.decode:2569 *1/ */
+            /*     return LISA_XVFMAX_Q; */
+            /* case 0x4: */
+            /*     /1* 01110101 00111110 0....... ........ *1/ */
+            /*     /1* la.decode:2570 *1/ */
+            /*     return LISA_XVFMIN_H; */
             case 0x5:
                 /* 01110101 00111110 1....... ........ */
                 /* la.decode:2571 */
@@ -12722,19 +12758,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 00111111 0....... ........ */
                 /* la.decode:2572 */
                 return LISA_XVFMIN_D;
-            case 0x7:
-                /* 01110101 00111111 1....... ........ */
-                /* la.decode:2573 */
-                return LISA_XVFMIN_Q;
+            /* case 0x7: */
+            /*     /1* 01110101 00111111 1....... ........ *1/ */
+            /*     /1* la.decode:2573 *1/ */
+            /*     return LISA_XVFMIN_Q; */
             }
             return LISA_INVALID;
         case 0x50:
             /* 01110101 010000.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 01000000 0....... ........ */
-                /* la.decode:2574 */
-                return LISA_XVFMAXA_H;
+            /* case 0x0: */
+            /*     /1* 01110101 01000000 0....... ........ *1/ */
+            /*     /1* la.decode:2574 *1/ */
+            /*     return LISA_XVFMAXA_H; */
             case 0x1:
                 /* 01110101 01000000 1....... ........ */
                 /* la.decode:2575 */
@@ -12743,14 +12779,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 01000001 0....... ........ */
                 /* la.decode:2576 */
                 return LISA_XVFMAXA_D;
-            case 0x3:
-                /* 01110101 01000001 1....... ........ */
-                /* la.decode:2577 */
-                return LISA_XVFMAXA_Q;
-            case 0x4:
-                /* 01110101 01000010 0....... ........ */
-                /* la.decode:2578 */
-                return LISA_XVFMINA_H;
+            /* case 0x3: */
+            /*     /1* 01110101 01000001 1....... ........ *1/ */
+            /*     /1* la.decode:2577 *1/ */
+            /*     return LISA_XVFMAXA_Q; */
+            /* case 0x4: */
+            /*     /1* 01110101 01000010 0....... ........ *1/ */
+            /*     /1* la.decode:2578 *1/ */
+            /*     return LISA_XVFMINA_H; */
             case 0x5:
                 /* 01110101 01000010 1....... ........ */
                 /* la.decode:2579 */
@@ -12759,19 +12795,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 01000011 0....... ........ */
                 /* la.decode:2580 */
                 return LISA_XVFMINA_D;
-            case 0x7:
-                /* 01110101 01000011 1....... ........ */
-                /* la.decode:2581 */
-                return LISA_XVFMINA_Q;
+            /* case 0x7: */
+            /*     /1* 01110101 01000011 1....... ........ *1/ */
+            /*     /1* la.decode:2581 *1/ */
+            /*     return LISA_XVFMINA_Q; */
             }
             return LISA_INVALID;
         case 0x51:
             /* 01110101 010001.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 01000100 0....... ........ */
-                /* la.decode:2582 */
-                return LISA_XVFSCALEB_H;
+            /* case 0x0: */
+            /*     /1* 01110101 01000100 0....... ........ *1/ */
+            /*     /1* la.decode:2582 *1/ */
+            /*     return LISA_XVFSCALEB_H; */
             case 0x1:
                 /* 01110101 01000100 1....... ........ */
                 /* la.decode:2583 */
@@ -12780,10 +12816,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 01000101 0....... ........ */
                 /* la.decode:2584 */
                 return LISA_XVFSCALEB_D;
-            case 0x3:
-                /* 01110101 01000101 1....... ........ */
-                /* la.decode:2585 */
-                return LISA_XVFSCALEB_Q;
+            /* case 0x3: */
+            /*     /1* 01110101 01000101 1....... ........ *1/ */
+            /*     /1* la.decode:2585 *1/ */
+            /*     return LISA_XVFSCALEB_Q; */
             case 0x4:
                 /* 01110101 01000110 0....... ........ */
                 /* la.decode:2586 */
@@ -12792,14 +12828,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 01000110 1....... ........ */
                 /* la.decode:2587 */
                 return LISA_XVFCVT_S_D;
-            case 0x6:
-                /* 01110101 01000111 0....... ........ */
-                /* la.decode:2588 */
-                return LISA_XVFCVT_D_Q;
-            case 0x7:
-                /* 01110101 01000111 1....... ........ */
-                /* la.decode:2589 */
-                return LISA_XVFFINT_H_W;
+            /* case 0x6: */
+            /*     /1* 01110101 01000111 0....... ........ *1/ */
+            /*     /1* la.decode:2588 *1/ */
+            /*     return LISA_XVFCVT_D_Q; */
+            /* case 0x7: */
+            /*     /1* 01110101 01000111 1....... ........ *1/ */
+            /*     /1* la.decode:2589 *1/ */
+            /*     return LISA_XVFFINT_H_W; */
             }
             return LISA_INVALID;
         case 0x52:
@@ -12809,14 +12845,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                 /* 01110101 01001000 0....... ........ */
                 /* la.decode:2590 */
                 return LISA_XVFFINT_S_L;
-            case 0x1:
-                /* 01110101 01001000 1....... ........ */
-                /* la.decode:2591 */
-                return LISA_XVFFINT_H_WU;
-            case 0x2:
-                /* 01110101 01001001 0....... ........ */
-                /* la.decode:2592 */
-                return LISA_XVFFINT_S_LU;
+            /* case 0x1: */
+            /*     /1* 01110101 01001000 1....... ........ *1/ */
+            /*     /1* la.decode:2591 *1/ */
+            /*     return LISA_XVFFINT_H_WU; */
+            /* case 0x2: */
+            /*     /1* 01110101 01001001 0....... ........ *1/ */
+            /*     /1* la.decode:2592 *1/ */
+            /*     return LISA_XVFFINT_S_LU; */
             case 0x3:
                 /* 01110101 01001001 1....... ........ */
                 /* la.decode:2593 */
@@ -12842,26 +12878,26 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0x53:
             /* 01110101 010011.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x0:
-                /* 01110101 01001100 0....... ........ */
-                /* la.decode:2598 */
-                return LISA_XVFTINT_WU_D;
-            case 0x1:
-                /* 01110101 01001100 1....... ........ */
-                /* la.decode:2599 */
-                return LISA_XVFTINTRM_WU_D;
-            case 0x2:
-                /* 01110101 01001101 0....... ........ */
-                /* la.decode:2600 */
-                return LISA_XVFTINTRP_WU_D;
-            case 0x3:
-                /* 01110101 01001101 1....... ........ */
-                /* la.decode:2601 */
-                return LISA_XVFTINTRZ_WU_D;
-            case 0x4:
-                /* 01110101 01001110 0....... ........ */
-                /* la.decode:2602 */
-                return LISA_XVFTINTRNE_WU_D;
+            /* case 0x0: */
+            /*     /1* 01110101 01001100 0....... ........ *1/ */
+            /*     /1* la.decode:2598 *1/ */
+            /*     return LISA_XVFTINT_WU_D; */
+            /* case 0x1: */
+            /*     /1* 01110101 01001100 1....... ........ *1/ */
+            /*     /1* la.decode:2599 *1/ */
+            /*     return LISA_XVFTINTRM_WU_D; */
+            /* case 0x2: */
+            /*     /1* 01110101 01001101 0....... ........ *1/ */
+            /*     /1* la.decode:2600 *1/ */
+            /*     return LISA_XVFTINTRP_WU_D; */
+            /* case 0x3: */
+            /*     /1* 01110101 01001101 1....... ........ *1/ */
+            /*     /1* la.decode:2601 *1/ */
+            /*     return LISA_XVFTINTRZ_WU_D; */
+            /* case 0x4: */
+            /*     /1* 01110101 01001110 0....... ........ *1/ */
+            /*     /1* la.decode:2602 *1/ */
+            /*     return LISA_XVFTINTRNE_WU_D; */
             case 0x5:
                 /* 01110101 01001110 1....... ........ */
                 /* la.decode:2603 */
@@ -13412,50 +13448,50 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 010100.. ........ */
                     /* la.decode:2720 */
                     return LISA_XVMSKGEZ_B;
-                case 0x15:
-                    /* 01110110 10011100 010101.. ........ */
-                    /* la.decode:2721 */
-                    return LISA_XVMSKGEZ_H;
-                case 0x16:
-                    /* 01110110 10011100 010110.. ........ */
-                    /* la.decode:2722 */
-                    return LISA_XVMSKGEZ_W;
-                case 0x17:
-                    /* 01110110 10011100 010111.. ........ */
-                    /* la.decode:2723 */
-                    return LISA_XVMSKGEZ_D;
+                /* case 0x15: */
+                /*     /1* 01110110 10011100 010101.. ........ *1/ */
+                /*     /1* la.decode:2721 *1/ */
+                /*     return LISA_XVMSKGEZ_H; */
+                /* case 0x16: */
+                /*     /1* 01110110 10011100 010110.. ........ *1/ */
+                /*     /1* la.decode:2722 *1/ */
+                /*     return LISA_XVMSKGEZ_W; */
+                /* case 0x17: */
+                /*     /1* 01110110 10011100 010111.. ........ *1/ */
+                /*     /1* la.decode:2723 *1/ */
+                /*     return LISA_XVMSKGEZ_D; */
                 case 0x18:
                     /* 01110110 10011100 011000.. ........ */
                     /* la.decode:2724 */
                     return LISA_XVMSKNZ_B;
-                case 0x19:
-                    /* 01110110 10011100 011001.. ........ */
-                    /* la.decode:2725 */
-                    return LISA_XVMSKNZ_H;
-                case 0x1a:
-                    /* 01110110 10011100 011010.. ........ */
-                    /* la.decode:2726 */
-                    return LISA_XVMSKNZ_W;
-                case 0x1b:
-                    /* 01110110 10011100 011011.. ........ */
-                    /* la.decode:2727 */
-                    return LISA_XVMSKNZ_D;
+                /* case 0x19: */
+                /*     /1* 01110110 10011100 011001.. ........ *1/ */
+                /*     /1* la.decode:2725 *1/ */
+                /*     return LISA_XVMSKNZ_H; */
+                /* case 0x1a: */
+                /*     /1* 01110110 10011100 011010.. ........ *1/ */
+                /*     /1* la.decode:2726 *1/ */
+                /*     return LISA_XVMSKNZ_W; */
+                /* case 0x1b: */
+                /*     /1* 01110110 10011100 011011.. ........ *1/ */
+                /*     /1* la.decode:2727 *1/ */
+                /*     return LISA_XVMSKNZ_D; */
                 case 0x1c:
                     /* 01110110 10011100 011100.. ........ */
                     /* la.decode:2728 */
                     return LISA_XVMSKCOPY_B;
-                case 0x1d:
-                    /* 01110110 10011100 011101.. ........ */
-                    /* la.decode:2729 */
-                    return LISA_XVMSKCOPY_H;
-                case 0x1e:
-                    /* 01110110 10011100 011110.. ........ */
-                    /* la.decode:2730 */
-                    return LISA_XVMSKCOPY_W;
-                case 0x1f:
-                    /* 01110110 10011100 011111.. ........ */
-                    /* la.decode:2731 */
-                    return LISA_XVMSKCOPY_D;
+                /* case 0x1d: */
+                /*     /1* 01110110 10011100 011101.. ........ *1/ */
+                /*     /1* la.decode:2729 *1/ */
+                /*     return LISA_XVMSKCOPY_H; */
+                /* case 0x1e: */
+                /*     /1* 01110110 10011100 011110.. ........ *1/ */
+                /*     /1* la.decode:2730 *1/ */
+                /*     return LISA_XVMSKCOPY_W; */
+                /* case 0x1f: */
+                /*     /1* 01110110 10011100 011111.. ........ *1/ */
+                /*     /1* la.decode:2731 *1/ */
+                /*     return LISA_XVMSKCOPY_D; */
                 }
                 return LISA_INVALID;
             case 0x1:
@@ -13465,18 +13501,18 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 100000.. ........ */
                     /* la.decode:2732 */
                     return LISA_XVMSKFILL_B;
-                case 0x1:
-                    /* 01110110 10011100 100001.. ........ */
-                    /* la.decode:2733 */
-                    return LISA_XVMSKFILL_H;
-                case 0x2:
-                    /* 01110110 10011100 100010.. ........ */
-                    /* la.decode:2734 */
-                    return LISA_XVMSKFILL_W;
-                case 0x3:
-                    /* 01110110 10011100 100011.. ........ */
-                    /* la.decode:2735 */
-                    return LISA_XVMSKFILL_D;
+                /* case 0x1: */
+                /*     /1* 01110110 10011100 100001.. ........ *1/ */
+                /*     /1* la.decode:2733 *1/ */
+                /*     return LISA_XVMSKFILL_H; */
+                /* case 0x2: */
+                /*     /1* 01110110 10011100 100010.. ........ *1/ */
+                /*     /1* la.decode:2734 *1/ */
+                /*     return LISA_XVMSKFILL_W; */
+                /* case 0x3: */
+                /*     /1* 01110110 10011100 100011.. ........ *1/ */
+                /*     /1* la.decode:2735 *1/ */
+                /*     return LISA_XVMSKFILL_D; */
                 case 0x4:
                     /* 01110110 10011100 100100.. ........ */
                     /* la.decode:2736 */
@@ -13575,10 +13611,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                         return LISA_XVSETALLNEZ_D;
                     }
                     return LISA_INVALID;
-                case 0x10:
-                    /* 01110110 10011100 110000.. ........ */
-                    /* la.decode:2748 */
-                    return LISA_XVFLOGB_H;
+                /* case 0x10: */
+                /*     /1* 01110110 10011100 110000.. ........ *1/ */
+                /*     /1* la.decode:2748 *1/ */
+                /*     return LISA_XVFLOGB_H; */
                 case 0x11:
                     /* 01110110 10011100 110001.. ........ */
                     /* la.decode:2749 */
@@ -13587,14 +13623,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 110010.. ........ */
                     /* la.decode:2750 */
                     return LISA_XVFLOGB_D;
-                case 0x13:
-                    /* 01110110 10011100 110011.. ........ */
-                    /* la.decode:2751 */
-                    return LISA_XVFLOGB_Q;
-                case 0x14:
-                    /* 01110110 10011100 110100.. ........ */
-                    /* la.decode:2752 */
-                    return LISA_XVFCLASS_H;
+                /* case 0x13: */
+                /*     /1* 01110110 10011100 110011.. ........ *1/ */
+                /*     /1* la.decode:2751 *1/ */
+                /*     return LISA_XVFLOGB_Q; */
+                /* case 0x14: */
+                /*     /1* 01110110 10011100 110100.. ........ *1/ */
+                /*     /1* la.decode:2752 *1/ */
+                /*     return LISA_XVFCLASS_H; */
                 case 0x15:
                     /* 01110110 10011100 110101.. ........ */
                     /* la.decode:2753 */
@@ -13603,14 +13639,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 110110.. ........ */
                     /* la.decode:2754 */
                     return LISA_XVFCLASS_D;
-                case 0x17:
-                    /* 01110110 10011100 110111.. ........ */
-                    /* la.decode:2755 */
-                    return LISA_XVFCLASS_Q;
-                case 0x18:
-                    /* 01110110 10011100 111000.. ........ */
-                    /* la.decode:2756 */
-                    return LISA_XVFSQRT_H;
+                /* case 0x17: */
+                /*     /1* 01110110 10011100 110111.. ........ *1/ */
+                /*     /1* la.decode:2755 *1/ */
+                /*     return LISA_XVFCLASS_Q; */
+                /* case 0x18: */
+                /*     /1* 01110110 10011100 111000.. ........ *1/ */
+                /*     /1* la.decode:2756 *1/ */
+                /*     return LISA_XVFSQRT_H; */
                 case 0x19:
                     /* 01110110 10011100 111001.. ........ */
                     /* la.decode:2757 */
@@ -13619,14 +13655,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 111010.. ........ */
                     /* la.decode:2758 */
                     return LISA_XVFSQRT_D;
-                case 0x1b:
-                    /* 01110110 10011100 111011.. ........ */
-                    /* la.decode:2759 */
-                    return LISA_XVFSQRT_Q;
-                case 0x1c:
-                    /* 01110110 10011100 111100.. ........ */
-                    /* la.decode:2760 */
-                    return LISA_XVFRECIP_H;
+                /* case 0x1b: */
+                /*     /1* 01110110 10011100 111011.. ........ *1/ */
+                /*     /1* la.decode:2759 *1/ */
+                /*     return LISA_XVFSQRT_Q; */
+                /* case 0x1c: */
+                /*     /1* 01110110 10011100 111100.. ........ *1/ */
+                /*     /1* la.decode:2760 *1/ */
+                /*     return LISA_XVFRECIP_H; */
                 case 0x1d:
                     /* 01110110 10011100 111101.. ........ */
                     /* la.decode:2761 */
@@ -13635,19 +13671,19 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011100 111110.. ........ */
                     /* la.decode:2762 */
                     return LISA_XVFRECIP_D;
-                case 0x1f:
-                    /* 01110110 10011100 111111.. ........ */
-                    /* la.decode:2763 */
-                    return LISA_XVFRECIP_Q;
+                /* case 0x1f: */
+                /*     /1* 01110110 10011100 111111.. ........ *1/ */
+                /*     /1* la.decode:2763 *1/ */
+                /*     return LISA_XVFRECIP_Q; */
                 }
                 return LISA_INVALID;
             case 0x2:
                 /* 01110110 10011101 0....... ........ */
                 switch ((insn >> 10) & 0x1f) {
-                case 0x0:
-                    /* 01110110 10011101 000000.. ........ */
-                    /* la.decode:2764 */
-                    return LISA_XVFRSQRT_H;
+                /* case 0x0: */
+                /*     /1* 01110110 10011101 000000.. ........ *1/ */
+                /*     /1* la.decode:2764 *1/ */
+                /*     return LISA_XVFRSQRT_H; */
                 case 0x1:
                     /* 01110110 10011101 000001.. ........ */
                     /* la.decode:2765 */
@@ -13656,46 +13692,46 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 000010.. ........ */
                     /* la.decode:2766 */
                     return LISA_XVFRSQRT_D;
-                case 0x3:
-                    /* 01110110 10011101 000011.. ........ */
-                    /* la.decode:2767 */
-                    return LISA_XVFRSQRT_Q;
-                case 0x4:
-                    /* 01110110 10011101 000100.. ........ */
-                    /* la.decode:2768 */
-                    return LISA_XVFRECIPE_H;
-                case 0x5:
-                    /* 01110110 10011101 000101.. ........ */
-                    /* la.decode:2769 */
-                    return LISA_XVFRECIPE_S;
-                case 0x6:
-                    /* 01110110 10011101 000110.. ........ */
-                    /* la.decode:2770 */
-                    return LISA_XVFRECIPE_D;
-                case 0x7:
-                    /* 01110110 10011101 000111.. ........ */
-                    /* la.decode:2771 */
-                    return LISA_XVFRECIPE_Q;
-                case 0x8:
-                    /* 01110110 10011101 001000.. ........ */
-                    /* la.decode:2772 */
-                    return LISA_XVFRSQRTE_H;
-                case 0x9:
-                    /* 01110110 10011101 001001.. ........ */
-                    /* la.decode:2773 */
-                    return LISA_XVFRSQRTE_S;
-                case 0xa:
-                    /* 01110110 10011101 001010.. ........ */
-                    /* la.decode:2774 */
-                    return LISA_XVFRSQRTE_D;
-                case 0xb:
-                    /* 01110110 10011101 001011.. ........ */
-                    /* la.decode:2775 */
-                    return LISA_XVFRSQRTE_Q;
-                case 0xc:
-                    /* 01110110 10011101 001100.. ........ */
-                    /* la.decode:2776 */
-                    return LISA_XVFRINT_H;
+                /* case 0x3: */
+                /*     /1* 01110110 10011101 000011.. ........ *1/ */
+                /*     /1* la.decode:2767 *1/ */
+                /*     return LISA_XVFRSQRT_Q; */
+                /* case 0x4: */
+                /*     /1* 01110110 10011101 000100.. ........ *1/ */
+                /*     /1* la.decode:2768 *1/ */
+                /*     return LISA_XVFRECIPE_H; */
+                /* case 0x5: */
+                /*     /1* 01110110 10011101 000101.. ........ *1/ */
+                /*     /1* la.decode:2769 *1/ */
+                /*     return LISA_XVFRECIPE_S; */
+                /* case 0x6: */
+                /*     /1* 01110110 10011101 000110.. ........ *1/ */
+                /*     /1* la.decode:2770 *1/ */
+                /*     return LISA_XVFRECIPE_D; */
+                /* case 0x7: */
+                /*     /1* 01110110 10011101 000111.. ........ *1/ */
+                /*     /1* la.decode:2771 *1/ */
+                /*     return LISA_XVFRECIPE_Q; */
+                /* case 0x8: */
+                /*     /1* 01110110 10011101 001000.. ........ *1/ */
+                /*     /1* la.decode:2772 *1/ */
+                /*     return LISA_XVFRSQRTE_H; */
+                /* case 0x9: */
+                /*     /1* 01110110 10011101 001001.. ........ *1/ */
+                /*     /1* la.decode:2773 *1/ */
+                /*     return LISA_XVFRSQRTE_S; */
+                /* case 0xa: */
+                /*     /1* 01110110 10011101 001010.. ........ *1/ */
+                /*     /1* la.decode:2774 *1/ */
+                /*     return LISA_XVFRSQRTE_D; */
+                /* case 0xb: */
+                /*     /1* 01110110 10011101 001011.. ........ *1/ */
+                /*     /1* la.decode:2775 *1/ */
+                /*     return LISA_XVFRSQRTE_Q; */
+                /* case 0xc: */
+                /*     /1* 01110110 10011101 001100.. ........ *1/ */
+                /*     /1* la.decode:2776 *1/ */
+                /*     return LISA_XVFRINT_H; */
                 case 0xd:
                     /* 01110110 10011101 001101.. ........ */
                     /* la.decode:2777 */
@@ -13704,14 +13740,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 001110.. ........ */
                     /* la.decode:2778 */
                     return LISA_XVFRINT_D;
-                case 0xf:
-                    /* 01110110 10011101 001111.. ........ */
-                    /* la.decode:2779 */
-                    return LISA_XVFRINT_Q;
-                case 0x10:
-                    /* 01110110 10011101 010000.. ........ */
-                    /* la.decode:2780 */
-                    return LISA_XVFRINTRM_H;
+                /* case 0xf: */
+                /*     /1* 01110110 10011101 001111.. ........ *1/ */
+                /*     /1* la.decode:2779 *1/ */
+                /*     return LISA_XVFRINT_Q; */
+                /* case 0x10: */
+                /*     /1* 01110110 10011101 010000.. ........ *1/ */
+                /*     /1* la.decode:2780 *1/ */
+                /*     return LISA_XVFRINTRM_H; */
                 case 0x11:
                     /* 01110110 10011101 010001.. ........ */
                     /* la.decode:2781 */
@@ -13720,14 +13756,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 010010.. ........ */
                     /* la.decode:2782 */
                     return LISA_XVFRINTRM_D;
-                case 0x13:
-                    /* 01110110 10011101 010011.. ........ */
-                    /* la.decode:2783 */
-                    return LISA_XVFRINTRM_Q;
-                case 0x14:
-                    /* 01110110 10011101 010100.. ........ */
-                    /* la.decode:2784 */
-                    return LISA_XVFRINTRP_H;
+                /* case 0x13: */
+                /*     /1* 01110110 10011101 010011.. ........ *1/ */
+                /*     /1* la.decode:2783 *1/ */
+                /*     return LISA_XVFRINTRM_Q; */
+                /* case 0x14: */
+                /*     /1* 01110110 10011101 010100.. ........ *1/ */
+                /*     /1* la.decode:2784 *1/ */
+                /*     return LISA_XVFRINTRP_H; */
                 case 0x15:
                     /* 01110110 10011101 010101.. ........ */
                     /* la.decode:2785 */
@@ -13736,14 +13772,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 010110.. ........ */
                     /* la.decode:2786 */
                     return LISA_XVFRINTRP_D;
-                case 0x17:
-                    /* 01110110 10011101 010111.. ........ */
-                    /* la.decode:2787 */
-                    return LISA_XVFRINTRP_Q;
-                case 0x18:
-                    /* 01110110 10011101 011000.. ........ */
-                    /* la.decode:2788 */
-                    return LISA_XVFRINTRZ_H;
+                /* case 0x17: */
+                /*     /1* 01110110 10011101 010111.. ........ *1/ */
+                /*     /1* la.decode:2787 *1/ */
+                /*     return LISA_XVFRINTRP_Q; */
+                /* case 0x18: */
+                /*     /1* 01110110 10011101 011000.. ........ *1/ */
+                /*     /1* la.decode:2788 *1/ */
+                /*     return LISA_XVFRINTRZ_H; */
                 case 0x19:
                     /* 01110110 10011101 011001.. ........ */
                     /* la.decode:2789 */
@@ -13752,14 +13788,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 011010.. ........ */
                     /* la.decode:2790 */
                     return LISA_XVFRINTRZ_D;
-                case 0x1b:
-                    /* 01110110 10011101 011011.. ........ */
-                    /* la.decode:2791 */
-                    return LISA_XVFRINTRZ_Q;
-                case 0x1c:
-                    /* 01110110 10011101 011100.. ........ */
-                    /* la.decode:2792 */
-                    return LISA_XVFRINTRNE_H;
+                /* case 0x1b: */
+                /*     /1* 01110110 10011101 011011.. ........ *1/ */
+                /*     /1* la.decode:2791 *1/ */
+                /*     return LISA_XVFRINTRZ_Q; */
+                /* case 0x1c: */
+                /*     /1* 01110110 10011101 011100.. ........ *1/ */
+                /*     /1* la.decode:2792 *1/ */
+                /*     return LISA_XVFRINTRNE_H; */
                 case 0x1d:
                     /* 01110110 10011101 011101.. ........ */
                     /* la.decode:2793 */
@@ -13768,10 +13804,10 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 011110.. ........ */
                     /* la.decode:2794 */
                     return LISA_XVFRINTRNE_D;
-                case 0x1f:
-                    /* 01110110 10011101 011111.. ........ */
-                    /* la.decode:2795 */
-                    return LISA_XVFRINTRNE_Q;
+                /* case 0x1f: */
+                /*     /1* 01110110 10011101 011111.. ........ *1/ */
+                /*     /1* la.decode:2795 *1/ */
+                /*     return LISA_XVFRINTRNE_Q; */
                 }
                 return LISA_INVALID;
             case 0x3:
@@ -13785,22 +13821,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 100010.. ........ */
                     /* la.decode:2797 */
                     return LISA_XVEXTL_D_B;
-                case 0x3:
-                    /* 01110110 10011101 100011.. ........ */
-                    /* la.decode:2798 */
-                    return LISA_XVEXTL_Q_B;
+                /* case 0x3: */
+                /*     /1* 01110110 10011101 100011.. ........ *1/ */
+                /*     /1* la.decode:2798 *1/ */
+                /*     return LISA_XVEXTL_Q_B; */
                 case 0x5:
                     /* 01110110 10011101 100101.. ........ */
                     /* la.decode:2799 */
                     return LISA_XVEXTL_D_H;
-                case 0x6:
-                    /* 01110110 10011101 100110.. ........ */
-                    /* la.decode:2800 */
-                    return LISA_XVEXTL_Q_H;
-                case 0x8:
-                    /* 01110110 10011101 101000.. ........ */
-                    /* la.decode:2801 */
-                    return LISA_XVEXTL_Q_W;
+                /* case 0x6: */
+                /*     /1* 01110110 10011101 100110.. ........ *1/ */
+                /*     /1* la.decode:2800 *1/ */
+                /*     return LISA_XVEXTL_Q_H; */
+                /* case 0x8: */
+                /*     /1* 01110110 10011101 101000.. ........ *1/ */
+                /*     /1* la.decode:2801 *1/ */
+                /*     return LISA_XVEXTL_Q_W; */
                 case 0xb:
                     /* 01110110 10011101 101011.. ........ */
                     /* la.decode:2802 */
@@ -13809,22 +13845,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 101100.. ........ */
                     /* la.decode:2803 */
                     return LISA_XVEXTL_D_BU;
-                case 0xd:
-                    /* 01110110 10011101 101101.. ........ */
-                    /* la.decode:2804 */
-                    return LISA_XVEXTL_Q_BU;
+                /* case 0xd: */
+                /*     /1* 01110110 10011101 101101.. ........ *1/ */
+                /*     /1* la.decode:2804 *1/ */
+                /*     return LISA_XVEXTL_Q_BU; */
                 case 0xf:
                     /* 01110110 10011101 101111.. ........ */
                     /* la.decode:2805 */
                     return LISA_XVEXTL_D_HU;
-                case 0x10:
-                    /* 01110110 10011101 110000.. ........ */
-                    /* la.decode:2806 */
-                    return LISA_XVEXTL_Q_HU;
-                case 0x12:
-                    /* 01110110 10011101 110010.. ........ */
-                    /* la.decode:2807 */
-                    return LISA_XVEXTL_Q_WU;
+                /* case 0x10: */
+                /*     /1* 01110110 10011101 110000.. ........ *1/ */
+                /*     /1* la.decode:2806 *1/ */
+                /*     return LISA_XVEXTL_Q_HU; */
+                /* case 0x12: */
+                /*     /1* 01110110 10011101 110010.. ........ *1/ */
+                /*     /1* la.decode:2807 *1/ */
+                /*     return LISA_XVEXTL_Q_WU; */
                 case 0x14:
                     /* 01110110 10011101 110100.. ........ */
                     /* la.decode:2808 */
@@ -13865,14 +13901,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011101 111101.. ........ */
                     /* la.decode:2817 */
                     return LISA_XVFCVTH_D_S;
-                case 0x1e:
-                    /* 01110110 10011101 111110.. ........ */
-                    /* la.decode:2818 */
-                    return LISA_XVFCVTL_Q_D;
-                case 0x1f:
-                    /* 01110110 10011101 111111.. ........ */
-                    /* la.decode:2819 */
-                    return LISA_XVFCVTH_Q_D;
+                /* case 0x1e: */
+                /*     /1* 01110110 10011101 111110.. ........ *1/ */
+                /*     /1* la.decode:2818 *1/ */
+                /*     return LISA_XVFCVTL_Q_D; */
+                /* case 0x1f: */
+                /*     /1* 01110110 10011101 111111.. ........ *1/ */
+                /*     /1* la.decode:2819 *1/ */
+                /*     return LISA_XVFCVTH_Q_D; */
                 }
                 return LISA_INVALID;
             case 0x4:
@@ -13902,30 +13938,30 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011110 000101.. ........ */
                     /* la.decode:2825 */
                     return LISA_XVFFINTH_D_W;
-                case 0x6:
-                    /* 01110110 10011110 000110.. ........ */
-                    /* la.decode:2826 */
-                    return LISA_XVFFINTL_Q_L;
-                case 0x7:
-                    /* 01110110 10011110 000111.. ........ */
-                    /* la.decode:2827 */
-                    return LISA_XVFFINTH_Q_L;
-                case 0x8:
-                    /* 01110110 10011110 001000.. ........ */
-                    /* la.decode:2828 */
-                    return LISA_XVFFINTL_D_WU;
-                case 0x9:
-                    /* 01110110 10011110 001001.. ........ */
-                    /* la.decode:2829 */
-                    return LISA_XVFFINTH_D_WU;
-                case 0xa:
-                    /* 01110110 10011110 001010.. ........ */
-                    /* la.decode:2830 */
-                    return LISA_XVFFINTL_Q_LU;
-                case 0xb:
-                    /* 01110110 10011110 001011.. ........ */
-                    /* la.decode:2831 */
-                    return LISA_XVFFINTH_Q_LU;
+                /* case 0x6: */
+                /*     /1* 01110110 10011110 000110.. ........ *1/ */
+                /*     /1* la.decode:2826 *1/ */
+                /*     return LISA_XVFFINTL_Q_L; */
+                /* case 0x7: */
+                /*     /1* 01110110 10011110 000111.. ........ *1/ */
+                /*     /1* la.decode:2827 *1/ */
+                /*     return LISA_XVFFINTH_Q_L; */
+                /* case 0x8: */
+                /*     /1* 01110110 10011110 001000.. ........ *1/ */
+                /*     /1* la.decode:2828 *1/ */
+                /*     return LISA_XVFFINTL_D_WU; */
+                /* case 0x9: */
+                /*     /1* 01110110 10011110 001001.. ........ *1/ */
+                /*     /1* la.decode:2829 *1/ */
+                /*     return LISA_XVFFINTH_D_WU; */
+                /* case 0xa: */
+                /*     /1* 01110110 10011110 001010.. ........ *1/ */
+                /*     /1* la.decode:2830 *1/ */
+                /*     return LISA_XVFFINTL_Q_LU; */
+                /* case 0xb: */
+                /*     /1* 01110110 10011110 001011.. ........ *1/ */
+                /*     /1* la.decode:2831 *1/ */
+                /*     return LISA_XVFFINTH_Q_LU; */
                 case 0xc:
                     /* 01110110 10011110 001100.. ........ */
                     /* la.decode:2832 */
@@ -13974,22 +14010,22 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011110 010111.. ........ */
                     /* la.decode:2843 */
                     return LISA_XVFTINT_LU_D;
-                case 0x18:
-                    /* 01110110 10011110 011000.. ........ */
-                    /* la.decode:2844 */
-                    return LISA_XVFTINTRM_WU_S;
-                case 0x19:
-                    /* 01110110 10011110 011001.. ........ */
-                    /* la.decode:2845 */
-                    return LISA_XVFTINTRM_LU_D;
-                case 0x1a:
-                    /* 01110110 10011110 011010.. ........ */
-                    /* la.decode:2846 */
-                    return LISA_XVFTINTRP_WU_S;
-                case 0x1b:
-                    /* 01110110 10011110 011011.. ........ */
-                    /* la.decode:2847 */
-                    return LISA_XVFTINTRP_LU_D;
+                /* case 0x18: */
+                /*     /1* 01110110 10011110 011000.. ........ *1/ */
+                /*     /1* la.decode:2844 *1/ */
+                /*     return LISA_XVFTINTRM_WU_S; */
+                /* case 0x19: */
+                /*     /1* 01110110 10011110 011001.. ........ *1/ */
+                /*     /1* la.decode:2845 *1/ */
+                /*     return LISA_XVFTINTRM_LU_D; */
+                /* case 0x1a: */
+                /*     /1* 01110110 10011110 011010.. ........ *1/ */
+                /*     /1* la.decode:2846 *1/ */
+                /*     return LISA_XVFTINTRP_WU_S; */
+                /* case 0x1b: */
+                /*     /1* 01110110 10011110 011011.. ........ *1/ */
+                /*     /1* la.decode:2847 *1/ */
+                /*     return LISA_XVFTINTRP_LU_D; */
                 case 0x1c:
                     /* 01110110 10011110 011100.. ........ */
                     /* la.decode:2848 */
@@ -13998,14 +14034,14 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011110 011101.. ........ */
                     /* la.decode:2849 */
                     return LISA_XVFTINTRZ_LU_D;
-                case 0x1e:
-                    /* 01110110 10011110 011110.. ........ */
-                    /* la.decode:2850 */
-                    return LISA_XVFTINTRNE_WU_S;
-                case 0x1f:
-                    /* 01110110 10011110 011111.. ........ */
-                    /* la.decode:2851 */
-                    return LISA_XVFTINTRNE_LU_D;
+                /* case 0x1e: */
+                /*     /1* 01110110 10011110 011110.. ........ *1/ */
+                /*     /1* la.decode:2850 *1/ */
+                /*     return LISA_XVFTINTRNE_WU_S; */
+                /* case 0x1f: */
+                /*     /1* 01110110 10011110 011111.. ........ *1/ */
+                /*     /1* la.decode:2851 *1/ */
+                /*     return LISA_XVFTINTRNE_LU_D; */
                 }
                 return LISA_INVALID;
             case 0x5:
@@ -14051,46 +14087,46 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     /* 01110110 10011110 101001.. ........ */
                     /* la.decode:2861 */
                     return LISA_XVFTINTRNEH_L_S;
-                case 0xa:
-                    /* 01110110 10011110 101010.. ........ */
-                    /* la.decode:2862 */
-                    return LISA_XVFTINTL_LU_S;
-                case 0xb:
-                    /* 01110110 10011110 101011.. ........ */
-                    /* la.decode:2863 */
-                    return LISA_XVFTINTH_LU_S;
-                case 0xc:
-                    /* 01110110 10011110 101100.. ........ */
-                    /* la.decode:2864 */
-                    return LISA_XVFTINTRML_LU_S;
-                case 0xd:
-                    /* 01110110 10011110 101101.. ........ */
-                    /* la.decode:2865 */
-                    return LISA_XVFTINTRMH_LU_S;
-                case 0xe:
-                    /* 01110110 10011110 101110.. ........ */
-                    /* la.decode:2866 */
-                    return LISA_XVFTINTRPL_LU_S;
-                case 0xf:
-                    /* 01110110 10011110 101111.. ........ */
-                    /* la.decode:2867 */
-                    return LISA_XVFTINTRPH_LU_S;
-                case 0x10:
-                    /* 01110110 10011110 110000.. ........ */
-                    /* la.decode:2868 */
-                    return LISA_XVFTINTRZL_LU_S;
-                case 0x11:
-                    /* 01110110 10011110 110001.. ........ */
-                    /* la.decode:2869 */
-                    return LISA_XVFTINTRZH_LU_S;
-                case 0x12:
-                    /* 01110110 10011110 110010.. ........ */
-                    /* la.decode:2870 */
-                    return LISA_XVFTINTRNEL_LU_S;
-                case 0x13:
-                    /* 01110110 10011110 110011.. ........ */
-                    /* la.decode:2871 */
-                    return LISA_XVFTINTRNEH_LU_S;
+                /* case 0xa: */
+                /*     /1* 01110110 10011110 101010.. ........ *1/ */
+                /*     /1* la.decode:2862 *1/ */
+                /*     return LISA_XVFTINTL_LU_S; */
+                /* case 0xb: */
+                /*     /1* 01110110 10011110 101011.. ........ *1/ */
+                /*     /1* la.decode:2863 *1/ */
+                /*     return LISA_XVFTINTH_LU_S; */
+                /* case 0xc: */
+                /*     /1* 01110110 10011110 101100.. ........ *1/ */
+                /*     /1* la.decode:2864 *1/ */
+                /*     return LISA_XVFTINTRML_LU_S; */
+                /* case 0xd: */
+                /*     /1* 01110110 10011110 101101.. ........ *1/ */
+                /*     /1* la.decode:2865 *1/ */
+                /*     return LISA_XVFTINTRMH_LU_S; */
+                /* case 0xe: */
+                /*     /1* 01110110 10011110 101110.. ........ *1/ */
+                /*     /1* la.decode:2866 *1/ */
+                /*     return LISA_XVFTINTRPL_LU_S; */
+                /* case 0xf: */
+                /*     /1* 01110110 10011110 101111.. ........ *1/ */
+                /*     /1* la.decode:2867 *1/ */
+                /*     return LISA_XVFTINTRPH_LU_S; */
+                /* case 0x10: */
+                /*     /1* 01110110 10011110 110000.. ........ *1/ */
+                /*     /1* la.decode:2868 *1/ */
+                /*     return LISA_XVFTINTRZL_LU_S; */
+                /* case 0x11: */
+                /*     /1* 01110110 10011110 110001.. ........ *1/ */
+                /*     /1* la.decode:2869 *1/ */
+                /*     return LISA_XVFTINTRZH_LU_S; */
+                /* case 0x12: */
+                /*     /1* 01110110 10011110 110010.. ........ *1/ */
+                /*     /1* la.decode:2870 *1/ */
+                /*     return LISA_XVFTINTRNEL_LU_S; */
+                /* case 0x13: */
+                /*     /1* 01110110 10011110 110011.. ........ *1/ */
+                /*     /1* la.decode:2871 *1/ */
+                /*     return LISA_XVFTINTRNEH_LU_S; */
                 case 0x18:
                     /* 01110110 10011110 111000.. ........ */
                     /* la.decode:2872 */
@@ -14311,17 +14347,17 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0xba:
             /* 01110110 111010.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x6:
-                /* 01110110 11101011 0....... ........ */
-                /* la.decode:2909 */
-                return LISA_XVINSGR2VR_B;
+            /* case 0x6: */
+            /*     /1* 01110110 11101011 0....... ........ *1/ */
+            /*     /1* la.decode:2909 *1/ */
+            /*     return LISA_XVINSGR2VR_B; */
             case 0x7:
                 /* 01110110 11101011 1....... ........ */
                 switch ((insn >> 14) & 0x1) {
-                case 0x0:
-                    /* 01110110 11101011 10...... ........ */
-                    /* la.decode:2910 */
-                    return LISA_XVINSGR2VR_H;
+                /* case 0x0: */
+                /*     /1* 01110110 11101011 10...... ........ *1/ */
+                /*     /1* la.decode:2910 *1/ */
+                /*     return LISA_XVINSGR2VR_H; */
                 case 0x1:
                     /* 01110110 11101011 11...... ........ */
                     switch ((insn >> 13) & 0x1) {
@@ -14347,17 +14383,17 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0xbb:
             /* 01110110 111011.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x6:
-                /* 01110110 11101111 0....... ........ */
-                /* la.decode:2913 */
-                return LISA_XVPICKVE2GR_B;
+            /* case 0x6: */
+            /*     /1* 01110110 11101111 0....... ........ *1/ */
+            /*     /1* la.decode:2913 *1/ */
+            /*     return LISA_XVPICKVE2GR_B; */
             case 0x7:
                 /* 01110110 11101111 1....... ........ */
                 switch ((insn >> 14) & 0x1) {
-                case 0x0:
-                    /* 01110110 11101111 10...... ........ */
-                    /* la.decode:2914 */
-                    return LISA_XVPICKVE2GR_H;
+                /* case 0x0: */
+                /*     /1* 01110110 11101111 10...... ........ *1/ */
+                /*     /1* la.decode:2914 *1/ */
+                /*     return LISA_XVPICKVE2GR_H; */
                 case 0x1:
                     /* 01110110 11101111 11...... ........ */
                     switch ((insn >> 13) & 0x1) {
@@ -14383,17 +14419,17 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0xbc:
             /* 01110110 111100.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x6:
-                /* 01110110 11110011 0....... ........ */
-                /* la.decode:2917 */
-                return LISA_XVPICKVE2GR_BU;
+            /* case 0x6: */
+            /*     /1* 01110110 11110011 0....... ........ *1/ */
+            /*     /1* la.decode:2917 *1/ */
+            /*     return LISA_XVPICKVE2GR_BU; */
             case 0x7:
                 /* 01110110 11110011 1....... ........ */
                 switch ((insn >> 14) & 0x1) {
-                case 0x0:
-                    /* 01110110 11110011 10...... ........ */
-                    /* la.decode:2918 */
-                    return LISA_XVPICKVE2GR_HU;
+                /* case 0x0: */
+                /*     /1* 01110110 11110011 10...... ........ *1/ */
+                /*     /1* la.decode:2918 *1/ */
+                /*     return LISA_XVPICKVE2GR_HU; */
                 case 0x1:
                     /* 01110110 11110011 11...... ........ */
                     switch ((insn >> 13) & 0x1) {
@@ -14491,17 +14527,17 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0xbf:
             /* 01110110 111111.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x6:
-                /* 01110110 11111111 0....... ........ */
-                /* la.decode:2929 */
-                return LISA_XVINSVE0_B;
+            /* case 0x6: */
+            /*     /1* 01110110 11111111 0....... ........ *1/ */
+            /*     /1* la.decode:2929 *1/ */
+            /*     return LISA_XVINSVE0_B; */
             case 0x7:
                 /* 01110110 11111111 1....... ........ */
                 switch ((insn >> 14) & 0x1) {
-                case 0x0:
-                    /* 01110110 11111111 10...... ........ */
-                    /* la.decode:2930 */
-                    return LISA_XVINSVE0_H;
+                /* case 0x0: */
+                /*     /1* 01110110 11111111 10...... ........ *1/ */
+                /*     /1* la.decode:2930 *1/ */
+                /*     return LISA_XVINSVE0_H; */
                 case 0x1:
                     /* 01110110 11111111 11...... ........ */
                     switch ((insn >> 13) & 0x1) {
@@ -14527,17 +14563,17 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
         case 0xc0:
             /* 01110111 000000.. ........ ........ */
             switch ((insn >> 15) & 0x7) {
-            case 0x6:
-                /* 01110111 00000011 0....... ........ */
-                /* la.decode:2933 */
-                return LISA_XVPICKVE_B;
+            /* case 0x6: */
+            /*     /1* 01110111 00000011 0....... ........ *1/ */
+            /*     /1* la.decode:2933 *1/ */
+            /*     return LISA_XVPICKVE_B; */
             case 0x7:
                 /* 01110111 00000011 1....... ........ */
                 switch ((insn >> 14) & 0x1) {
-                case 0x0:
-                    /* 01110111 00000011 10...... ........ */
-                    /* la.decode:2934 */
-                    return LISA_XVPICKVE_H;
+                /* case 0x0: */
+                /*     /1* 01110111 00000011 10...... ........ *1/ */
+                /*     /1* la.decode:2934 *1/ */
+                /*     return LISA_XVPICKVE_H; */
                 case 0x1:
                     /* 01110111 00000011 11...... ........ */
                     switch ((insn >> 13) & 0x1) {
@@ -14623,7 +14659,7 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     return LISA_XVEXTL_Q_D;
                 }
                 /* la.decode:2947 */
-                return LISA_XVSLLWIL_Q_D;
+                /* return LISA_XVSLLWIL_Q_D; */
             }
             return LISA_INVALID;
         case 0xc3:
@@ -14664,7 +14700,7 @@ IR2_INS_OP get_ins_op(uint32_t insn) {
                     return LISA_XVEXTL_QU_DU;
                 }
                 /* la.decode:2954 */
-                return LISA_XVSLLWIL_QU_DU;
+                /* return LISA_XVSLLWIL_QU_DU; */
             }
             return LISA_INVALID;
         case 0xc4:

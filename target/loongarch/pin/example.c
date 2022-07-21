@@ -1,5 +1,6 @@
 #include "example.h"
-#include "target/loongarch/instrument/la_disasm/include/disasm.h"
+#include "../instrument/decoder/disasm.h"
+#include "../instrument/decoder/la_print.h"
 #include "ins_inspection.h"
 #include "qemu.h"
 #include "user-internals.h"
@@ -12,8 +13,8 @@ VOID docount(UINT64 pc, UINT32 opcode)
     ++icount;
     char msg[128];
     Ins ins;
-    la_disasm_one_ins(opcode, &ins);
-    ins_print(&ins, msg);
+    la_disasm(opcode, &ins);
+    sprint_ins(&ins, msg);
     fprintf(stderr, "thread %d: %lu\tpc: 0x%lx\t%s\n", PIN_ThreadId(), icount, pc, msg);
 }
 

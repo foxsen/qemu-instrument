@@ -131,30 +131,28 @@ void ins_insert_after(Ins *old, Ins *ins)
 }
 
 
-bool op_is_branch(IR2_INS_OP op)
+bool op_is_branch(IR2_OPCODE op)
 {
     return (LISA_BEQZ <= op && op <= LISA_BGEU);
 }
 
-bool op_is_direct_jmp(IR2_INS_OP op)
+bool op_is_direct_jmp(IR2_OPCODE op)
 {
-    return (LISA_BEQZ <= op && op <= LISA_BGEU) && op != LISA_JIRL;
+    return ((LISA_BEQZ <= op && op <= LISA_BCNEZ) || (LISA_B <= op && op <= LISA_BGEU));
 }
 
-bool op_is_indirect_jmp(IR2_INS_OP op)
+bool op_is_indirect_jmp(IR2_OPCODE op)
 {
-    /* FIXME: not sure about jiscr0 & jiscr1 */
-    lsassert(op != LISA_JISCR0 && op != LISA_JISCR1);
     return (op == LISA_JIRL);
 }
 
-bool op_is_condition_jmp(IR2_INS_OP op)
+bool op_is_condition_jmp(IR2_OPCODE op)
 {
     return ((LISA_BEQZ <= op && op <= LISA_BCNEZ)
             || (LISA_BEQ <= op && op <= LISA_BGEU));
 }
 
-bool op_is_load(IR2_INS_OP op)
+bool op_is_load(IR2_OPCODE op)
 {
     if (op >= LISA_LD_B && op <= LISA_LD_D) {
         return true;
@@ -191,7 +189,7 @@ bool op_is_load(IR2_INS_OP op)
     return false;
 }
 
-bool op_is_store(IR2_INS_OP op)
+bool op_is_store(IR2_OPCODE op)
 {
     if (op >= LISA_ST_B && op <= LISA_ST_D) {
         return true;
@@ -288,7 +286,7 @@ Ins *ins_b(long offset)
     return ins_create_1(LISA_B, offset);
 }
 
-Ins *ins_create_0(IR2_INS_OP op)
+Ins *ins_create_0(IR2_OPCODE op)
 {
     Ins *ins = ins_alloc(0x0);
     ins->op = op;
@@ -296,7 +294,7 @@ Ins *ins_create_0(IR2_INS_OP op)
     return ins;
 }
 
-Ins *ins_create_1(IR2_INS_OP op, int opnd0)
+Ins *ins_create_1(IR2_OPCODE op, int opnd0)
 {
     Ins *ins = ins_alloc(0x0);
     ins->op = op;
@@ -305,7 +303,7 @@ Ins *ins_create_1(IR2_INS_OP op, int opnd0)
     return ins;
 }
 
-Ins *ins_create_2(IR2_INS_OP op, int opnd0, int opnd1)
+Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1)
 {
     Ins *ins = ins_alloc(0x0);
     ins->op = op;
@@ -315,7 +313,7 @@ Ins *ins_create_2(IR2_INS_OP op, int opnd0, int opnd1)
     return ins;
 }
 
-Ins *ins_create_3(IR2_INS_OP op, int opnd0, int opnd1, int opnd2)
+Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
 {
     Ins *ins = ins_alloc(0x0);
     ins->op = op;
@@ -326,7 +324,7 @@ Ins *ins_create_3(IR2_INS_OP op, int opnd0, int opnd1, int opnd2)
     return ins;
 }
 
-Ins *ins_create_4(IR2_INS_OP op, int opnd0, int opnd1, int opnd2, int opnd3)
+Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
 {
     Ins *ins = ins_alloc(0x0);
     ins->op = op;
@@ -338,35 +336,35 @@ Ins *ins_create_4(IR2_INS_OP op, int opnd0, int opnd1, int opnd2, int opnd3)
     return ins;
 }
 
-Ins *ins_append_0(IR2_INS_OP op)
+Ins *ins_append_0(IR2_OPCODE op)
 {
     Ins *ins = ins_create_0(op);
     ins_append(ins);
     return ins;
 }
 
-Ins *ins_append_1(IR2_INS_OP op, int opnd0)
+Ins *ins_append_1(IR2_OPCODE op, int opnd0)
 {
     Ins *ins = ins_create_1(op, opnd0);
     ins_append(ins);
     return ins;
 }
 
-Ins *ins_append_2(IR2_INS_OP op, int opnd0, int opnd1)
+Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1)
 {
     Ins *ins = ins_create_2(op, opnd0, opnd1);
     ins_append(ins);
     return ins;
 }
 
-Ins *ins_append_3(IR2_INS_OP op, int opnd0, int opnd1, int opnd2)
+Ins *ins_append_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
 {
     Ins *ins = ins_create_3(op, opnd0, opnd1, opnd2);
     ins_append(ins);
     return ins;
 }
 
-Ins *ins_append_4(IR2_INS_OP op, int opnd0, int opnd1, int opnd2, int opnd3)
+Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
 {
     Ins *ins = ins_create_4(op, opnd0, opnd1, opnd2, opnd3);
     ins_append(ins);

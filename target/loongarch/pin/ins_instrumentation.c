@@ -186,7 +186,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
 
     /* 1. 设置分析函数的参数 */
     Ins *cur = ins->first_ins;
-    IR2_INS_OP op = ins->origin_ins->op;
+    IR2_OPCODE op = ins->origin_ins->op;
     int ins_nr = 0;
     int itemp1 = reg_invalid;
     int itemp2 = reg_invalid;

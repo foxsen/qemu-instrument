@@ -2,7 +2,8 @@
 #define _PIN_TYPES_H_
 
 #include <stdint.h>
-#include "la_disasm/include/ir2.h"
+#include <stdbool.h>
+#include "decoder/ir2.h"
 
 typedef struct pin_ins {
     uint64_t pc;
