@@ -85,7 +85,7 @@ BOOL INS_HasFallThrough(INS ins)
 {
     /* TODO: does syscall & break have fallthrough? */
     IR2_OPCODE op = ins->origin_ins->op;
-    if (op_is_branch(op) && !op_is_condition_jmp(op))
+    if (op_is_branch(op) && !op_is_condition_branch(op))
         return false;
     return true;
 }

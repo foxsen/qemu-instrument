@@ -320,7 +320,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         ins_remove(ins);
         ins_nr--;
-    } else if (op_is_direct_jmp(ins->op)) {
+    } else if (op_is_direct_branch(ins->op)) {
         /* 直接跳转：
          * 1. 保存目标地址到 reg_target
          * 2. 跳转到上下文切换代码（推迟到重定位再做）
@@ -424,7 +424,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         ins_remove(ins);
         ins_nr--;
-    } else if (op_is_indirect_jmp(ins->op)) {
+    } else if (op_is_indirect_branch(ins->op)) {
         /* 间接跳转：
          * 1. 保存目标地址到 reg_target
          * 2. 跳转到上下文切换代码（推迟到重定位再做）

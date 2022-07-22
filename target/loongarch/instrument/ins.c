@@ -136,80 +136,257 @@ bool op_is_branch(IR2_OPCODE op)
     return (LISA_BEQZ <= op && op <= LISA_BGEU);
 }
 
-bool op_is_direct_jmp(IR2_OPCODE op)
+bool op_is_direct_branch(IR2_OPCODE op)
 {
     return ((LISA_BEQZ <= op && op <= LISA_BCNEZ) || (LISA_B <= op && op <= LISA_BGEU));
 }
 
-bool op_is_indirect_jmp(IR2_OPCODE op)
+bool op_is_indirect_branch(IR2_OPCODE op)
 {
-    return (op == LISA_JIRL);
+    return ((op == LISA_JIRL) || (LISA_JISCR0 <= op && op <= LISA_JISCR1));
 }
 
-bool op_is_condition_jmp(IR2_OPCODE op)
+bool op_is_condition_branch(IR2_OPCODE op)
 {
     return ((LISA_BEQZ <= op && op <= LISA_BCNEZ)
             || (LISA_BEQ <= op && op <= LISA_BGEU));
 }
 
+bool op_is_float_branch(IR2_OPCODE op)
+{
+    return (LISA_BCEQZ == op || LISA_BCNEZ == op);
+}
+
+bool op_is_ldst(IR2_OPCODE op)
+{
+    return (op_is_load(op) || op_is_store(op));
+}
+
 bool op_is_load(IR2_OPCODE op)
 {
-    if (op >= LISA_LD_B && op <= LISA_LD_D) {
+    switch (op) {
+    case LISA_LL_W:
+    case LISA_LL_D:
+    case LISA_LDPTR_W:
+    case LISA_LDPTR_D:
+    case LISA_LD_B:
+    case LISA_LD_H:
+    case LISA_LD_W:
+    case LISA_LD_D:
+    case LISA_LD_BU:
+    case LISA_LD_HU:
+    case LISA_LD_WU:
+    case LISA_PRELD:
+    case LISA_FLD_S:
+    case LISA_FLD_D:
+    case LISA_VLD:
+    case LISA_XVLD:
+    case LISA_LDL_W:
+    case LISA_LDR_W:
+    case LISA_LDL_D:
+    case LISA_LDR_D:
+    case LISA_VLDREPL_D:
+    case LISA_VLDREPL_W:
+    case LISA_VLDREPL_H:
+    case LISA_VLDREPL_B:
+    case LISA_XVLDREPL_D:
+    case LISA_XVLDREPL_W:
+    case LISA_XVLDREPL_H:
+    case LISA_XVLDREPL_B:
+    case LISA_LDX_B:
+    case LISA_LDX_H:
+    case LISA_LDX_W:
+    case LISA_LDX_D:
+    case LISA_LDX_BU:
+    case LISA_LDX_HU:
+    case LISA_LDX_WU:
+    case LISA_PRELDX:
+    case LISA_FLDX_S:
+    case LISA_FLDX_D:
+    case LISA_VLDX:
+    case LISA_XVLDX:
+    case LISA_FLDGT_S:
+    case LISA_FLDGT_D:
+    case LISA_FLDLE_S:
+    case LISA_FLDLE_D:
+    case LISA_LDGT_B:
+    case LISA_LDGT_H:
+    case LISA_LDGT_W:
+    case LISA_LDGT_D:
+    case LISA_LDLE_B:
+    case LISA_LDLE_H:
+    case LISA_LDLE_W:
+    case LISA_LDLE_D:
         return true;
+    default:
+        return false;
     }
-    if (op >= LISA_LD_BU && op <= LISA_LD_WU) {
-        return true;
-    }
-    if (op == LISA_LL_W || op == LISA_LL_D) {
-        return true;
-    }
-    if (op == LISA_LDPTR_W || op == LISA_LDPTR_D) {
-        return true;
-    }
-    if (op == LISA_FLD_S || op == LISA_FLD_D) {
-        return true;
-    }
-    if (op == LISA_VLD || op == LISA_XVLD){
-        return true;
-    }
-    if (op >= LISA_LDL_W && op <= LISA_LDR_D){
-        /* TODO: LA dont have? */
-        lsassert(0);
-        return true;
-    }
-    if (op >= LISA_VLDREPL_D && op <= LISA_VLDREPL_B){
-        return true;
-    }
-    if (op >= LISA_XVLDREPL_D && op <= LISA_XVLDREPL_B){
-        return true;
-    }
-    if (op == LISA_PRELD) {
-        return true;
-    }
-    return false;
 }
 
 bool op_is_store(IR2_OPCODE op)
 {
-    if (op >= LISA_ST_B && op <= LISA_ST_D) {
+    switch (op) {
+    case LISA_SC_W:
+    case LISA_SC_D:
+    case LISA_STPTR_W:
+    case LISA_STPTR_D:
+    case LISA_ST_B:
+    case LISA_ST_H:
+    case LISA_ST_W:
+    case LISA_ST_D:
+    case LISA_FST_S:
+    case LISA_FST_D:
+    case LISA_VST:
+    case LISA_XVST:
+    case LISA_STL_W:
+    case LISA_STR_W:
+    case LISA_STL_D:
+    case LISA_STR_D:
+    case LISA_VSTELM_D:
+    case LISA_VSTELM_W:
+    case LISA_VSTELM_H:
+    case LISA_VSTELM_B:
+    case LISA_XVSTELM_D:
+    case LISA_XVSTELM_W:
+    case LISA_XVSTELM_H:
+    case LISA_XVSTELM_B:
+    case LISA_STX_B:
+    case LISA_STX_H:
+    case LISA_STX_W:
+    case LISA_STX_D:
+    case LISA_FSTX_S:
+    case LISA_FSTX_D:
+    case LISA_VSTX:
+    case LISA_XVSTX:
+    case LISA_FSTGT_S:
+    case LISA_FSTGT_D:
+    case LISA_FSTLE_S:
+    case LISA_FSTLE_D:
+    case LISA_STGT_B:
+    case LISA_STGT_H:
+    case LISA_STGT_W:
+    case LISA_STGT_D:
+    case LISA_STLE_B:
+    case LISA_STLE_H:
+    case LISA_STLE_W:
+    case LISA_STLE_D:
         return true;
+    default:
+        return false;
     }
-    if (op >= LISA_STL_W && op <= LISA_STR_D) {
+}
+
+bool op_is_float_load(IR2_OPCODE op)
+{
+    switch (op) {
+    case LISA_FLD_S:
+    case LISA_FLD_D:
+    case LISA_VLD:
+    case LISA_XVLD:
+    case LISA_VLDREPL_D:
+    case LISA_VLDREPL_W:
+    case LISA_VLDREPL_H:
+    case LISA_VLDREPL_B:
+    case LISA_XVLDREPL_D:
+    case LISA_XVLDREPL_W:
+    case LISA_XVLDREPL_H:
+    case LISA_XVLDREPL_B:
+    case LISA_FLDX_S:
+    case LISA_FLDX_D:
+    case LISA_VLDX:
+    case LISA_XVLDX:
+    case LISA_FLDGT_S:
+    case LISA_FLDGT_D:
+    case LISA_FLDLE_S:
+    case LISA_FLDLE_D:
         return true;
+    default:
+        return false;
     }
-    if (op == LISA_SC_D || op == LISA_SC_W) {
+}
+
+bool op_is_float_store(IR2_OPCODE op)
+{
+    switch (op) {
+    case LISA_FST_S:
+    case LISA_FST_D:
+    case LISA_VST:
+    case LISA_XVST:
+    case LISA_VSTELM_D:
+    case LISA_VSTELM_W:
+    case LISA_VSTELM_H:
+    case LISA_VSTELM_B:
+    case LISA_XVSTELM_D:
+    case LISA_XVSTELM_W:
+    case LISA_XVSTELM_H:
+    case LISA_XVSTELM_B:
+    case LISA_FSTX_S:
+    case LISA_FSTX_D:
+    case LISA_VSTX:
+    case LISA_XVSTX:
+    case LISA_FSTGT_S:
+    case LISA_FSTGT_D:
+    case LISA_FSTLE_S:
+    case LISA_FSTLE_D:
         return true;
+    default:
+        return false;
     }
-    if (op == LISA_STPTR_W || op == LISA_STPTR_D) {
+}
+
+bool op_is_am(IR2_OPCODE op)
+{
+    switch (op) {
+    case LISA_AMSWAP_W:
+    case LISA_AMSWAP_D:
+    case LISA_AMADD_W:
+    case LISA_AMADD_D:
+    case LISA_AMAND_W:
+    case LISA_AMAND_D:
+    case LISA_AMOR_W:
+    case LISA_AMOR_D:
+    case LISA_AMXOR_W:
+    case LISA_AMXOR_D:
+    case LISA_AMMAX_W:
+    case LISA_AMMAX_D:
+    case LISA_AMMIN_W:
+    case LISA_AMMIN_D:
+    case LISA_AMMAX_WU:
+    case LISA_AMMAX_DU:
+    case LISA_AMMIN_WU:
+    case LISA_AMMIN_DU:
+    case LISA_AMSWAP_DB_W:
+    case LISA_AMSWAP_DB_D:
+    case LISA_AMADD_DB_W:
+    case LISA_AMADD_DB_D:
+    case LISA_AMAND_DB_W:
+    case LISA_AMAND_DB_D:
+    case LISA_AMOR_DB_W:
+    case LISA_AMOR_DB_D:
+    case LISA_AMXOR_DB_W:
+    case LISA_AMXOR_DB_D:
+    case LISA_AMMAX_DB_W:
+    case LISA_AMMAX_DB_D:
+    case LISA_AMMIN_DB_W:
+    case LISA_AMMIN_DB_D:
+    case LISA_AMMAX_DB_WU:
+    case LISA_AMMAX_DB_DU:
+    case LISA_AMMIN_DB_WU:
+    case LISA_AMMIN_DB_DU:
         return true;
+    default:
+        return false;
     }
-    if (op == LISA_FST_S || op == LISA_FST_D) {
-        return true;
-    }
-    if (op == LISA_VST || op == LISA_XVST){
-        return true;
-    }
-    return false;
+}
+
+bool op_is_ll(IR2_OPCODE op)
+{
+    return (op == LISA_LL_W || op == LISA_LL_D);
+}
+
+bool op_is_sc(IR2_OPCODE op)
+{
+    return (op == LISA_SC_W || op == LISA_SC_D);
 }
 
 bool opnd_is_gpr(Ins *ins, int i)
@@ -242,7 +419,8 @@ bool opnd_is_gpr_readwrite(Ins *ins, int i)
 #include "bitopts.h"
 uint64_t ins_target_addr(Ins *ins)
 {
-    lsassert(op_is_direct_jmp(ins->op));
+    lsassert(op_is_direct_branch(ins->op));
+    lsassertm(ins->pc != 0x0, "pc == 0");
 
     uint64_t pc = ins->pc;
     uint64_t offset;

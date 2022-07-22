@@ -46,11 +46,18 @@ void ins_insert_before(Ins *old, Ins *ins);
 void ins_insert_after(Ins *old, Ins *ins);
 
 bool op_is_branch(IR2_OPCODE op);
-bool op_is_direct_jmp(IR2_OPCODE op);
-bool op_is_indirect_jmp(IR2_OPCODE op);
-bool op_is_condition_jmp(IR2_OPCODE op);
+bool op_is_direct_branch(IR2_OPCODE op);
+bool op_is_indirect_branch(IR2_OPCODE op);
+bool op_is_condition_branch(IR2_OPCODE op);
+bool op_is_float_branch(IR2_OPCODE op);
+bool op_is_ldst(IR2_OPCODE op);
 bool op_is_load(IR2_OPCODE op);
 bool op_is_store(IR2_OPCODE op);
+bool op_is_float_load(IR2_OPCODE op);
+bool op_is_float_store(IR2_OPCODE op);
+bool op_is_am(IR2_OPCODE op);
+bool op_is_ll(IR2_OPCODE op);
+bool op_is_sc(IR2_OPCODE op);
 
 bool opnd_is_gpr(Ins *ins, int i);
 bool opnd_is_gpr_read(Ins *ins, int i);

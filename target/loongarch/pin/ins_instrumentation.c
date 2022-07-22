@@ -264,7 +264,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
         case IARG_BRANCH_TAKEN:
             if (op == LISA_SYSCALL || op == LISA_BREAK) {
                 lsassertm(0, "is syscall/break a branch?\n");
-            } else if (op_is_condition_jmp(op)) {
+            } else if (op_is_condition_branch(op)) {
                 /*
                  * BEQ rj, rd, off
                  * ->
@@ -317,9 +317,9 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             }
             break;
         case IARG_BRANCH_TARGET_ADDR:
-            if (op_is_direct_jmp(op)) {
+            if (op_is_direct_branch(op)) {
                 ins_nr += ins_insert_before_li_d(cur, argi, ins_target_addr(ins->origin_ins));
-            } else if (op_is_indirect_jmp(op)) {
+            } else if (op_is_indirect_branch(op)) {
                 itemp1 = reg_alloc_itemp();
                 ins_nr += ins_insert_before_li_d(cur, itemp1, sign_extend(ins->origin_ins->opnd[2].val << 2, 18));
                 ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, ins->origin_ins->opnd[1].val)));

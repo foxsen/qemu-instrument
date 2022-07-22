@@ -50,7 +50,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         if (tr_data.is_jmp == TRANS_NEXT && ins_nr == max_insns) {
             tr_data.is_jmp = TRANS_TOO_MANY;
             INS_append_exit(ins, 0);
-        } else if (op_is_condition_jmp(la_ins->op)) {
+        } else if (op_is_condition_branch(la_ins->op)) {
             INS_append_exit(ins, 1); /* 条件跳转也作为tb结束, tb_link第二个跳转出口 */
         }
 
@@ -90,7 +90,7 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
             TRACE_append_bbl(trace, bbl);
             break;
         /* if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL || la_ins->op == LISA_BREAK) { */
-            /* if (op_is_condition_jmp(la_ins->op)) { */
+            /* if (op_is_condition_branch(la_ins->op)) { */
             /*     bbl = BBL_alloc(pc); */
             /* } else { */
             /*     break; */
