@@ -3,7 +3,7 @@
 #include "error.h"
 #include <stdint.h>
 
-/* 寄存器映射 */
+/* --- 寄存器映射 --- */
 const int reg_gpr_map[] = {
     [reg_t0] = reg_s0,
     [reg_t1] = reg_s1,
@@ -24,19 +24,14 @@ int gpr_is_mapped(int gpr) {
     return (reg_gpr_map[gpr] != 0);
 }
 
-/* 直接映射的寄存器，返回映射的寄存器
- * TODO: 未映射的寄存器，分配一个临时寄存器 
- */
+ /* 返回直接映射的寄存器，返回映射的寄存器 */
 int reg_alloc_gpr(int gpr) {
-    if (gpr_is_mapped(gpr)) {
-        return reg_gpr_map[gpr];
-    }
-    lsassert(0);
-    return 0;
+    lsassert(gpr_is_mapped(gpr));
+    return reg_gpr_map[gpr];
 }
 
-/* 临时寄存器 */
-const int reg_itemp_map[] = {
+/* --- 临时寄存器映射 --- */
+static const int itemp_map[] = {
     [ITEMP0] = reg_t0,
     [ITEMP1] = reg_t1,
     [ITEMP2] = reg_t2,
@@ -48,7 +43,7 @@ const int reg_itemp_map[] = {
     /* [ITEMP8] = reg_t8, */
 };
 
-const int reg_itemp_reverse_map[] = {
+static const int itemp_index_map[] = {
     /* [0 ... 31] = INVALID_TEMP, */
     [reg_t0] = ITEMP0,
     [reg_t1] = ITEMP1,
@@ -61,60 +56,63 @@ const int reg_itemp_reverse_map[] = {
     /* [reg_t8] = ITEMP8, */
 };
 
-#define ITEMP_NUM (sizeof(reg_itemp_map) / sizeof(int))
+#define ITEMP_NUM (sizeof(itemp_map) / sizeof(int))
+static uint16_t free_itemp_mask = (1 << ITEMP_NUM) - 1;
 
-
-
-/* available itemp bit_map */
-static uint16_t itemp_mask = (1 << ITEMP_NUM) - 1;
-
-/* map native reg to itemp */
-static int native_itemp_map[32] = {
-    [0 ... 31] = INVALID_TEMP,
-};
+void reg_debug_itemp_all_free(void)
+{
+    lsassert(free_itemp_mask == ((1 << ITEMP_NUM) - 1));
+}
 
 int reg_alloc_itemp(void)
 {
     static int cur = 0;
-    if (itemp_mask == 0) {
+    if (free_itemp_mask == 0) {
         lsassertm(0, "no free itemp");
     }
-    while (!BitIsSet(itemp_mask, cur)) {
+    while (!BitIsSet(free_itemp_mask, cur)) {
         cur = (cur + 1) % ITEMP_NUM;
     }
-    itemp_mask = BitUnset(itemp_mask, cur);
-    return reg_itemp_map[cur++];
+    free_itemp_mask = BitUnset(free_itemp_mask, cur);
+    return itemp_map[cur++];
 }
 
-void reg_free_itemp(int reg)
+void reg_free_itemp(int itemp)
 {
-    int i = reg_itemp_reverse_map[reg];
-    lsassert(!BitIsSet(itemp_mask, i));
-    itemp_mask = BitSet(itemp_mask, i);
+    int i = itemp_index_map[itemp];
+    lsassert(!BitIsSet(free_itemp_mask, i));
+    free_itemp_mask = BitSet(free_itemp_mask, i);
 }
 
 
-int map_native_reg_to_itemp(int native)
-{
-    /* reg_zero 不用做映射 */
-    if (native == reg_zero)
-        return 0;
 
-    if (native_itemp_map[native] == INVALID_TEMP) {
-        native_itemp_map[native] = reg_alloc_itemp();
+/* 记录 GPR 映射到的临时寄存器 */
+static __thread int gpr_itemp_map[] = {
+    [0 ... 31] = reg_invalid,
+};
+
+int reg_map_gpr_to_itemp(int gpr)
+{
+    if (gpr == reg_zero)
+        return reg_zero;
+
+    if (gpr_itemp_map[gpr] == reg_invalid) {
+        gpr_itemp_map[gpr] = reg_alloc_itemp();
     }
-    return native_itemp_map[native];
+
+    return gpr_itemp_map[gpr];
 }
 
-void unmap_native_reg_to_itemp(int native)
+void reg_unmap_gpr_to_itemp(int gpr)
 {
-    if (native == reg_zero)
+    if (gpr == reg_zero)
         return;
 
-    int itemp = native_itemp_map[native];
-    if (itemp != INVALID_TEMP) {
+    int itemp = gpr_itemp_map[gpr]; 
+    if (itemp != reg_invalid) {
         reg_free_itemp(itemp);
-        native_itemp_map[native] = INVALID_TEMP;
+        gpr_itemp_map[gpr] = reg_invalid;
     }
+    return;
 }
 

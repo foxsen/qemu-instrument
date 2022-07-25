@@ -75,9 +75,11 @@ int gpr_is_mapped(int gpr);
 int reg_alloc_gpr(int gpr);
 
 int reg_alloc_itemp(void);
-void reg_free_itemp(int reg);
-int map_native_reg_to_itemp(int reg_native);
-void unmap_native_reg_to_itemp(int reg_native);
+void reg_free_itemp(int itemp);
+void reg_debug_itemp_all_free(void);
+int reg_map_gpr_to_itemp(int gpr);
+void reg_unmap_gpr_to_itemp(int gpr);
+
 
 #endif
 

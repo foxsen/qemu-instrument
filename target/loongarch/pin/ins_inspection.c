@@ -76,7 +76,7 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     /* case LISA_STL_D: */
     /* case LISA_STR_D: */
     default:
-            lsassertm(0, "unhandled ins op\n");
+        lsassertm(0, "unhandled ins op\n");
     }
 }
 

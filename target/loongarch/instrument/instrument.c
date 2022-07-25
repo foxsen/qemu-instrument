@@ -128,6 +128,7 @@ void la_relocation(CPUState *cs)
             /* FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt */
             if (ins->opnd[0].val == 0x0) {
                 uintptr_t exit_offset = context_switch_native_to_bt - cur_ins_pos;
+                lsassert(exit_offset == sextract64(exit_offset, 0, 28));
                 ins->opnd[0].val = exit_offset >> 2;
             }
 

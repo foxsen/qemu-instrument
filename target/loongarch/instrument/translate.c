@@ -195,18 +195,14 @@ int INS_translate(CPUState *cs, INS pin_ins)
     int gpr[4] = {-1, -1, -1, -1};
     for (int i = 0; i < ins->opnd_count; i++) {
         int reg = ins->opnd[i].val;
-        /* 忽略 reg_zero */
-        if (reg == reg_zero)
-            continue;
         if (opnd_is_gpr(ins, i)) {
             gpr[i] = reg;
-            int mapped_gpr;
+            /* 用映射的寄存器替换指令中原始的寄存器 */
             if (gpr_is_mapped(reg)) {
-                mapped_gpr = reg_alloc_gpr(reg);
+                ins->opnd[i].val = reg_alloc_gpr(reg);
             } else {
-                mapped_gpr = map_native_reg_to_itemp(reg);
+                ins->opnd[i].val = reg_map_gpr_to_itemp(reg);
             }
-            ins->opnd[i].val = mapped_gpr;  /* 用映射的寄存器替换指令中所使用的原始寄存器 */
         }
     }
 
@@ -214,7 +210,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
         for (int i = 0; i < 4; ++i) {
             int reg = gpr[i];
-            if (reg != -1 && !gpr_is_mapped(reg)) {
+            if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
                 int mapped_gpr = ins->opnd[i].val;
                 if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
                     ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
@@ -227,15 +223,6 @@ int INS_translate(CPUState *cs, INS pin_ins)
             }
         }
     } else {
-        /* remove dup regs */
-        for (int i = 3; i >= 0; --i) {
-            for (int j = i - 1; j >= 0; --j) {
-                if (gpr[i] == gpr[j]) {
-                    gpr[i] = -1;
-                    break;
-                }
-            }
-        }
 #ifdef CONFIG_LMJ_DEBUG
         char msg[32];
         sprint_op(ins->op, msg);
@@ -243,20 +230,25 @@ int INS_translate(CPUState *cs, INS pin_ins)
 #endif
         for (int i = 0; i < 4; ++i) {
             int reg = gpr[i];
-            if (reg != -1 && !gpr_is_mapped(reg)) {
+            if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
+                /* skip duplicated regs */
+                bool skip = false;
+                for (int j = i - 1; j >= 0; --j) {
+                    if (gpr[i] == gpr[j]) {
+                        skip = true;
+                        break;
+                    }
+                }
+                if (skip) {
+                    continue;
+                }
+
                 int mapped_gpr = ins->opnd[i].val;
                 ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
                 ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
                 before_nr++;
                 after_nr++;
             }
-        }
-    }
-
-    /* 3. free itemps */
-    for (int i = 0; i < 4; ++i) {
-        if (gpr[i] != -1 && !gpr_is_mapped(gpr[i])) {
-            unmap_native_reg_to_itemp(gpr[i]);
         }
     }
 
@@ -388,13 +380,17 @@ int INS_translate(CPUState *cs, INS pin_ins)
         }
 
         if (ins->op == LISA_BL) {
-            /* save return address: GR[1] = PC + 4 */
+            /* save return address: $ra = PC + 4 */
             uint64_t next_pc = ins->pc + 4;
-            int itemp_ra = reg_alloc_itemp();
-            before_nr += ins_insert_before_li_d(ins, itemp_ra, next_pc);
-            ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp_ra, reg_env, env_offset_of_gpr(cs, reg_ra)));
-            before_nr++;
-            reg_free_itemp(itemp_ra);
+            if (gpr_is_mapped(reg_ra)) {
+                before_nr += ins_insert_before_li_d(ins, reg_alloc_gpr(reg_ra), next_pc);
+            } else {
+                int itemp_ra = reg_alloc_itemp();
+                before_nr += ins_insert_before_li_d(ins, itemp_ra, next_pc);
+                ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp_ra, reg_env, env_offset_of_gpr(cs, reg_ra)));
+                before_nr++;
+                reg_free_itemp(itemp_ra);
+            }
         }
 
         /* tb_link: fallthrough, this B ins will be patched when tb_link */
@@ -426,7 +422,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         ins_nr--;
     } else if (op_is_indirect_branch(ins->op)) {
         /* 间接跳转：
-         * 1. 保存目标地址到 reg_target
+         * 1. 计算目标地址，保存到 reg_target
          * 2. 跳转到上下文切换代码（推迟到重定位再做）
          * TODO: 添加stub for jmp_glue
          */
@@ -447,9 +443,13 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
         if (gpr[0] != -1 && gpr[0] != reg_zero) {
             uint64_t next_pc = ins->pc + 4;
-            int li_nr = ins_insert_before_li_d(ins, rd, next_pc);
-            ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, gpr[0])));
-            before_nr += li_nr + 1;
+            if (gpr_is_mapped(gpr[0])) {
+                before_nr += ins_insert_before_li_d(ins, reg_alloc_gpr(gpr[0]), next_pc);
+            } else {
+                before_nr += ins_insert_before_li_d(ins, rd, next_pc);
+                ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, gpr[0])));
+                before_nr += 1;
+            }
         }
 
         /* IBTC: 检查 tb_jmp_cache 中是否缓存了目标 tb */
@@ -534,6 +534,17 @@ int INS_translate(CPUState *cs, INS pin_ins)
         ins_nr--;
     }
 
+    /* free mapped itemps */
+    for (int i = 0; i < 4; ++i) {
+        int reg = gpr[i];
+        if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
+            reg_unmap_gpr_to_itemp(reg);
+        }
+    }
+    /* debug info */
+    reg_debug_itemp_all_free();
+
+    /* 最后，确定翻译后的指令链表范围 */
     Ins *start = ins, *end = ins;
     /* TODO: a ugly fix for ins被remove的情况 */
     if (ins_nr == 0) {

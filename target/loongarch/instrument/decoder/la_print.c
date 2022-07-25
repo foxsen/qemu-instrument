@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "target/loongarch/instrument/error.h"
+#include <assert.h>
 #include "disasm.h"
 #include "la_print.h"
 
@@ -2636,7 +2636,7 @@ void sprint_op(IR2_OPCODE op, char *msg) {
 }
 
 void sprint_ins(IR2 *ir2, char * msg) {
-    lsassert(ir2->op >= LISA_INVALID && ir2->op <= LISA_ENDING);
+    assert(ir2->op >= LISA_INVALID && ir2->op <= LISA_ENDING);
     sprintf(msg, "%-15s\t", ir2_ins_name[ir2->op]);
     for (int i = 0; i < ir2->opnd_count; i++) {
         if (i != 0)
@@ -2664,8 +2664,11 @@ void sprint_ins(IR2 *ir2, char * msg) {
             case IR2_OPND_IMM:
                 sprintf(msg + strlen(msg),"0x%x", ir2->opnd[i].val);
                 break;
+            case IR2_OPND_NONE:
+                break;
             default:
-                sprintf(msg + strlen(msg),"Error in print_ir2, unknown opnd\n");
+                fprintf(stderr, "Error in sprint_ins, unknown opnd\n");
+                assert(0);
                 exit(EXIT_FAILURE);
         }
     }
