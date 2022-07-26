@@ -76,14 +76,14 @@ static bool is_la_sign_opnd[] = {
 
 int get_opnd_val(GM_OPERAND_TYPE type, uint32_t insn)
 {
-    GM_OPERAND_PLACE_RELATION *bit_field = &bit_field_table[type];
-    int bit_start = bit_field->bit_range_0.start;
-    int bit_end = bit_field->bit_range_0.end;
+    GM_OPERAND_PLACE_RELATION bit_field = bit_field_table[type];
+    int bit_start = bit_field.bit_range_0.start;
+    int bit_end = bit_field.bit_range_0.end;
     int bit_len = bit_end - bit_start + 1;
     int val = (insn >> bit_start) & ((1 << bit_len) - 1);
 
-    bit_start = bit_field->bit_range_1.start;
-    bit_end = bit_field->bit_range_1.end;
+    bit_start = bit_field.bit_range_1.start;
+    bit_end = bit_field.bit_range_1.end;
     if (bit_start >= 0 &&  bit_end >= 0) {
         int field1_val = insn << (31 - bit_end) >> (31 - bit_end + bit_start);
         val |= field1_val << bit_len;
@@ -91,7 +91,7 @@ int get_opnd_val(GM_OPERAND_TYPE type, uint32_t insn)
 
     if (is_la_sign_opnd[type]) {
         if (bit_end >= 0)
-            bit_len += bit_field->bit_range_1.end - bit_field->bit_range_1.start + 1;
+            bit_len += bit_field.bit_range_1.end - bit_field.bit_range_1.start + 1;
         val = val << (32 - bit_len) >> (32 - bit_len);
     }
 
@@ -106,10 +106,10 @@ void la_disasm(uint32_t opcode, Ins *ins)
     ins->op = op; 
     ins->opnd_count = 0;
 
-    GM_LA_OPCODE_FORMAT *format = &lisa_format_table[op];
+    GM_LA_OPCODE_FORMAT format = lisa_format_table[op];
 
     for (int i = 0; i < 4; i++) {
-        GM_OPERAND_TYPE opnd_type = format->opnd[i];
+        GM_OPERAND_TYPE opnd_type = format.opnd[i];
         if (opnd_type == OPD_INVALID)
             break;
 

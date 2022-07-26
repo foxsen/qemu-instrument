@@ -74,7 +74,7 @@ typedef enum {
     FPR_XK,
 } GM_OPERAND_TYPE;
 
-extern IR2_OPND_TYPE ir2_opnd_type_table[];
+extern const IR2_OPND_TYPE ir2_opnd_type_table[];
 
 typedef struct pair {
     int start;
@@ -93,9 +93,9 @@ typedef struct {
     GM_OPERAND_TYPE opnd[4];
 } GM_LA_OPCODE_FORMAT;
 
-extern GM_OPERAND_PLACE_RELATION bit_field_table[];
+extern const GM_OPERAND_PLACE_RELATION bit_field_table[];
 
-extern GM_LA_OPCODE_FORMAT lisa_format_table[];
+extern const GM_LA_OPCODE_FORMAT lisa_format_table[];
 
 #include "ir2.h"
 #include <stdbool.h>
@@ -119,7 +119,7 @@ typedef struct lisa_insn_reg_access_format {
 } lisa_insn_reg_access_format;
 
 /* 定义对指令中每个操作数，是否读写寄存器 */
-extern lisa_insn_reg_access_format lisa_reg_access_table[];
+extern const lisa_insn_reg_access_format lisa_reg_access_table[];
 
 
 

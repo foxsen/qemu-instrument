@@ -1,7 +1,7 @@
 #include "assemble.h"
 #include "target/loongarch/instrument/error.h"
 
-IR2_OPND_TYPE ir2_opnd_type_table[] ={
+const IR2_OPND_TYPE ir2_opnd_type_table[] ={
     IR2_OPND_NONE, //OPD_INVALID
     IR2_OPND_CC, //FCC_CA
     IR2_OPND_CC, //FCC_CD
@@ -73,7 +73,7 @@ IR2_OPND_TYPE ir2_opnd_type_table[] ={
     IR2_OPND_FPR, //FPR_XK
 };
 
-GM_OPERAND_PLACE_RELATION bit_field_table[] = {
+const GM_OPERAND_PLACE_RELATION bit_field_table[] = {
     {OPD_INVALID, {-1, -1}, {-1, -1} },
     {FCC_CA, {15, 17}, {-1, -1} },
     {FCC_CD, {0, 2}, {-1, -1} },
@@ -145,7 +145,7 @@ GM_OPERAND_PLACE_RELATION bit_field_table[] = {
     {FPR_XK, {10, 14}, {-1, -1} },
 };
 
-GM_LA_OPCODE_FORMAT lisa_format_table[] = {
+const GM_LA_OPCODE_FORMAT lisa_format_table[] = {
     {LISA_INVALID, 0x0, {OPD_INVALID}},
     {LISA_ILL, -1, {OPD_INVALID}},
     {LISA_LABEL, 0x0, {OPD_INVALID}},
@@ -2744,7 +2744,7 @@ GM_LA_OPCODE_FORMAT lisa_format_table[] = {
 };
 
 /* 定义对指令中每个操作数，是否读写寄存器 */
-lisa_insn_reg_access_format lisa_reg_access_table[] = {
+const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_INVALID, {}, false}, // LISA_INVALID {OPD_INVALID}
     {LISA_ILL, {}, false}, // LISA_ILL {OPD_INVALID}
     {LISA_LABEL, {}, false}, // LISA_LABEL {OPD_INVALID}
@@ -5344,15 +5344,15 @@ lisa_insn_reg_access_format lisa_reg_access_table[] = {
 
 uint32_t la_assemble(IR2 *ir2)
 {
-    GM_LA_OPCODE_FORMAT *format = &lisa_format_table[ir2->op];
-    lsassert(format->op == ir2->op);
-    lsassert(format->opcode != 0);
+    GM_LA_OPCODE_FORMAT format = lisa_format_table[ir2->op];
+    lsassert(format.op == ir2->op);
+    lsassert(format.opcode != 0);
 
-    uint32_t insn = format->opcode;
+    uint32_t insn = format.opcode;
     lsassertm(insn, "Cannot use a pseudo opcode!");
 
     for (int i = 0; i < 4; ++i) {
-        GM_OPERAND_TYPE opnd_type = format->opnd[i];
+        GM_OPERAND_TYPE opnd_type = format.opnd[i];
         if (opnd_type == OPD_INVALID) {
             lsassert(i == ir2->opnd_count);
             break;
@@ -5360,17 +5360,17 @@ uint32_t la_assemble(IR2 *ir2)
 
         int val = ir2->opnd[i].val;
 
-        GM_OPERAND_PLACE_RELATION *bit_field = &bit_field_table[opnd_type];
-        int start = bit_field->bit_range_0.start;
-        int end = bit_field->bit_range_0.end;
+        GM_OPERAND_PLACE_RELATION bit_field = bit_field_table[opnd_type];
+        int start = bit_field.bit_range_0.start;
+        int end = bit_field.bit_range_0.end;
         int bit_len = end - start + 1;
 
         int mask = (1 << bit_len) - 1;
         insn |= (val & mask) << start;
 
         /* OPD_OFFL & OPD_OFFLL opnd has two parts */
-        start = bit_field->bit_range_1.start;
-        end = bit_field->bit_range_1.end;
+        start = bit_field.bit_range_1.start;
+        end = bit_field.bit_range_1.end;
         if (start >= 0 && end >= 0) {
             val = val >> bit_len;
             bit_len = end - start + 1;
@@ -5383,21 +5383,21 @@ uint32_t la_assemble(IR2 *ir2)
 
 IR2_OPND_TYPE get_ir2_opnd_type(Ins *ins, int i)
 {
-    GM_LA_OPCODE_FORMAT *format = &lisa_format_table[ins->op];
-    GM_OPERAND_TYPE la_opnd_type = format->opnd[i];
+    GM_LA_OPCODE_FORMAT format = lisa_format_table[ins->op];
+    GM_OPERAND_TYPE la_opnd_type = format.opnd[i];
     IR2_OPND_TYPE ir2_opnd_type = ir2_opnd_type_table[la_opnd_type];
     return ir2_opnd_type;
 }
 
 LISA_REG_ACCESS_TYPE get_ir2_reg_access_type(Ins *ins, int i)
 {
-    lisa_insn_reg_access_format *format = &lisa_reg_access_table[ins->op];
-    lsassert(format->valid);
-    return format->opnd[i];
+    lisa_insn_reg_access_format format = lisa_reg_access_table[ins->op];
+    lsassert(format.valid);
+    return format.opnd[i];
 }
 
 bool is_ir2_reg_access_type_valid(Ins *ins)
 {
-    lisa_insn_reg_access_format *format = &lisa_reg_access_table[ins->op];
-    return format->valid;
+    lisa_insn_reg_access_format format = lisa_reg_access_table[ins->op];
+    return format.valid;
 }
