@@ -492,7 +492,6 @@ int INS_translate(CPUState *cs, INS pin_ins)
         tr_data.is_jmp = TRANS_NORETURN;
 
         int itemp = reg_alloc_itemp();
-        int itemp_cpu = reg_alloc_itemp();
 
         /* save next_pc */
         /* BUG: int li_nr = ins_insert_before_li_d(ins, itemp, ins->pc + 4); */
@@ -517,17 +516,14 @@ int INS_translate(CPUState *cs, INS pin_ins)
             }
         }
 
-        /* call cpu_loop_exit(CPUState *cpu) 
-         * BUG promt: 很可能出问题
-         * TODO: maybe need call (see) cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc) */
+        /* call cpu_loop_exit(CPUState *cpu) */
         li_nr = ins_insert_before_li_d(ins, itemp, (uint64_t)cpu_loop_exit);
-        li_nr = ins_insert_before_li_d(ins, itemp_cpu, (uint64_t)cs);
+        li_nr = ins_insert_before_li_d(ins, reg_a0, env_offset_of_cpu_state(cs));
+        ins_insert_before(ins, ins_create_3(LISA_ADD_D, reg_a0, reg_env, reg_a0));
         /* syscall will never return, so reg_ra is no use */
-        ins_insert_before(ins, ins_create_3(LISA_OR, reg_a0, reg_zero, itemp_cpu));
         ins_insert_before(ins, ins_create_3(LISA_JIRL, reg_ra, itemp, 0));
         before_nr += 2 * li_nr + 2;
 
-        reg_free_itemp(itemp_cpu);
         reg_free_itemp(itemp);
 
         ins_remove(ins);

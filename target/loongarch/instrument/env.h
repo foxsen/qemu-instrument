@@ -15,6 +15,13 @@
 #include "qemu/typedefs.h"
 
 
+static inline int env_offset_of_cpu_state(CPUState *cs)
+{
+    /* note: the result is larger than 12 bits, so we can not use ADDI_D to calc addr */
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(cs) - (uint64_t)cpu);
+}
+
 static inline int env_offset_of_gpr(CPUState *cs, int i)
 {
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
@@ -27,9 +34,9 @@ static inline int env_offset_of_pc(CPUState *cs)
     return (int)((uint64_t)(&cpu->pc) - (uint64_t)cpu);
 }
 
-/* note: the result is larger than 12 bits, so can not use ADDI_D */
 static inline int env_offset_of_tb_jmp_cache(CPUState *cs)
 {
+    /* note: the result is larger than 12 bits, so we can not use ADDI_D to calc addr */
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
     return (int)((uint64_t)(&cs->tb_jmp_cache) - (uint64_t)cpu);
 }

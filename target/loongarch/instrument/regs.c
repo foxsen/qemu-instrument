@@ -66,7 +66,7 @@ void reg_debug_itemp_all_free(void)
 
 int reg_alloc_itemp(void)
 {
-    static int cur = 0;
+    static __thread int cur = 0;
     if (free_itemp_mask == 0) {
         lsassertm(0, "no free itemp");
     }
