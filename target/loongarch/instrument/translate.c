@@ -272,43 +272,29 @@ int INS_translate(CPUState *cs, INS pin_ins)
     /* Note: origin ins will be removed */
     if (ins->op == LISA_PCADDI || ins->op == LISA_PCADDU12I || ins->op == LISA_PCADDU18I || ins->op == LISA_PCALAU12I) {
         /* PCADD 系列指令 */
-        int itemp_pc = reg_alloc_itemp();
-        int itemp_offset = reg_alloc_itemp();
-        int li_nr = ins_insert_before_li_d(ins, itemp_pc, ins->pc);
-        before_nr += li_nr;
-        /* TODO: can use less insn to achieve it */
+        int rd = ins->opnd[0].val;
+        int li_nr = 0;
         switch (ins->op) {
             case LISA_PCADDI:
-                li_nr = ins_insert_before_li_d(ins, itemp_offset, sign_extend(ins->opnd[1].val << 2, 22));
+                li_nr = ins_insert_before_li_d(ins, rd, ins->pc + sign_extend(ins->opnd[1].val << 2, 22));
                 before_nr += li_nr;
                 break;
             case LISA_PCADDU12I:
-                li_nr = ins_insert_before_li_d(ins, itemp_offset, sign_extend(ins->opnd[1].val << 12, 32));
+                li_nr = ins_insert_before_li_d(ins, rd, ins->pc + sign_extend(ins->opnd[1].val << 12, 32));
                 before_nr += li_nr;
                 break;
             case LISA_PCADDU18I:
-                li_nr = ins_insert_before_li_d(ins, itemp_offset, sign_extend(ins->opnd[1].val << 18, 38));
+                li_nr = ins_insert_before_li_d(ins, rd, ins->pc + sign_extend(ins->opnd[1].val << 18, 38));
                 before_nr += li_nr;
                 break;
             case LISA_PCALAU12I:
-                li_nr = ins_insert_before_li_d(ins, itemp_offset, sign_extend(ins->opnd[1].val << 12, 32));
+                /* LISA_PCALAU12I低12位清零 */
+                li_nr = ins_insert_before_li_d(ins, rd, (ins->pc + sign_extend(ins->opnd[1].val << 12, 32)) & ~0xfff);
                 before_nr += li_nr;
                 break;
             default:
                 break;
         }
-
-        ins_insert_before(ins, ins_create_3(LISA_ADD_D, ins->opnd[0].val, itemp_pc, itemp_offset));
-        before_nr++;
-
-        /* LISA_PCALAU12I: 低12位清零 */
-        if (ins->op == LISA_PCALAU12I) {
-            ins_insert_before(ins, ins_create_4(LISA_BSTRINS_D, ins->opnd[0].val, reg_zero, 11, 0));
-            before_nr++;
-        }
-
-        reg_free_itemp(itemp_offset);
-        reg_free_itemp(itemp_pc);
 
         ins_remove(ins);
         ins_nr--;
@@ -393,11 +379,11 @@ int INS_translate(CPUState *cs, INS pin_ins)
             }
         }
 
-        /* tb_link: fallthrough, this B ins will be patched when tb_link */
+        /* tb_link: fallthrough, this nop ins will be patched when tb_link */
         if (enable_tb_link) {
-            Ins *b = ins_b(1);
-            tr_data.jmp_ins[0] = b;
-            ins_insert_before(ins, b);
+            Ins *nop = ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
+            tr_data.jmp_ins[0] = nop;
+            ins_insert_before(ins, nop);
             before_nr++;
         }
 
@@ -477,8 +463,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
             reg_free_itemp(itemp);
         }
 
-        /* set return value ($a0) = 0 */
-        /* FIXME: return value not used */
+        /* set return value ($a0) = 0, for not tb_link */
         ins_insert_before(ins, ins_create_3(LISA_OR, reg_a0, reg_zero, reg_zero));
         before_nr++;
 
@@ -493,8 +478,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         int itemp = reg_alloc_itemp();
 
-        /* save next_pc */
-        /* BUG: int li_nr = ins_insert_before_li_d(ins, itemp, ins->pc + 4); */
+        /* save exception pc */
         int li_nr = ins_insert_before_li_d(ins, itemp, ins->pc);
         ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_pc(cs)));
         before_nr += li_nr + 1;
@@ -520,8 +504,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
         li_nr = ins_insert_before_li_d(ins, itemp, (uint64_t)cpu_loop_exit);
         li_nr = ins_insert_before_li_d(ins, reg_a0, env_offset_of_cpu_state(cs));
         ins_insert_before(ins, ins_create_3(LISA_ADD_D, reg_a0, reg_env, reg_a0));
-        /* syscall will never return, so reg_ra is no use */
-        ins_insert_before(ins, ins_create_3(LISA_JIRL, reg_ra, itemp, 0));
+        /* syscall will never return */
+        ins_insert_before(ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
         before_nr += 2 * li_nr + 2;
 
         reg_free_itemp(itemp);
@@ -567,14 +551,14 @@ int INS_append_exit(INS pin_ins, uint32_t index)
 
     Ins *end;
     if (enable_tb_link) {
-        /* tb_link: fallthrough, this B ins will be patched when tb_link */
-        Ins *b = ins_b(1);
-        tr_data.jmp_ins[index] = b;
-        ins_insert_after(pin_ins->last_ins, b);
+        /* tb_link: fallthrough, this nop ins will be patched when tb_link */
+        Ins *nop = ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
+        tr_data.jmp_ins[index] = nop;
+        ins_insert_after(pin_ins->last_ins, nop);
         ++num;
 
         end = ins_b(0);
-        ins_insert_after(b, end);
+        ins_insert_after(nop, end);
         ++num;
     } else {
         end = ins_b(0);

@@ -3,7 +3,7 @@
 #include "error.h"
 #include <stdint.h>
 
-/* --- 寄存器映射 --- */
+/* === 寄存器映射 === */
 const int reg_gpr_map[] = {
     [reg_t0] = reg_s0,
     [reg_t1] = reg_s1,
@@ -30,7 +30,7 @@ int reg_alloc_gpr(int gpr) {
     return reg_gpr_map[gpr];
 }
 
-/* --- 临时寄存器映射 --- */
+/* === 临时寄存器映射 === */
 static const int itemp_map[] = {
     [ITEMP0] = reg_t0,
     [ITEMP1] = reg_t1,
@@ -59,16 +59,12 @@ static const int itemp_index_map[] = {
 #define ITEMP_NUM (sizeof(itemp_map) / sizeof(int))
 static uint16_t free_itemp_mask = (1 << ITEMP_NUM) - 1;
 
-void reg_debug_itemp_all_free(void)
-{
-    lsassert(free_itemp_mask == ((1 << ITEMP_NUM) - 1));
-}
-
 int reg_alloc_itemp(void)
 {
     static __thread int cur = 0;
     if (free_itemp_mask == 0) {
         lsassertm(0, "no free itemp");
+        abort();
     }
     while (!BitIsSet(free_itemp_mask, cur)) {
         cur = (cur + 1) % ITEMP_NUM;
@@ -79,9 +75,14 @@ int reg_alloc_itemp(void)
 
 void reg_free_itemp(int itemp)
 {
-    int i = itemp_index_map[itemp];
-    lsassert(!BitIsSet(free_itemp_mask, i));
-    free_itemp_mask = BitSet(free_itemp_mask, i);
+    int idx = itemp_index_map[itemp];
+    lsassert(!BitIsSet(free_itemp_mask, idx));
+    free_itemp_mask = BitSet(free_itemp_mask, idx);
+}
+
+void reg_debug_itemp_all_free(void)
+{
+    lsassert(free_itemp_mask == ((1 << ITEMP_NUM) - 1));
 }
 
 
