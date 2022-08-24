@@ -2631,6 +2631,13 @@ static const char *ir2_cc_name[] = {
 };
 
 
+const char *gpr_name(uint32_t gpr)
+{
+    if (gpr >= 32)
+        return "invalid";
+    return ir2_gpr_name[gpr];
+}
+
 void sprint_op(IR2_OPCODE op, char *msg) {
     sprintf(msg, "%-15s\t", ir2_ins_name[op]);
 }

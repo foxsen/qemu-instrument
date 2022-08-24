@@ -17,9 +17,8 @@ void tr_init(void *tb)
 
     /* allocate ins_array when called at the first time */
     if (t->ins_array == NULL) {
-        lsassert(t->cur_ins_nr == 0);
-        t->ins_array = (Ins *)calloc(MAX_INS_NR, sizeof(Ins));
         t->max_ins_nr = MAX_INS_NR;
+        t->ins_array = (Ins *)calloc(t->max_ins_nr, sizeof(Ins));
     }
     t->cur_ins_nr = 0;
 
@@ -35,7 +34,7 @@ void tr_fini(void)
 Ins *ins_alloc(uint64_t pc)
 {
     TRANSLATION_DATA *t = &tr_data;
-    lsassertm(t->cur_ins_nr < MAX_INS_NR, "too many ins\n");
+    lsassertm(t->cur_ins_nr < t->max_ins_nr, "too many ins\n");
 
     Ins *ins = t->ins_array + t->cur_ins_nr;
     t->cur_ins_nr++;

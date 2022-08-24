@@ -16,12 +16,12 @@ typedef enum TransType {
 typedef struct TRANSLATION_DATA {
     void *curr_tb;
     TransType is_jmp;
-    Ins* jmp_ins[2];
+    Ins* jmp_ins[2];    // tb两个出口的B指令，用于被重定向到context_swicth
 
     /* ins array: 提前分配好的ins对象池 */
     Ins *ins_array;
     int max_ins_nr;
-    int cur_ins_nr;
+    int cur_ins_nr;     // 下一个待分配的地址，每次开始翻译TB时清零
 
     /* ins list: 翻译过程中生成的指令链表 */
     int list_ins_nr;    // ins_nr in ins list

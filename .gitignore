@@ -18,3 +18,4 @@ GTAGS
 *.gcov
 /.ccls-cache/
 /build-x86-64-softmmu/
+.vim-bookmarks
