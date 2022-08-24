@@ -3179,30 +3179,30 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_BGE, {GPR_READ, GPR_READ, REG_ACCESS_INVALID}, true},
     {LISA_BLTU, {GPR_READ, GPR_READ, REG_ACCESS_INVALID}, true},
     {LISA_BGEU, {GPR_READ, GPR_READ, REG_ACCESS_INVALID}, true},
-    {LISA_FADD_S, {}, false}, // LISA_FADD_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FADD_D, {}, false}, // LISA_FADD_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FSUB_S, {}, false}, // LISA_FSUB_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FSUB_D, {}, false}, // LISA_FSUB_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMUL_S, {}, false}, // LISA_FMUL_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMUL_D, {}, false}, // LISA_FMUL_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FDIV_S, {}, false}, // LISA_FDIV_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FDIV_D, {}, false}, // LISA_FDIV_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMAX_S, {}, false}, // LISA_FMAX_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMAX_D, {}, false}, // LISA_FMAX_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMIN_S, {}, false}, // LISA_FMIN_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMIN_D, {}, false}, // LISA_FMIN_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMAXA_S, {}, false}, // LISA_FMAXA_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMAXA_D, {}, false}, // LISA_FMAXA_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMINA_S, {}, false}, // LISA_FMINA_S {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FMINA_D, {}, false}, // LISA_FMINA_D {FPR_FD, FPR_FJ, FPR_FK}
+    {LISA_FADD_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FADD_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FSUB_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FSUB_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMUL_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMUL_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FDIV_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FDIV_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMAX_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMAX_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMIN_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMIN_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMAXA_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMAXA_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMINA_S, {FPR_WRITE, FPR_READ, FPR_READ}, true},
+    {LISA_FMINA_D, {FPR_WRITE, FPR_READ, FPR_READ}, true},
     {LISA_FSCALEB_S, {}, false}, // LISA_FSCALEB_S {FPR_FD, FPR_FJ, FPR_FK}
     {LISA_FSCALEB_D, {}, false}, // LISA_FSCALEB_D {FPR_FD, FPR_FJ, FPR_FK}
     {LISA_FCOPYSIGN_S, {}, false}, // LISA_FCOPYSIGN_S {FPR_FD, FPR_FJ, FPR_FK}
     {LISA_FCOPYSIGN_D, {}, false}, // LISA_FCOPYSIGN_D {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FABS_S, {}, false}, // LISA_FABS_S {FPR_FD, FPR_FJ}
-    {LISA_FABS_D, {}, false}, // LISA_FABS_D {FPR_FD, FPR_FJ}
-    {LISA_FNEG_S, {}, false}, // LISA_FNEG_S {FPR_FD, FPR_FJ}
-    {LISA_FNEG_D, {}, false}, // LISA_FNEG_D {FPR_FD, FPR_FJ}
+    {LISA_FABS_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FABS_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FNEG_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FNEG_D, {FPR_WRITE, FPR_READ}, true},
     {LISA_FLOGB_S, {}, false}, // LISA_FLOGB_S {FPR_FD, FPR_FJ}
     {LISA_FLOGB_D, {}, false}, // LISA_FLOGB_D {FPR_FD, FPR_FJ}
     {LISA_FCLASS_S, {}, false}, // LISA_FCLASS_S {FPR_FD, FPR_FJ}
@@ -3213,8 +3213,8 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_FRECIP_D, {}, false}, // LISA_FRECIP_D {FPR_FD, FPR_FJ}
     {LISA_FRSQRT_S, {}, false}, // LISA_FRSQRT_S {FPR_FD, FPR_FJ}
     {LISA_FRSQRT_D, {}, false}, // LISA_FRSQRT_D {FPR_FD, FPR_FJ}
-    {LISA_FMOV_S, {}, false}, // LISA_FMOV_S {FPR_FD, FPR_FJ}
-    {LISA_FMOV_D, {}, false}, // LISA_FMOV_D {FPR_FD, FPR_FJ}
+    {LISA_FMOV_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FMOV_D, {FPR_WRITE, FPR_READ}, true},
     {LISA_MOVGR2FR_W, {FPR_WRITE, GPR_READ}, true},
     {LISA_MOVGR2FR_D, {FPR_WRITE, GPR_READ}, true},
     {LISA_MOVGR2FRH_W, {FPR_READWRITE, GPR_READ}, true},
@@ -3258,14 +3258,14 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_FFINT_D_L, {}, false}, // LISA_FFINT_D_L {FPR_FD, FPR_FJ}
     {LISA_FRINT_S, {}, false}, // LISA_FRINT_S {FPR_FD, FPR_FJ}
     {LISA_FRINT_D, {}, false}, // LISA_FRINT_D {FPR_FD, FPR_FJ}
-    {LISA_FMADD_S, {}, false}, // LISA_FMADD_S {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FMADD_D, {}, false}, // LISA_FMADD_D {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FMSUB_S, {}, false}, // LISA_FMSUB_S {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FMSUB_D, {}, false}, // LISA_FMSUB_D {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FNMADD_S, {}, false}, // LISA_FNMADD_S {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FNMADD_D, {}, false}, // LISA_FNMADD_D {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FNMSUB_S, {}, false}, // LISA_FNMSUB_S {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
-    {LISA_FNMSUB_D, {}, false}, // LISA_FNMSUB_D {FPR_FD, FPR_FJ, FPR_FK, FPR_FA}
+    {LISA_FMADD_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FMADD_D, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FMSUB_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FMSUB_D, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FNMADD_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FNMADD_D, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FNMSUB_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
+    {LISA_FNMSUB_D, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
     {LISA_VFMADD_S, {}, false}, // LISA_VFMADD_S {FPR_VD, FPR_VJ, FPR_VK, FPR_VA}
     {LISA_VFMADD_D, {}, false}, // LISA_VFMADD_D {FPR_VD, FPR_VJ, FPR_VK, FPR_VA}
     {LISA_VFMSUB_S, {}, false}, // LISA_VFMSUB_S {FPR_VD, FPR_VJ, FPR_VK, FPR_VA}
