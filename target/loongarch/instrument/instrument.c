@@ -119,11 +119,11 @@ void la_relocation(CPUState *cs)
 {
     int ins_nr = 0;
     TranslationBlock *tb = tr_data.curr_tb;
+    uintptr_t cur_ins_pos = (uintptr_t)tb->tc.ptr;
     bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
 
     for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
         if (ins->op == LISA_B) {
-            uintptr_t cur_ins_pos = (uintptr_t)tb->tc.ptr + (ins_nr << 2);
             /* 跳转指令重定向 */ 
             /* FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt */
             if (ins->opnd[0].val == 0x0) {
@@ -131,20 +131,21 @@ void la_relocation(CPUState *cs)
                 lsassert(exit_offset == sextract64(exit_offset, 0, 28));
                 ins->opnd[0].val = exit_offset >> 2;
             }
+        }
 
-            /* tb_link: 记录要patch的B的地址 */
-            if (enable_tb_link) {
-                if (tr_data.jmp_ins[0] == ins) {
-                    tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                    tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
-                }
-                if (tr_data.jmp_ins[1] == ins) {
-                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
-                }
+        /* tb_link: 记录要patch的B的地址 */
+        if (enable_tb_link) {
+            if (tr_data.jmp_ins[0] == ins) {
+                tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+            }
+            if (tr_data.jmp_ins[1] == ins) {
+                tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
             }
         }
         ins_nr++;
+        cur_ins_pos += 4;
     }
 
     /* TODO: handle segv scenario */
