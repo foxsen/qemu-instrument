@@ -3057,9 +3057,13 @@ static void load_elf_image(const char *image_name, int image_fd,
         info->end_data = info->end_code;
     }
 
+#ifdef CONFIG_LMJ
+    load_symbols(ehdr, image_fd, load_bias);
+#else
     if (qemu_log_enabled()) {
         load_symbols(ehdr, image_fd, load_bias);
     }
+#endif
 
     mmap_unlock();
 

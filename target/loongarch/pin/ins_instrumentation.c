@@ -39,6 +39,18 @@ void PIN_AddSyscallExitFunction(SYSCALL_EXIT_CALLBACK fun, VOID *val)
     PIN_state.syscall_exit_cb_val = val;
 }
 
+void PIN_AddCpuExecEnterFunction(CPU_EXEC_ENTER_CALLBACK fun, VOID *val)
+{
+    PIN_state.cpu_exec_enter_cb = fun;
+    PIN_state.cpu_exec_enter_cb_val = val;
+}
+
+void PIN_AddCpuExecExitFunction(CPU_EXEC_EXIT_CALLBACK fun, VOID *val)
+{
+    PIN_state.cpu_exec_exit_cb = fun;
+    PIN_state.cpu_exec_exit_cb_val = val;
+}
+
 typedef struct analysis_call_arg {
     IARG_TYPE type;
     uint64_t val;

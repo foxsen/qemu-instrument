@@ -333,6 +333,10 @@ const void *HELPER(lookup_tb_ptr)(CPUArchState *env)
     return tb->tc.ptr;
 }
 
+#ifdef CONFIG_LMJ
+#include "target/loongarch/pin/pin_state.h"
+#endif
+
 /* Execute a TB, and fix up the CPU state afterwards if necessary */
 /*
  * Disable CFI checks.
@@ -353,6 +357,10 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
 
     log_cpu_exec(itb->pc, cpu, itb);
 
+#ifdef CONFIG_LMJ
+    pin_instrument_cpu_exec_enter(cpu, itb);
+#endif 
+
     qemu_thread_jit_execute();
     ret = tcg_qemu_tb_exec(env, tb_ptr);
     cpu->can_do_io = 1;
@@ -366,6 +374,10 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
      */
     last_tb = tcg_splitwx_to_rw((void *)(ret & ~TB_EXIT_MASK));
     *tb_exit = ret & TB_EXIT_MASK;
+
+#ifdef CONFIG_LMJ
+    pin_instrument_cpu_exec_exit(cpu, last_tb, *tb_exit);
+#endif 
 
     trace_exec_tb_exit(last_tb, *tb_exit);
 

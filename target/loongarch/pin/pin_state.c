@@ -6,6 +6,18 @@ BOOL PIN_Init(INT32 argc, CHAR** argv)
 {
     PIN_state.ins_cb = NULL;
     PIN_state.ins_cb_val = NULL;
+    PIN_state.trace_cb = NULL;
+    PIN_state.trace_cb_val = NULL;
+    PIN_state.fini_cb = NULL;
+    PIN_state.fini_cb_val = NULL;
+    PIN_state.syscall_entry_cb = NULL;
+    PIN_state.syscall_entry_cb_val = NULL;
+    PIN_state.syscall_exit_cb = NULL;
+    PIN_state.syscall_exit_cb_val = NULL;
+    PIN_state.cpu_exec_enter_cb = NULL;
+    PIN_state.cpu_exec_enter_cb_val = NULL;
+    PIN_state.cpu_exec_exit_cb = NULL;
+    PIN_state.cpu_exec_exit_cb_val = NULL;
     return 0;
 }
 
@@ -47,5 +59,20 @@ void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret)
     ctxt.env = cpu->env_ptr;
     if (PIN_state.syscall_exit_cb != NULL) {
         PIN_state.syscall_exit_cb(PIN_ThreadId(), &ctxt, 0, PIN_state.syscall_exit_cb_val);
+    }
+}
+
+void pin_instrument_cpu_exec_enter(CPUState *cpu, TranslationBlock *tb)
+{
+    if (PIN_state.cpu_exec_enter_cb) {
+        PIN_state.cpu_exec_enter_cb(cpu, tb);
+    }
+}
+
+void pin_instrument_cpu_exec_exit(CPUState *cpu, TranslationBlock *last_tb, int tb_exit)
+{
+    /* FIEXME: when exec_tb exit for syscall/break, this cb will not be called */
+    if (PIN_state.cpu_exec_exit_cb) {
+        PIN_state.cpu_exec_exit_cb(cpu, last_tb, tb_exit);
     }
 }

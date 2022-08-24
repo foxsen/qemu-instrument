@@ -3,5 +3,6 @@ loongarch_tcg_ss.add(files(
   'ins_instrumentation.c',
   'pin_state.c',
   'thread.c',
-  'example.c',
 ))
+
+subdir('pintools')
