@@ -1,6 +1,7 @@
 #include "ins_inspection.h"
 #include "../instrument/ins.h"
 #include "../instrument/error.h"
+#include "../instrument/decoder/la_print.h"
 
 ADDRINT INS_Address(INS ins)
 {
@@ -10,6 +11,11 @@ ADDRINT INS_Address(INS ins)
 BOOL INS_IsMemoryRead(INS ins)
 {
     return op_is_load(ins->origin_ins->op);
+}
+
+BOOL INS_IsMemoryWrite(INS ins)
+{
+    return op_is_store(ins->origin_ins->op);
 }
 
 USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
@@ -24,6 +30,9 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     case LISA_VSTELM_B:
     case LISA_XVLDREPL_B:
     case LISA_XVSTELM_B:
+    case LISA_LDX_B:
+    case LISA_STX_B:
+    case LISA_LDX_BU:
         return 1;
     case LISA_LD_H:
     case LISA_ST_H:
@@ -32,6 +41,9 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     case LISA_VSTELM_H:
     case LISA_XVLDREPL_H:
     case LISA_XVSTELM_H:
+    case LISA_LDX_H:
+    case LISA_STX_H:
+    case LISA_LDX_HU:
         return 2;
     case LISA_LD_W:
     case LISA_ST_W:
@@ -46,6 +58,9 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     case LISA_VSTELM_W:
     case LISA_XVLDREPL_W:
     case LISA_XVSTELM_W:
+    case LISA_LDX_W:
+    case LISA_STX_W:
+    case LISA_LDX_WU:
         return 4;
     case LISA_LD_D:
     case LISA_ST_D:
@@ -59,6 +74,8 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     case LISA_VSTELM_D:
     case LISA_XVLDREPL_D:
     case LISA_XVSTELM_D:
+    case LISA_LDX_D:
+    case LISA_STX_D:
         return 8;
     case LISA_VLD:
     case LISA_VST:
@@ -76,8 +93,10 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
     /* case LISA_STL_D: */
     /* case LISA_STR_D: */
     default:
+        print_ins(ins->origin_ins);
         lsassertm(0, "unhandled ins op\n");
     }
+    return -1;
 }
 
 
@@ -147,252 +166,252 @@ BOOL BBL_Valid(BBL x)
 
 
 static const char *syscall_nr_name[] = {
-    "__NR_io_setup",                   // 0
-    "__NR_io_destroy",                 // 1
-    "__NR_io_submit",                  // 2
-    "__NR_io_cancel",                  // 3
-    "__NR_io_getevents",               // 4
-    "__NR_setxattr",                   // 5
-    "__NR_lsetxattr",                  // 6
-    "__NR_fsetxattr",                  // 7
-    "__NR_getxattr",                   // 8
-    "__NR_lgetxattr",                  // 9
-    "__NR_fgetxattr",                  // 10
-    "__NR_listxattr",                  // 11
-    "__NR_llistxattr",                 // 12
-    "__NR_flistxattr",                 // 13
-    "__NR_removexattr",                // 14
-    "__NR_lremovexattr",               // 15
-    "__NR_fremovexattr",               // 16
-    "__NR_getcwd",                     // 17
-    "__NR_lookup_dcookie",             // 18
-    "__NR_eventfd2",                   // 19
-    "__NR_epoll_create1",              // 20
-    "__NR_epoll_ctl",                  // 21
-    "__NR_epoll_pwait",                // 22
-    "__NR_dup",                        // 23
-    "__NR_dup3",                       // 24
-    "__NR3264_fcntl",                  // 25
-    "__NR_inotify_init1",              // 26
-    "__NR_inotify_add_watch",          // 27
-    "__NR_inotify_rm_watch",           // 28
-    "__NR_ioctl",                      // 29
-    "__NR_ioprio_set",                 // 30
-    "__NR_ioprio_get",                 // 31
-    "__NR_flock",                      // 32
-    "__NR_mknodat",                    // 33
-    "__NR_mkdirat",                    // 34
-    "__NR_unlinkat",                   // 35
-    "__NR_symlinkat",                  // 36
-    "__NR_linkat",                     // 37
-    "__NR_renameat",                   // 38
-    "__NR_umount2",                    // 39
-    "__NR_mount",                      // 40
-    "__NR_pivot_root",                 // 41
-    "__NR_nfsservctl",                 // 42
-    "__NR3264_statfs",                 // 43
-    "__NR3264_fstatfs",                // 44
-    "__NR3264_truncate",               // 45
-    "__NR3264_ftruncate",              // 46
-    "__NR_fallocate",                  // 47
-    "__NR_faccessat",                  // 48
-    "__NR_chdir",                      // 49
-    "__NR_fchdir",                     // 50
-    "__NR_chroot",                     // 51
-    "__NR_fchmod",                     // 52
-    "__NR_fchmodat",                   // 53
-    "__NR_fchownat",                   // 54
-    "__NR_fchown",                     // 55
-    "__NR_openat",                     // 56
-    "__NR_close",                      // 57
-    "__NR_vhangup",                    // 58
-    "__NR_pipe2",                      // 59
-    "__NR_quotactl",                   // 60
-    "__NR_getdents64",                 // 61
-    "__NR3264_lseek",                  // 62
-    "__NR_read",                       // 63
-    "__NR_write",                      // 64
-    "__NR_readv",                      // 65
-    "__NR_writev",                     // 66
-    "__NR_pread64",                    // 67
-    "__NR_pwrite64",                   // 68
-    "__NR_preadv",                     // 69
-    "__NR_pwritev",                    // 70
-    "__NR3264_sendfile",               // 71
-    "__NR_pselect6",                   // 72
-    "__NR_ppoll",                      // 73
-    "__NR_signalfd4",                  // 74
-    "__NR_vmsplice",                   // 75
-    "__NR_splice",                     // 76
-    "__NR_tee",                        // 77
-    "__NR_readlinkat",                 // 78
-    "__NR3264_fstatat",                // 79
-    "__NR3264_fstat",                  // 80
-    "__NR_sync",                       // 81
-    "__NR_fsync",                      // 82
-    "__NR_fdatasync",                  // 83
-    /* "__NR_sync_file_range2",           // 84 */
-    "__NR_sync_file_range",            // 84
-    "__NR_timerfd_create",             // 85
-    "__NR_timerfd_settime",            // 86
-    "__NR_timerfd_gettime",            // 87
-    "__NR_utimensat",                  // 88
-    "__NR_acct",                       // 89
-    "__NR_capget",                     // 90
-    "__NR_capset",                     // 91
-    "__NR_personality",                // 92
-    "__NR_exit",                       // 93
-    "__NR_exit_group",                 // 94
-    "__NR_waitid",                     // 95
-    "__NR_set_tid_address",            // 96
-    "__NR_unshare",                    // 97
-    "__NR_futex",                      // 98
-    "__NR_set_robust_list",            // 99
-    "__NR_get_robust_list",            // 100
-    "__NR_nanosleep",                  // 101
-    "__NR_getitimer",                  // 102
-    "__NR_setitimer",                  // 103
-    "__NR_kexec_load",                 // 104
-    "__NR_init_module",                // 105
-    "__NR_delete_module",              // 106
-    "__NR_timer_create",               // 107
-    "__NR_timer_gettime",              // 108
-    "__NR_timer_getoverrun",           // 109
-    "__NR_timer_settime",              // 110
-    "__NR_timer_delete",               // 111
-    "__NR_clock_settime",              // 112
-    "__NR_clock_gettime",              // 113
-    "__NR_clock_getres",               // 114
-    "__NR_clock_nanosleep",            // 115
-    "__NR_syslog",                     // 116
-    "__NR_ptrace",                     // 117
-    "__NR_sched_setparam",             // 118
-    "__NR_sched_setscheduler",         // 119
-    "__NR_sched_getscheduler",         // 120
-    "__NR_sched_getparam",             // 121
-    "__NR_sched_setaffinity",          // 122
-    "__NR_sched_getaffinity",          // 123
-    "__NR_sched_yield",                // 124
-    "__NR_sched_get_priority_max",     // 125
-    "__NR_sched_get_priority_min",     // 126
-    "__NR_sched_rr_get_interval",      // 127
-    "__NR_restart_syscall",            // 128
-    "__NR_kill",                       // 129
-    "__NR_tkill",                      // 130
-    "__NR_tgkill",                     // 131
-    "__NR_sigaltstack",                // 132
-    "__NR_rt_sigsuspend",              // 133
-    "__NR_rt_sigaction",               // 134
-    "__NR_rt_sigprocmask",             // 135
-    "__NR_rt_sigpending",              // 136
-    "__NR_rt_sigtimedwait",            // 137
-    "__NR_rt_sigqueueinfo",            // 138
-    "__NR_rt_sigreturn",               // 139
-    "__NR_setpriority",                // 140
-    "__NR_getpriority",                // 141
-    "__NR_reboot",                     // 142
-    "__NR_setregid",                   // 143
-    "__NR_setgid",                     // 144
-    "__NR_setreuid",                   // 145
-    "__NR_setuid",                     // 146
-    "__NR_setresuid",                  // 147
-    "__NR_getresuid",                  // 148
-    "__NR_setresgid",                  // 149
-    "__NR_getresgid",                  // 150
-    "__NR_setfsuid",                   // 151
-    "__NR_setfsgid",                   // 152
-    "__NR_times",                      // 153
-    "__NR_setpgid",                    // 154
-    "__NR_getpgid",                    // 155
-    "__NR_getsid",                     // 156
-    "__NR_setsid",                     // 157
-    "__NR_getgroups",                  // 158
-    "__NR_setgroups",                  // 159
-    "__NR_uname",                      // 160
-    "__NR_sethostname",                // 161
-    "__NR_setdomainname",              // 162
-    "__NR_getrlimit",                  // 163
-    "__NR_setrlimit",                  // 164
-    "__NR_getrusage",                  // 165
-    "__NR_umask",                      // 166
-    "__NR_prctl",                      // 167
-    "__NR_getcpu",                     // 168
-    "__NR_gettimeofday",               // 169
-    "__NR_settimeofday",               // 170
-    "__NR_adjtimex",                   // 171
-    "__NR_getpid",                     // 172
-    "__NR_getppid",                    // 173
-    "__NR_getuid",                     // 174
-    "__NR_geteuid",                    // 175
-    "__NR_getgid",                     // 176
-    "__NR_getegid",                    // 177
-    "__NR_gettid",                     // 178
-    "__NR_sysinfo",                    // 179
-    "__NR_mq_open",                    // 180
-    "__NR_mq_unlink",                  // 181
-    "__NR_mq_timedsend",               // 182
-    "__NR_mq_timedreceive",            // 183
-    "__NR_mq_notify",                  // 184
-    "__NR_mq_getsetattr",              // 185
-    "__NR_msgget",                     // 186
-    "__NR_msgctl",                     // 187
-    "__NR_msgrcv",                     // 188
-    "__NR_msgsnd",                     // 189
-    "__NR_semget",                     // 190
-    "__NR_semctl",                     // 191
-    "__NR_semtimedop",                 // 192
-    "__NR_semop",                      // 193
-    "__NR_shmget",                     // 194
-    "__NR_shmctl",                     // 195
-    "__NR_shmat",                      // 196
-    "__NR_shmdt",                      // 197
-    "__NR_socket",                     // 198
-    "__NR_socketpair",                 // 199
-    "__NR_bind",                       // 200
-    "__NR_listen",                     // 201
-    "__NR_accept",                     // 202
-    "__NR_connect",                    // 203
-    "__NR_getsockname",                // 204
-    "__NR_getpeername",                // 205
-    "__NR_sendto",                     // 206
-    "__NR_recvfrom",                   // 207
-    "__NR_setsockopt",                 // 208
-    "__NR_getsockopt",                 // 209
-    "__NR_shutdown",                   // 210
-    "__NR_sendmsg",                    // 211
-    "__NR_recvmsg",                    // 212
-    "__NR_readahead",                  // 213
-    "__NR_brk",                        // 214
-    "__NR_munmap",                     // 215
-    "__NR_mremap",                     // 216
-    "__NR_add_key",                    // 217
-    "__NR_request_key",                // 218
-    "__NR_keyctl",                     // 219
-    "__NR_clone",                      // 220
-    "__NR_execve",                     // 221
-    "__NR3264_mmap",                   // 222
-    "__NR3264_fadvise64",              // 223
-    "__NR_swapon",                     // 224
-    "__NR_swapoff",                    // 225
-    "__NR_mprotect",                   // 226
-    "__NR_msync",                      // 227
-    "__NR_mlock",                      // 228
-    "__NR_munlock",                    // 229
-    "__NR_mlockall",                   // 230
-    "__NR_munlockall",                 // 231
-    "__NR_mincore",                    // 232
-    "__NR_madvise",                    // 233
-    "__NR_remap_file_pages",           // 234
-    "__NR_mbind",                      // 235
-    "__NR_get_mempolicy",              // 236
-    "__NR_set_mempolicy",              // 237
-    "__NR_migrate_pages",              // 238
-    "__NR_move_pages",                 // 239
-    "__NR_rt_tgsigqueueinfo",          // 240
-    "__NR_perf_event_open",            // 241
-    "__NR_accept4",                    // 242
-    "__NR_recvmmsg",                   // 243
-    "__NR_arch_specific_syscall",      // 244
+    "io_setup",                   // 0
+    "io_destroy",                 // 1
+    "io_submit",                  // 2
+    "io_cancel",                  // 3
+    "io_getevents",               // 4
+    "setxattr",                   // 5
+    "lsetxattr",                  // 6
+    "fsetxattr",                  // 7
+    "getxattr",                   // 8
+    "lgetxattr",                  // 9
+    "fgetxattr",                  // 10
+    "listxattr",                  // 11
+    "llistxattr",                 // 12
+    "flistxattr",                 // 13
+    "removexattr",                // 14
+    "lremovexattr",               // 15
+    "fremovexattr",               // 16
+    "getcwd",                     // 17
+    "lookup_dcookie",             // 18
+    "eventfd2",                   // 19
+    "epoll_create1",              // 20
+    "epoll_ctl",                  // 21
+    "epoll_pwait",                // 22
+    "dup",                        // 23
+    "dup3",                       // 24
+    "264_fcntl",                  // 25
+    "inotify_init1",              // 26
+    "inotify_add_watch",          // 27
+    "inotify_rm_watch",           // 28
+    "ioctl",                      // 29
+    "ioprio_set",                 // 30
+    "ioprio_get",                 // 31
+    "flock",                      // 32
+    "mknodat",                    // 33
+    "mkdirat",                    // 34
+    "unlinkat",                   // 35
+    "symlinkat",                  // 36
+    "linkat",                     // 37
+    "renameat",                   // 38
+    "umount2",                    // 39
+    "mount",                      // 40
+    "pivot_root",                 // 41
+    "nfsservctl",                 // 42
+    "264_statfs",                 // 43
+    "264_fstatfs",                // 44
+    "264_truncate",               // 45
+    "264_ftruncate",              // 46
+    "fallocate",                  // 47
+    "faccessat",                  // 48
+    "chdir",                      // 49
+    "fchdir",                     // 50
+    "chroot",                     // 51
+    "fchmod",                     // 52
+    "fchmodat",                   // 53
+    "fchownat",                   // 54
+    "fchown",                     // 55
+    "openat",                     // 56
+    "close",                      // 57
+    "vhangup",                    // 58
+    "pipe2",                      // 59
+    "quotactl",                   // 60
+    "getdents64",                 // 61
+    "264_lseek",                  // 62
+    "read",                       // 63
+    "write",                      // 64
+    "readv",                      // 65
+    "writev",                     // 66
+    "pread64",                    // 67
+    "pwrite64",                   // 68
+    "preadv",                     // 69
+    "pwritev",                    // 70
+    "264_sendfile",               // 71
+    "pselect6",                   // 72
+    "ppoll",                      // 73
+    "signalfd4",                  // 74
+    "vmsplice",                   // 75
+    "splice",                     // 76
+    "tee",                        // 77
+    "readlinkat",                 // 78
+    "264_fstatat",                // 79
+    "264_fstat",                  // 80
+    "sync",                       // 81
+    "fsync",                      // 82
+    "fdatasync",                  // 83
+    /* "sync_file_range2",           // 84 */
+    "sync_file_range",            // 84
+    "timerfd_create",             // 85
+    "timerfd_settime",            // 86
+    "timerfd_gettime",            // 87
+    "utimensat",                  // 88
+    "acct",                       // 89
+    "capget",                     // 90
+    "capset",                     // 91
+    "personality",                // 92
+    "exit",                       // 93
+    "exit_group",                 // 94
+    "waitid",                     // 95
+    "set_tid_address",            // 96
+    "unshare",                    // 97
+    "futex",                      // 98
+    "set_robust_list",            // 99
+    "get_robust_list",            // 100
+    "nanosleep",                  // 101
+    "getitimer",                  // 102
+    "setitimer",                  // 103
+    "kexec_load",                 // 104
+    "init_module",                // 105
+    "delete_module",              // 106
+    "timer_create",               // 107
+    "timer_gettime",              // 108
+    "timer_getoverrun",           // 109
+    "timer_settime",              // 110
+    "timer_delete",               // 111
+    "clock_settime",              // 112
+    "clock_gettime",              // 113
+    "clock_getres",               // 114
+    "clock_nanosleep",            // 115
+    "syslog",                     // 116
+    "ptrace",                     // 117
+    "sched_setparam",             // 118
+    "sched_setscheduler",         // 119
+    "sched_getscheduler",         // 120
+    "sched_getparam",             // 121
+    "sched_setaffinity",          // 122
+    "sched_getaffinity",          // 123
+    "sched_yield",                // 124
+    "sched_get_priority_max",     // 125
+    "sched_get_priority_min",     // 126
+    "sched_rr_get_interval",      // 127
+    "restart_syscall",            // 128
+    "kill",                       // 129
+    "tkill",                      // 130
+    "tgkill",                     // 131
+    "sigaltstack",                // 132
+    "rt_sigsuspend",              // 133
+    "rt_sigaction",               // 134
+    "rt_sigprocmask",             // 135
+    "rt_sigpending",              // 136
+    "rt_sigtimedwait",            // 137
+    "rt_sigqueueinfo",            // 138
+    "rt_sigreturn",               // 139
+    "setpriority",                // 140
+    "getpriority",                // 141
+    "reboot",                     // 142
+    "setregid",                   // 143
+    "setgid",                     // 144
+    "setreuid",                   // 145
+    "setuid",                     // 146
+    "setresuid",                  // 147
+    "getresuid",                  // 148
+    "setresgid",                  // 149
+    "getresgid",                  // 150
+    "setfsuid",                   // 151
+    "setfsgid",                   // 152
+    "times",                      // 153
+    "setpgid",                    // 154
+    "getpgid",                    // 155
+    "getsid",                     // 156
+    "setsid",                     // 157
+    "getgroups",                  // 158
+    "setgroups",                  // 159
+    "uname",                      // 160
+    "sethostname",                // 161
+    "setdomainname",              // 162
+    "getrlimit",                  // 163
+    "setrlimit",                  // 164
+    "getrusage",                  // 165
+    "umask",                      // 166
+    "prctl",                      // 167
+    "getcpu",                     // 168
+    "gettimeofday",               // 169
+    "settimeofday",               // 170
+    "adjtimex",                   // 171
+    "getpid",                     // 172
+    "getppid",                    // 173
+    "getuid",                     // 174
+    "geteuid",                    // 175
+    "getgid",                     // 176
+    "getegid",                    // 177
+    "gettid",                     // 178
+    "sysinfo",                    // 179
+    "mq_open",                    // 180
+    "mq_unlink",                  // 181
+    "mq_timedsend",               // 182
+    "mq_timedreceive",            // 183
+    "mq_notify",                  // 184
+    "mq_getsetattr",              // 185
+    "msgget",                     // 186
+    "msgctl",                     // 187
+    "msgrcv",                     // 188
+    "msgsnd",                     // 189
+    "semget",                     // 190
+    "semctl",                     // 191
+    "semtimedop",                 // 192
+    "semop",                      // 193
+    "shmget",                     // 194
+    "shmctl",                     // 195
+    "shmat",                      // 196
+    "shmdt",                      // 197
+    "socket",                     // 198
+    "socketpair",                 // 199
+    "bind",                       // 200
+    "listen",                     // 201
+    "accept",                     // 202
+    "connect",                    // 203
+    "getsockname",                // 204
+    "getpeername",                // 205
+    "sendto",                     // 206
+    "recvfrom",                   // 207
+    "setsockopt",                 // 208
+    "getsockopt",                 // 209
+    "shutdown",                   // 210
+    "sendmsg",                    // 211
+    "recvmsg",                    // 212
+    "readahead",                  // 213
+    "brk",                        // 214
+    "munmap",                     // 215
+    "mremap",                     // 216
+    "add_key",                    // 217
+    "request_key",                // 218
+    "keyctl",                     // 219
+    "clone",                      // 220
+    "execve",                     // 221
+    "264_mmap",                   // 222
+    "264_fadvise64",              // 223
+    "swapon",                     // 224
+    "swapoff",                    // 225
+    "mprotect",                   // 226
+    "msync",                      // 227
+    "mlock",                      // 228
+    "munlock",                    // 229
+    "mlockall",                   // 230
+    "munlockall",                 // 231
+    "mincore",                    // 232
+    "madvise",                    // 233
+    "remap_file_pages",           // 234
+    "mbind",                      // 235
+    "get_mempolicy",              // 236
+    "set_mempolicy",              // 237
+    "migrate_pages",              // 238
+    "move_pages",                 // 239
+    "rt_tgsigqueueinfo",          // 240
+    "perf_event_open",            // 241
+    "accept4",                    // 242
+    "recvmmsg",                   // 243
+    "arch_specific_syscall",      // 244
     "undefined",                       // 245
     "undefined",                       // 246
     "undefined",                       // 247
@@ -408,41 +427,41 @@ static const char *syscall_nr_name[] = {
     "undefined",                       // 257
     "undefined",                       // 258
     "undefined",                       // 259
-    "__NR_wait4",                      // 260
-    "__NR_prlimit64",                  // 261
-    "__NR_fanotify_init",              // 262
-    "__NR_fanotify_mark",              // 263
-    "__NR_name_to_handle_at",          // 264
-    "__NR_open_by_handle_at",          // 265
-    "__NR_clock_adjtime",              // 266
-    "__NR_syncfs",                     // 267
-    "__NR_setns",                      // 268
-    "__NR_sendmmsg",                   // 269
-    "__NR_process_vm_readv",           // 270
-    "__NR_process_vm_writev",          // 271
-    "__NR_kcmp",                       // 272
-    "__NR_finit_module",               // 273
-    "__NR_sched_setattr",              // 274
-    "__NR_sched_getattr",              // 275
-    "__NR_renameat2",                  // 276
-    "__NR_seccomp",                    // 277
-    "__NR_getrandom",                  // 278
-    "__NR_memfd_create",               // 279
-    "__NR_bpf",                        // 280
-    "__NR_execveat",                   // 281
-    "__NR_userfaultfd",                // 282
-    "__NR_membarrier",                 // 283
-    "__NR_mlock2",                     // 284
-    "__NR_copy_file_range",            // 285
-    "__NR_preadv2",                    // 286
-    "__NR_pwritev2",                   // 287
-    "__NR_pkey_mprotect",              // 288
-    "__NR_pkey_alloc",                 // 289
-    "__NR_pkey_free",                  // 290
-    "__NR_statx",                      // 291
-    "__NR_io_pgetevents",              // 292
-    "__NR_rseq",                       // 293
-    "__NR_syscalls",                   // 294
+    "wait4",                      // 260
+    "prlimit64",                  // 261
+    "fanotify_init",              // 262
+    "fanotify_mark",              // 263
+    "name_to_handle_at",          // 264
+    "open_by_handle_at",          // 265
+    "clock_adjtime",              // 266
+    "syncfs",                     // 267
+    "setns",                      // 268
+    "sendmmsg",                   // 269
+    "process_vm_readv",           // 270
+    "process_vm_writev",          // 271
+    "kcmp",                       // 272
+    "finit_module",               // 273
+    "sched_setattr",              // 274
+    "sched_getattr",              // 275
+    "renameat2",                  // 276
+    "seccomp",                    // 277
+    "getrandom",                  // 278
+    "memfd_create",               // 279
+    "bpf",                        // 280
+    "execveat",                   // 281
+    "userfaultfd",                // 282
+    "membarrier",                 // 283
+    "mlock2",                     // 284
+    "copy_file_range",            // 285
+    "preadv2",                    // 286
+    "pwritev2",                   // 287
+    "pkey_mprotect",              // 288
+    "pkey_alloc",                 // 289
+    "pkey_free",                  // 290
+    "statx",                      // 291
+    "io_pgetevents",              // 292
+    "rseq",                       // 293
+    "syscalls",                   // 294
 };
 
 const char* syscall_name(uint64_t nr)

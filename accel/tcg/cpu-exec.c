@@ -900,6 +900,37 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
 
 extern int lmj_debug;
 
+/* not done */
+/* copy from cpu_exec */
+void instrument_rtn(CPUState *cpu);
+void instrument_rtn(CPUState *cpu)
+{
+    TranslationBlock *tb;
+    target_ulong cs_base, pc;
+    uint32_t flags, cflags;
+
+    /* cpu_get_tb_cpu_state(cpu->env_ptr, &pc, &cs_base, &flags); */
+    pc = 0x0;
+    cs_base = 0;
+    flags = cpu_mmu_index(cpu->env_ptr, false);
+
+    cflags = cpu->cflags_next_tb;
+    if (cflags == -1) {
+        cflags = curr_cflags(cpu);
+    } else {
+        cpu->cflags_next_tb = -1;
+    }
+
+    mmap_lock();
+    tb = tb_gen_code(cpu, pc, cs_base, flags, cflags);
+    mmap_unlock();
+    /*
+     * We add the TB in the virtual pc hash table
+     * for the fast lookup
+     */
+    qatomic_set(&cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)], tb);
+}
+
 /* main execution loop */
 
 int cpu_exec(CPUState *cpu)
@@ -990,9 +1021,9 @@ int cpu_exec(CPUState *cpu)
             }
 
             /* debug info */
-            if (lmj_debug == 1) {
-                log_cpu_state(cpu, 0);
-            }
+            /* if (lmj_debug == 1) { */
+            /*     log_cpu_state(cpu, 0); */
+            /* } */
 
             tb = tb_lookup(cpu, pc, cs_base, flags, cflags);
             if (tb == NULL) {
