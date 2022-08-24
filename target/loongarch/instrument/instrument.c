@@ -44,6 +44,9 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->len */
         INS ins = INS_alloc(pc, opcode, la_ins);
         INS_translate(cs, ins);
+
+        // debug_print_itemp_status();
+
         INS_instrument(ins);
         ++ins_nr;
 
@@ -88,6 +91,10 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
         /* 现在一个trace只有一个bbl */
         if (tr_data.is_jmp != TRANS_NEXT) {
             TRACE_append_bbl(trace, bbl);
+
+            /* debug info */
+            reg_debug_itemp_all_free();
+
             break;
         /* if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL || la_ins->op == LISA_BREAK) { */
             /* if (op_is_condition_branch(la_ins->op)) { */
@@ -233,7 +240,7 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
                         break;
                     inst = inst->next;
                 }
-                fprintf(stderr, "------------------\n");
+                fprintf(stderr, "==================\n");
             }
         }
         lsassert(pc == code_ptr);

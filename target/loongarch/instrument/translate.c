@@ -373,13 +373,44 @@ int INS_translate(CPUState *cs, INS pin_ins)
     int gpr[4] = {-1, -1, -1, -1};
     for (int i = 0; i < ins->opnd_count; i++) {
         int reg = ins->opnd[i].val;
-        if (opnd_is_gpr(ins, i)) {
+        if (opnd_is_gpr(ins, i) && reg != reg_zero) {
             gpr[i] = reg;
             /* 用映射的寄存器替换指令中原始的寄存器 */
             if (gpr_is_mapped(reg)) {
                 ins->opnd[i].val = reg_alloc_gpr(reg);
             } else {
+                /* int need_load = (!gpr_is_mapped_to_itemp(reg)) && (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)); */
+                
+                int need_load = 0;
+                if (!gpr_is_mapped_to_itemp(reg)) {
+                    for (int j = i; j < ins->opnd_count; ++j) {
+                        /* 也许后面的操作数才会需要读该寄存器，因此需要检查这个寄存器在所有操作数上的读写情况 */
+                        if (opnd_is_gpr(ins, j) && (ins->opnd[j].val) == reg && (opnd_is_gpr_read(ins, j) || opnd_is_gpr_readwrite(ins, j))) {
+                            need_load = 1;
+                            break;
+                        }
+                    }
+                }
+
+                /* temporary: lazy free itemp, for reg_alloc_itemp */
+                {
+                    int victim_gpr = need_save_an_itemp_gpr();
+                    if (victim_gpr != reg_invalid) {
+                        ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(victim_gpr), reg_env, env_offset_of_gpr(cs, victim_gpr)));
+                        before_nr++;
+                        reg_unmap_gpr_to_itemp(victim_gpr);
+                    }
+                }
                 ins->opnd[i].val = reg_map_gpr_to_itemp(reg);
+
+                /* BUG: if (!fullregs && is_ir2_reg_access_type_valid(ins)) */
+                if (need_load) {
+                    ins_insert_before(ins, ins_create_3(LISA_LD_D, ins->opnd[i].val, reg_env, env_offset_of_gpr(cs, reg)));
+                    before_nr++;
+                }
+                if (opnd_is_gpr_write(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
+                    set_mapped_gpr_dirty(reg);
+                }
             }
         }
     }
@@ -387,20 +418,20 @@ int INS_translate(CPUState *cs, INS pin_ins)
     /* 2. add LD/ST ins around origin ins */
     /* BUG: 如果两个操作数都是同一个reg，如果都被READ,岂不是LOAD两次？ */
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
-        for (int i = 0; i < 4; ++i) {
-            int reg = gpr[i];
-            if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
-                int mapped_gpr = ins->opnd[i].val;
-                if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
-                    ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
-                    before_nr++;
-                }
-                if (opnd_is_gpr_write(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
-                    ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
-                    after_nr++;
-                }
-            }
-        }
+        /* for (int i = 0; i < 4; ++i) { */
+        /*     int reg = gpr[i]; */
+        /*     if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) { */
+        /*         int mapped_gpr = ins->opnd[i].val; */
+        /*         if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) { */
+        /*             ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg))); */
+        /*             before_nr++; */
+        /*         } */
+        /*         if (opnd_is_gpr_write(ins, i) || opnd_is_gpr_readwrite(ins, i)) { */
+        /*             ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg))); */
+        /*             after_nr++; */
+        /*         } */
+        /*     } */
+        /* } */
     } else {
 #ifdef CONFIG_LMJ_DEBUG
         char msg[32];
@@ -427,6 +458,19 @@ int INS_translate(CPUState *cs, INS pin_ins)
                 ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
                 before_nr++;
                 after_nr++;
+            }
+        }
+    }
+
+    /* free all freeable itemp_mapped gpr */
+    if (op_is_branch(ins->op) || ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
+        for (int reg = 0; reg < 32; ++ reg) {
+            if (!gpr_is_mapped(reg) && gpr_is_mapped_to_itemp(reg) && !(ins->op == LISA_JIRL && gpr[0] == reg)) {
+                if (itemp_is_dirty(gpr_mapped_to_itemp(reg))) {
+                    ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(reg), reg_env, env_offset_of_gpr(cs, reg)));
+                    before_nr++;
+                    reg_unmap_gpr_to_itemp(reg);
+                }
             }
         }
     }
@@ -550,6 +594,15 @@ int INS_translate(CPUState *cs, INS pin_ins)
             if (gpr_is_mapped(reg_ra)) {
                 before_nr += ins_insert_before_li_d(ins, reg_alloc_gpr(reg_ra), next_pc);
             } else {
+                /* temporary: lazy free itemp, for reg_alloc_itemp */
+                {
+                    int victim_gpr = need_save_an_itemp_gpr();
+                    if (victim_gpr != reg_invalid) {
+                        ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(victim_gpr), reg_env, env_offset_of_gpr(cs, victim_gpr)));
+                        before_nr++;
+                        reg_unmap_gpr_to_itemp(victim_gpr);
+                    }
+                }
                 int itemp_ra = reg_alloc_itemp();
                 before_nr += ins_insert_before_li_d(ins, itemp_ra, next_pc);
                 ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp_ra, reg_env, env_offset_of_gpr(cs, reg_ra)));
@@ -617,7 +670,26 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         /* IBTC: 检查 tb_jmp_cache 中是否缓存了目标 tb */
         if (enable_jmp_cache) {
+            /* temporary: lazy free itemp, for reg_alloc_itemp */
+            {
+                int victim_gpr = need_save_an_itemp_gpr();
+                if (victim_gpr != reg_invalid) {
+                    ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(victim_gpr), reg_env, env_offset_of_gpr(cs, victim_gpr)));
+                    before_nr++;
+                    reg_unmap_gpr_to_itemp(victim_gpr);
+                }
+            }
             int itemp_tb = reg_alloc_itemp();
+
+            /* temporary: lazy free itemp, for reg_alloc_itemp */
+            {
+                int victim_gpr = need_save_an_itemp_gpr();
+                if (victim_gpr != reg_invalid) {
+                    ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(victim_gpr), reg_env, env_offset_of_gpr(cs, victim_gpr)));
+                    before_nr++;
+                    reg_unmap_gpr_to_itemp(victim_gpr);
+                }
+            }
             int itemp = reg_alloc_itemp();
             /* 1. get cpu->tb_jmp_cache (here offset is larger than 12bits, so load the imm) */
             li_nr = ins_insert_before_li_d(ins, itemp, env_offset_of_tb_jmp_cache(cs));
@@ -653,6 +725,15 @@ int INS_translate(CPUState *cs, INS pin_ins)
     } else if (ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
         tr_data.is_jmp = TRANS_NORETURN;
 
+        /* temporary: lazy free itemp, for reg_alloc_itemp */
+        {
+            int victim_gpr = need_save_an_itemp_gpr();
+            if (victim_gpr != reg_invalid) {
+                ins_insert_before(ins, ins_create_3(LISA_ST_D, gpr_mapped_to_itemp(victim_gpr), reg_env, env_offset_of_gpr(cs, victim_gpr)));
+                before_nr++;
+                reg_unmap_gpr_to_itemp(victim_gpr);
+            }
+        }
         int itemp = reg_alloc_itemp();
 
         /* save exception pc */
@@ -710,11 +791,11 @@ int INS_translate(CPUState *cs, INS pin_ins)
     for (int i = 0; i < 4; ++i) {
         int reg = gpr[i];
         if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
-            reg_unmap_gpr_to_itemp(reg);
+            set_mapped_gpr_freeable(reg);
         }
     }
     /* debug info */
-    reg_debug_itemp_all_free();
+    /* reg_debug_itemp_all_free(); */
 
     /* 最后，确定翻译后的指令链表范围 */
     Ins *start = ins, *end = ins;
