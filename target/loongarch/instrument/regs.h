@@ -1,8 +1,8 @@
 #ifndef _REGS_H_
 #define _REGS_H_
-/*
- * LA registers
- */
+
+/* LA registers */
+/* GPR */
 #define reg_invalid -1
 #define reg_zero    0
 #define reg_ra      1
@@ -25,7 +25,7 @@
 #define reg_t6      18
 #define reg_t7      19
 #define reg_t8      20
-#define reg_r21     21
+#define reg_x       21
 #define reg_fp      22
 #define reg_s0      23
 #define reg_s1      24
@@ -38,8 +38,10 @@
 #define reg_s8      31
 #define reg_end     32
 
+/* FCSR0 */
 #define reg_fcsr    0
 
+/* FCC[8] */
 #define reg_fcc0    0
 #define reg_fcc1    1
 #define reg_fcc2    2
@@ -49,13 +51,49 @@
 #define reg_fcc6    6
 #define reg_fcc7    7
 
+/* FPR[32] */
+#define reg_f0      0
+#define reg_f1      1
+#define reg_f2      2
+#define reg_f3      3
+#define reg_f4      4
+#define reg_f5      5
+#define reg_f6      6
+#define reg_f7      7
+#define reg_f8      8
+#define reg_f9      9
+#define reg_f10     10
+#define reg_f11     11
+#define reg_f12     12
+#define reg_f13     13
+#define reg_f14     14
+#define reg_f15     15
+#define reg_f16     16
+#define reg_f17     17
+#define reg_f18     18
+#define reg_f19     19
+#define reg_f20     20
+#define reg_f21     21
+#define reg_f22     22
+#define reg_f23     23
+#define reg_f24     24
+#define reg_f25     25
+#define reg_f26     26
+#define reg_f27     27
+#define reg_f28     28
+#define reg_f29     29
+#define reg_f30     30
+#define reg_f31     31
+
+/* not used in user-mode */
 #define reg_scr0    0
 #define reg_scr1    1
 #define reg_scr2    2
 #define reg_scr3    3
 
+
 /* save native info in bt context*/
-#define reg_code_ptr reg_r21
+#define reg_code_ptr reg_x
 #define reg_target reg_fp
 #define reg_env reg_s8
 

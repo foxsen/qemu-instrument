@@ -56,6 +56,11 @@ static const int itemp_index_map[] = {
     /* [reg_t8] = ITEMP8, */
 };
 
+static inline int get_itemp_index(int itemp)
+{
+    return itemp_index_map[itemp];
+}
+
 #define ITEMP_NUM (sizeof(itemp_map) / sizeof(int))
 static uint16_t free_itemp_mask = (1 << ITEMP_NUM) - 1;
 
@@ -75,7 +80,7 @@ int reg_alloc_itemp(void)
 
 void reg_free_itemp(int itemp)
 {
-    int idx = itemp_index_map[itemp];
+    int idx = get_itemp_index(itemp);
     lsassert(!BitIsSet(free_itemp_mask, idx));
     free_itemp_mask = BitSet(free_itemp_mask, idx);
 }

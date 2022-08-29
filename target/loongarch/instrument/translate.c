@@ -29,12 +29,53 @@ uint64_t context_switch_native_to_bt;
 #define S8_EXTRA_SPACE          (S7_EXTRA_SPACE + REG_LEN)
 #define FP_EXTRA_SPACE          (S8_EXTRA_SPACE + REG_LEN)
 #define RA_EXTRA_SPACE          (FP_EXTRA_SPACE + REG_LEN)
-#define FCSR_EXTRA_SPACE        (RA_EXTRA_SPACE + REG_LEN)
-#define R21_EXTRA_SPACE          (FCSR_EXTRA_SPACE + REG_LEN)
+#define R21_EXTRA_SPACE         (RA_EXTRA_SPACE + REG_LEN)
+#define FCSR_EXTRA_SPACE        (R21_EXTRA_SPACE + REG_LEN)
+#define FCC0_EXTRA_SPACE        (FCSR_EXTRA_SPACE + REG_LEN)
+#define FCC1_EXTRA_SPACE        (FCC0_EXTRA_SPACE + REG_LEN)
+#define FCC2_EXTRA_SPACE        (FCC1_EXTRA_SPACE + REG_LEN)
+#define FCC3_EXTRA_SPACE        (FCC2_EXTRA_SPACE + REG_LEN)
+#define FCC4_EXTRA_SPACE        (FCC3_EXTRA_SPACE + REG_LEN)
+#define FCC5_EXTRA_SPACE        (FCC4_EXTRA_SPACE + REG_LEN)
+#define FCC6_EXTRA_SPACE        (FCC5_EXTRA_SPACE + REG_LEN)
+#define FCC7_EXTRA_SPACE        (FCC6_EXTRA_SPACE + REG_LEN)
+#define F0_EXTRA_SPACE          (FCC7_EXTRA_SPACE + REG_LEN)
+#define F1_EXTRA_SPACE          (F0_EXTRA_SPACE + REG_LEN)
+#define F2_EXTRA_SPACE          (F1_EXTRA_SPACE + REG_LEN)
+#define F3_EXTRA_SPACE          (F2_EXTRA_SPACE + REG_LEN)
+#define F4_EXTRA_SPACE          (F3_EXTRA_SPACE + REG_LEN)
+#define F5_EXTRA_SPACE          (F4_EXTRA_SPACE + REG_LEN)
+#define F6_EXTRA_SPACE          (F5_EXTRA_SPACE + REG_LEN)
+#define F7_EXTRA_SPACE          (F6_EXTRA_SPACE + REG_LEN)
+#define F8_EXTRA_SPACE          (F7_EXTRA_SPACE + REG_LEN)
+#define F9_EXTRA_SPACE          (F8_EXTRA_SPACE + REG_LEN)
+#define F10_EXTRA_SPACE         (F9_EXTRA_SPACE + REG_LEN)
+#define F11_EXTRA_SPACE         (F10_EXTRA_SPACE + REG_LEN)
+#define F12_EXTRA_SPACE         (F11_EXTRA_SPACE + REG_LEN)
+#define F13_EXTRA_SPACE         (F12_EXTRA_SPACE + REG_LEN)
+#define F14_EXTRA_SPACE         (F13_EXTRA_SPACE + REG_LEN)
+#define F15_EXTRA_SPACE         (F14_EXTRA_SPACE + REG_LEN)
+#define F16_EXTRA_SPACE         (F15_EXTRA_SPACE + REG_LEN)
+#define F17_EXTRA_SPACE         (F16_EXTRA_SPACE + REG_LEN)
+#define F18_EXTRA_SPACE         (F17_EXTRA_SPACE + REG_LEN)
+#define F19_EXTRA_SPACE         (F18_EXTRA_SPACE + REG_LEN)
+#define F20_EXTRA_SPACE         (F19_EXTRA_SPACE + REG_LEN)
+#define F21_EXTRA_SPACE         (F20_EXTRA_SPACE + REG_LEN)
+#define F22_EXTRA_SPACE         (F21_EXTRA_SPACE + REG_LEN)
+#define F23_EXTRA_SPACE         (F22_EXTRA_SPACE + REG_LEN)
+#define F24_EXTRA_SPACE         (F23_EXTRA_SPACE + REG_LEN)
+#define F25_EXTRA_SPACE         (F24_EXTRA_SPACE + REG_LEN)
+#define F26_EXTRA_SPACE         (F25_EXTRA_SPACE + REG_LEN)
+#define F27_EXTRA_SPACE         (F26_EXTRA_SPACE + REG_LEN)
+#define F28_EXTRA_SPACE         (F27_EXTRA_SPACE + REG_LEN)
+#define F29_EXTRA_SPACE         (F28_EXTRA_SPACE + REG_LEN)
+#define F30_EXTRA_SPACE         (F29_EXTRA_SPACE + REG_LEN)
+#define F31_EXTRA_SPACE         (F30_EXTRA_SPACE + REG_LEN)
+    
 static void generate_context_switch_bt_to_native(CPUState *cs)
 {
     /* allocate space on the stack */
-    ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, -256);
+    ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, -512);
     /* save callee-saved LA registers. s0-s8, and fp, ra */
     ins_append_3(LISA_ST_D, reg_s0, reg_sp, S0_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s1, reg_sp, S1_EXTRA_SPACE);
@@ -45,9 +86,67 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_3(LISA_ST_D, reg_s6, reg_sp, S6_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s7, reg_sp, S7_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s8, reg_sp, S8_EXTRA_SPACE);
+
     ins_append_3(LISA_ST_D, reg_fp, reg_sp, FP_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
-    ins_append_3(LISA_ST_D, reg_r21, reg_sp, R21_EXTRA_SPACE);
+    ins_append_3(LISA_ST_D, reg_x, reg_sp, R21_EXTRA_SPACE);
+
+    /* save fcsr, fcc[8], fpr[32] */
+    int reg_tmp = reg_s0;
+    ins_append_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr);
+    ins_append_3(LISA_ST_W, reg_tmp, reg_sp, FCSR_EXTRA_SPACE); 
+
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc0);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC0_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc1);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC1_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc2);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC2_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc3);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC3_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc4);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC4_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc5);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC5_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc6);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC6_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVCF2GR, reg_tmp, reg_fcc7);
+    ins_append_3(LISA_ST_B, reg_tmp, reg_sp, FCC7_EXTRA_SPACE); 
+
+    ins_append_3(LISA_FST_D, reg_f0, reg_sp, F0_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f1, reg_sp, F1_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f2, reg_sp, F2_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f3, reg_sp, F3_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f4, reg_sp, F4_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f5, reg_sp, F5_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f6, reg_sp, F6_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f7, reg_sp, F7_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f8, reg_sp, F8_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f9, reg_sp, F9_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f10, reg_sp, F10_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f11, reg_sp, F11_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f12, reg_sp, F12_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f13, reg_sp, F13_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f14, reg_sp, F14_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f15, reg_sp, F15_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f16, reg_sp, F16_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f17, reg_sp, F17_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f18, reg_sp, F18_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f19, reg_sp, F19_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f20, reg_sp, F20_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f21, reg_sp, F21_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f22, reg_sp, F22_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f23, reg_sp, F23_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f24, reg_sp, F24_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f25, reg_sp, F25_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f26, reg_sp, F26_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f27, reg_sp, F27_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f28, reg_sp, F28_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f29, reg_sp, F29_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f30, reg_sp, F30_EXTRA_SPACE);
+    ins_append_3(LISA_FST_D, reg_f31, reg_sp, F31_EXTRA_SPACE);
+    
+
 
     /* a0: env */
     /* a1: code_cache */
@@ -60,7 +159,19 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     /* ins_append_3(LISA_LD_W, reg_temp_fcsr, reg_env, lsenv_offset_of_fcsr(lsenv)); */
     /* ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_temp_fcsr); */
 
-    /* load native registers from env. */
+    /* load registers from env. */
+    /* 1. load fpr[32], fcc[8], fcsr0 */
+    for (int fpr = 0; fpr < 32; ++fpr) {
+        ins_append_3(LISA_FLD_D, fpr, reg_env, env_offset_of_fpr(cs, fpr));
+    }
+    for (int fcc = 0; fcc < 8; ++fcc) {
+        ins_append_3(LISA_LD_B, reg_tmp, reg_env, env_offset_of_fcc(cs, fcc)); 
+        ins_append_2(LISA_MOVGR2CF, fcc, reg_tmp);
+    }
+    ins_append_3(LISA_LD_W, reg_tmp, reg_env, env_offset_of_fscr0(cs)); 
+    ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_tmp);
+
+    /* 2. load mapped gpr */
     /* tr_load_registers_from_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_is_mapped(gpr)) {
@@ -93,12 +204,24 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
      * */
 
     /* 3. store registers to env */
+    /* 3.1 store mapped gpr */
     /* tr_save_registers_to_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_is_mapped(gpr)) {
             ins_append_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr));
         }
     }
+    /* 3.2 store fpr[32], fcc[8], fcsr0 */
+    int reg_tmp = reg_s0;
+    for (int fpr = 0; fpr < 32; ++fpr) {
+        ins_append_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(cs, fpr));
+    }
+    for (int fcc = 0; fcc < 8; ++fcc) {
+        ins_append_2(LISA_MOVCF2GR, reg_tmp, fcc);
+        ins_append_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(cs, fcc)); 
+    }
+    ins_append_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr);
+    ins_append_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs)); 
 
     /* /1* 4. restore dbt FCSR *1/ */
     /* int reg_temp_fcsr = reg_s0; */
@@ -106,6 +229,60 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     /* ins_append_2(LISA_MOVFCSR2GR, reg_temp_fcsr, reg_fcsr); */
     /* ins_append_3(LISA_ST_W, reg_temp_fcsr, reg_env, */
     /*                       lsenv_offset_of_fcsr(lsenv)); */
+
+    /* restore fcsr, fcc[8], fpr[32] */
+    ins_append_3(LISA_LD_W, reg_tmp, reg_sp, FCSR_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_tmp);
+
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC0_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc0, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC1_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc1, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC2_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc2, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC3_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc3, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC4_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc4, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC5_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc5, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC6_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc6, reg_tmp);
+    ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC7_EXTRA_SPACE); 
+    ins_append_2(LISA_MOVGR2CF, reg_fcc7, reg_tmp);
+    
+    ins_append_3(LISA_FLD_D, reg_f0, reg_sp, F0_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f1, reg_sp, F1_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f2, reg_sp, F2_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f3, reg_sp, F3_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f4, reg_sp, F4_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f5, reg_sp, F5_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f6, reg_sp, F6_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f7, reg_sp, F7_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f8, reg_sp, F8_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f9, reg_sp, F9_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f10, reg_sp, F10_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f11, reg_sp, F11_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f12, reg_sp, F12_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f13, reg_sp, F13_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f14, reg_sp, F14_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f15, reg_sp, F15_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f16, reg_sp, F16_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f17, reg_sp, F17_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f18, reg_sp, F18_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f19, reg_sp, F19_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f20, reg_sp, F20_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f21, reg_sp, F21_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f22, reg_sp, F22_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f23, reg_sp, F23_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f24, reg_sp, F24_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f25, reg_sp, F25_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f26, reg_sp, F26_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f27, reg_sp, F27_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f28, reg_sp, F28_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f29, reg_sp, F29_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f30, reg_sp, F30_EXTRA_SPACE);
+    ins_append_3(LISA_FLD_D, reg_f31, reg_sp, F31_EXTRA_SPACE);
 
     /* 6. restore callee-saved registers. s0-s8, fp, ra */
     ins_append_3(LISA_LD_D, reg_s0, reg_sp, S0_EXTRA_SPACE);
@@ -117,11 +294,12 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_3(LISA_LD_D, reg_s6, reg_sp, S6_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_s7, reg_sp, S7_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_s8, reg_sp, S8_EXTRA_SPACE);
+
     ins_append_3(LISA_LD_D, reg_fp, reg_sp, FP_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
-    ins_append_3(LISA_LD_D, reg_r21, reg_sp, R21_EXTRA_SPACE);
+    ins_append_3(LISA_LD_D, reg_x, reg_sp, R21_EXTRA_SPACE);
     /* 7. restore sp */
-    ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, 256);
+    ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, 512);
 
     /* 8. return value */
     /* reg_ret(return value) is set by branch instruction */
@@ -207,6 +385,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
     }
 
     /* 2. add LD/ST ins around origin ins */
+    /* BUG: 如果两个操作数都是同一个reg，如果都被READ,岂不是LOAD两次？ */
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
         for (int i = 0; i < 4; ++i) {
             int reg = gpr[i];
@@ -419,11 +598,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
         int offset16 = ins->opnd[2].val;
 
         /* reg_target(PC) = GR[rj] + SignExtend(off16 << 2) */
-        int itemp_off = reg_alloc_itemp();
-        int li_nr = ins_insert_before_li_d(ins, itemp_off, sign_extend(offset16 << 2, 18));
-        ins_insert_before(ins, ins_create_3(LISA_ADD_D, reg_target, rj, itemp_off));
+        int li_nr = ins_insert_before_li_d(ins, reg_target, sign_extend(offset16 << 2, 18));
+        ins_insert_before(ins, ins_create_3(LISA_ADD_D, reg_target, rj, reg_target));
         before_nr += li_nr + 1;
-        reg_free_itemp(itemp_off);
 
         /* GR[rd] = PC + 4 */
         /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
@@ -492,13 +669,28 @@ int INS_translate(CPUState *cs, INS pin_ins)
         ins_insert_before(ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_exception_index(cs)));
         before_nr += li_nr + 1;
 
-        /* store mapped gpr */
+        /* store registers to env */
+        /* 1 store mapped gpr */
         for (int gpr = 0; gpr < 32; ++gpr) {
             if (gpr_is_mapped(gpr)) {
                 ins_insert_before(ins, ins_create_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr)));
                 ++before_nr;
             }
         }
+        /* 2 store fpr[32], fcc[8], fcsr0 */
+        int reg_tmp = reg_s0;
+        for (int fpr = 0; fpr < 32; ++fpr) {
+            ins_insert_before(ins, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(cs, fpr)));
+            ++before_nr;
+        }
+        for (int fcc = 0; fcc < 8; ++fcc) {
+            ins_insert_before(ins, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
+            ins_insert_before(ins, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(cs, fcc)));
+            before_nr += 2;
+        }
+        ins_insert_before(ins, ins_create_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr));
+        ins_insert_before(ins, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs))); 
+        before_nr += 2;
 
         /* call cpu_loop_exit(CPUState *cpu) */
         li_nr = ins_insert_before_li_d(ins, itemp, (uint64_t)cpu_loop_exit);

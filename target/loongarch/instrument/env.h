@@ -34,6 +34,25 @@ static inline int env_offset_of_pc(CPUState *cs)
     return (int)((uint64_t)(&cpu->pc) - (uint64_t)cpu);
 }
 
+static inline int env_offset_of_fpr(CPUState *cs, int i)
+{
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cpu->fpr[i]) - (uint64_t)cpu);
+}
+
+static inline int env_offset_of_fcc(CPUState *cs, int i)
+{
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cpu->cf[i]) - (uint64_t)cpu);
+}
+
+static inline int env_offset_of_fscr0(CPUState *cs)
+{
+    /* FIXME: fcsr0_mask not considered */
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cpu->fcsr0) - (uint64_t)cpu);
+}
+
 static inline int env_offset_of_tb_jmp_cache(CPUState *cs)
 {
     /* note: the result is larger than 12 bits, so we can not use ADDI_D to calc addr */
