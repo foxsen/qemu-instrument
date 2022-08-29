@@ -142,7 +142,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
 static void generate_context_switch_native_to_bt(CPUState *cs)
 {
     /* 0. set return value as 0 */
-    ins_append_3(LISA_OR, reg_a0, reg_zero, reg_zero);
+    ins_append_3(LISA_OR, reg_ret, reg_zero, reg_zero);
 
     /* 1. store the last executed TB */
     /* FIXME: do we use this? */
@@ -225,8 +225,8 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, 512);
 
     /* 7. set return value */
-    /* a0(return value) is set by branch instruction */
-    /* ins_append_3(LISA_OR, reg_a0, reg_a0, reg_zero); */
+    /* return value is set by branch instruction */
+    ins_append_3(LISA_OR, reg_a0, reg_ret, reg_zero);
 
     /* 8. return to qemu */
     ins_append_3(LISA_JIRL, reg_zero, reg_ra, 0);
@@ -421,7 +421,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
          */
         tr_data.is_jmp = TRANS_NORETURN;
 
-        int bcc_jmp_over = enable_tb_link ? 11 : 7;
+        /* bcc 根据条件选择出口 */
+        int bcc_jmp_over = enable_tb_link ? 11 : 7; /* BUG prompt */
         switch (ins->op) {
             case LISA_BEQZ:
                 /* FIXME: maybe we can calc the magic number and patch this ins later */
@@ -483,7 +484,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
             }
         }
 
-        /* tb_link: fallthrough, this nop ins will be patched when tb_link */
+        /* tb_link: add a nop
+         * at first exec time it will fallthrough
+         * this nop ins will be patched when tb_link */
         if (enable_tb_link) {
             Ins *nop = ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
             tr_data.jmp_ins[0] = nop;
@@ -495,12 +498,14 @@ int INS_translate(CPUState *cs, INS pin_ins)
         before_nr += ins_insert_before_li_d(ins, reg_target, ins_target_addr(ins));
 
         /* set return value */
-        /* if tb_link: $a0 = (tb | slot_index) */
-        /* else: $a0 = 0 */
+        /* if tb_link:
+         *     ret = (tb | slot_index)
+         * else:
+         *     ret = 0 */
         if (enable_tb_link) {
-            before_nr += ins_insert_before_li_d(ins, reg_a0, ((uint64_t)tr_data.curr_tb | 0));
+            before_nr += ins_insert_before_li_d(ins, reg_ret, ((uint64_t)tr_data.curr_tb | 0));
         } else {
-            ins_insert_before(ins, ins_create_3(LISA_ORI, reg_a0, reg_zero, reg_zero));
+            ins_insert_before(ins, ins_create_3(LISA_ORI, reg_ret, reg_zero, reg_zero));
             before_nr++;
         }
 
@@ -565,8 +570,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
             reg_free_itemp(itemp);
         }
 
-        /* set return value ($a0) = 0, for not tb_link */
-        ins_insert_before(ins, ins_create_3(LISA_OR, reg_a0, reg_zero, reg_zero));
+        /* set return value = 0, for not tb_link */
+        ins_insert_before(ins, ins_create_3(LISA_OR, reg_ret, reg_zero, reg_zero));
         before_nr++;
 
         /* Branch to context_switch_native_to_bt, will be modify in redirection process */
@@ -697,10 +702,10 @@ int INS_append_exit(INS pin_ins, uint32_t index)
     /* set return value */
     if (enable_tb_link) {
         /* tb_link: $a0 = (tb | slot_index) */
-        num += ins_insert_before_li_d(end, reg_a0, ((uint64_t)tr_data.curr_tb | index));
+        num += ins_insert_before_li_d(end, reg_ret, ((uint64_t)tr_data.curr_tb | index));
     } else {
         /* $a0 = 0 */
-        ins_insert_before(end, ins_create_3(LISA_OR, reg_a0, reg_zero, reg_zero));
+        ins_insert_before(end, ins_create_3(LISA_OR, reg_ret, reg_zero, reg_zero));
         ++num;
     }
 

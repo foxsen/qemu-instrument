@@ -38,6 +38,9 @@
 #define reg_s8      31
 #define reg_end     32
 
+/* note: reg_ret save return value(tb|jmp_slot), must be a temp reg, also not callee-saved regs */
+#define reg_ret reg_a6
+
 /* FCSR0 */
 #define reg_fcsr    0
 
