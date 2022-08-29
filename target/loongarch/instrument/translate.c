@@ -111,8 +111,11 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_3(LISA_OR, reg_env, reg_a0, reg_zero);
     ins_append_3(LISA_OR, reg_code_ptr, reg_a1, reg_zero);
 
-    /* 4. load guest registers from env. */
-    /* 4.1 load fpr[32], fcc[8], fcsr0 */
+    /* 4. save host $sp to env->host_sp */
+    ins_append_3(LISA_ST_D, reg_sp, reg_env, env_offset_of_host_sp(cs));
+
+    /* 5. load guest registers from env. */
+    /* 5.1 load fpr[32], fcc[8], fcsr0 */
     for (int fpr = 0; fpr < 32; ++fpr) {
         ins_append_3(LISA_FLD_D, fpr, reg_env, env_offset_of_fpr(cs, fpr));
     }
@@ -123,7 +126,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_3(LISA_LD_W, reg_tmp, reg_env, env_offset_of_fscr0(cs)); 
     ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_tmp);
 
-    /* 4.2. load mapped gpr */
+    /* 5.2. load mapped gpr */
     /* tr_load_registers_from_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_is_mapped(gpr)) {
@@ -131,7 +134,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
         }
     }
 
-    /* 5. jump to code cache */
+    /* 6. jump to code cache */
     /* FIXME: we can save code_ptr to SCR, then we have one more temp reg */
     ins_append_3(LISA_JIRL, reg_zero, reg_code_ptr, 0);
 }
@@ -171,8 +174,11 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr);
     ins_append_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs)); 
 
-    /* 4. restore callee-saved LA registers. */
-    /* 4.1. FPR: restore fcsr, fcc[8], fpr[24-31] */
+    /* 4. load host $sp */
+    ins_append_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(cs));
+
+    /* 5. restore callee-saved LA registers. */
+    /* 5.1. FPR: restore fcsr, fcc[8], fpr[24-31] */
     ins_append_3(LISA_LD_W, reg_tmp, reg_sp, FCSR_EXTRA_SPACE); 
     ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_tmp);
     ins_append_3(LISA_LD_B, reg_tmp, reg_sp, FCC0_EXTRA_SPACE); 
@@ -200,7 +206,7 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_3(LISA_FLD_D, reg_f30, reg_sp, F30_EXTRA_SPACE);
     ins_append_3(LISA_FLD_D, reg_f31, reg_sp, F31_EXTRA_SPACE);
 
-    /* 4.2. GPR: restore s0-s8, fp */
+    /* 5.2 GPR: restore s0-s8, fp */
     ins_append_3(LISA_LD_D, reg_s0, reg_sp, S0_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_s1, reg_sp, S1_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_s2, reg_sp, S2_EXTRA_SPACE);
@@ -215,14 +221,14 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_3(LISA_LD_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_x, reg_sp, R21_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_tp, reg_sp, TP_EXTRA_SPACE);
-    /* 5. restore sp */
+    /* 6. restore sp */
     ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, 512);
 
-    /* 6. set return value */
+    /* 7. set return value */
     /* a0(return value) is set by branch instruction */
     /* ins_append_3(LISA_OR, reg_a0, reg_a0, reg_zero); */
 
-    /* 7. return to qemu */
+    /* 8. return to qemu */
     ins_append_3(LISA_JIRL, reg_zero, reg_ra, 0);
 }
 
@@ -614,8 +620,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         /* 4. restore host tp */ 
         /* FIXME: just for absolutely correct, maybe no need */
-        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tp, reg_sp, TP_EXTRA_SPACE));
-        ++before_nr;
+        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tmp, reg_env, env_offset_of_host_sp(cs)));
+        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tp, reg_tmp, TP_EXTRA_SPACE));
+        before_nr += 2;
 
         /* 5. call cpu_loop_exit(CPUState *cpu) */
         /* note: arg cpu is thread local, so pass it by reg_env */

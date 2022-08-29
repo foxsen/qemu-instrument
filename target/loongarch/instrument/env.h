@@ -80,6 +80,12 @@ static inline int env_offset_of_last_executed_tb(CPUState *cs)
     return (int)((uint64_t)(&cpu->last_executed_tb) - (uint64_t)cpu);
 }
 
+static inline int env_offset_of_host_sp(CPUState *cs)
+{
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cpu->host_sp) - (uint64_t)cpu);
+}
+
 /* static inline int env_offset_of_eip(CPUState *cs) */
 /* { */
 /*     return env_offset_of_gpr(cs, 2); */
