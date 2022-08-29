@@ -38,6 +38,10 @@
 #define reg_s8      31
 #define reg_end     32
 
+/* save native info in bt context */
+#define reg_env reg_x
+#define reg_target reg_tp
+#define reg_code_ptr reg_a7
 /* note: reg_ret save return value(tb|jmp_slot), must be a temp reg, also not callee-saved regs */
 #define reg_ret reg_a6
 
@@ -94,11 +98,6 @@
 #define reg_scr2    2
 #define reg_scr3    3
 
-
-/* save native info in bt context*/
-#define reg_code_ptr reg_x
-#define reg_target reg_fp
-#define reg_env reg_s8
 
 #define INVALID_TEMP    -1
 #define ITEMP0          0

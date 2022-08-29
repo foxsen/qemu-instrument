@@ -5,26 +5,50 @@
 
 /* === 寄存器映射 === */
 const int reg_gpr_map[] = {
-    [reg_t0] = reg_s0,
-    [reg_t1] = reg_s1,
-    [reg_t2] = reg_s2,
-    [reg_t3] = reg_s3,
-    [reg_t4] = reg_s4,
-    [reg_t5] = reg_s5,
-    [reg_a0] = reg_s6,
-    [reg_a1] = reg_s7,
-    [reg_s0] = reg_t8,
-    [31] = 0, /* make array has 32 entries */
+    /* [0 ... 31] = reg_invalid, */
+    [reg_zero] = reg_zero,
+    [reg_ra] = reg_ra,
+    [reg_tp] = reg_invalid,
+    [reg_sp] = reg_sp,
+    [reg_a0] = reg_a0,
+    [reg_a1] = reg_a1,
+    [reg_a2] = reg_a2,
+    [reg_a3] = reg_a3,
+    [reg_a4] = reg_a4,
+    [reg_a5] = reg_invalid,
+    [reg_a6] = reg_invalid,
+    [reg_a7] = reg_invalid,
+    [reg_t0] = reg_t0,
+    [reg_t1] = reg_t1,
+    [reg_t2] = reg_t2,
+    [reg_t3] = reg_t3,
+    [reg_t4] = reg_t4,
+    [reg_t5] = reg_t5,
+    [reg_t6] = reg_t6,
+    [reg_t7] = reg_t7,
+    [reg_t8] = reg_t8,
+    [reg_x] = reg_invalid,
+    [reg_fp] = reg_fp,
+    [reg_s0] = reg_s0,
+    [reg_s1] = reg_s1,
+    [reg_s2] = reg_s2,
+    [reg_s3] = reg_s3,
+    [reg_s4] = reg_s4,
+    [reg_s5] = reg_s5,
+    [reg_s6] = reg_s6,
+    [reg_s7] = reg_s7,
+    [reg_s8] = reg_invalid,
 };
 
 #define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
 
 int gpr_is_mapped(int gpr) {
     lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
-    return (reg_gpr_map[gpr] != 0);
+    return (reg_gpr_map[gpr] != reg_invalid);
 }
 
  /* 返回直接映射的寄存器，返回映射的寄存器 */
+/* TODO: rename to mapped_gpr */
 int reg_alloc_gpr(int gpr) {
     lsassert(gpr_is_mapped(gpr));
     return reg_gpr_map[gpr];
@@ -32,27 +56,27 @@ int reg_alloc_gpr(int gpr) {
 
 /* === 临时寄存器映射 === */
 static const int itemp_map[] = {
-    [ITEMP0] = reg_t0,
-    [ITEMP1] = reg_t1,
-    [ITEMP2] = reg_t2,
-    [ITEMP3] = reg_t3,
-    [ITEMP4] = reg_t4,
-    [ITEMP5] = reg_t5,
-    [ITEMP6] = reg_t6,
-    [ITEMP7] = reg_t7,
+    [ITEMP0] = reg_a6,
+    [ITEMP1] = reg_s8,
+    [ITEMP2] = reg_a5,
+    /* [ITEMP3] = reg_t3, */
+    /* [ITEMP4] = reg_t4, */
+    /* [ITEMP5] = reg_t5, */
+    /* [ITEMP6] = reg_t6, */
+    /* [ITEMP7] = reg_t7, */
     /* [ITEMP8] = reg_t8, */
 };
 
 static const int itemp_index_map[] = {
     /* [0 ... 31] = INVALID_TEMP, */
-    [reg_t0] = ITEMP0,
-    [reg_t1] = ITEMP1,
-    [reg_t2] = ITEMP2,
-    [reg_t3] = ITEMP3,
-    [reg_t4] = ITEMP4,
-    [reg_t5] = ITEMP5,
-    [reg_t6] = ITEMP6,
-    [reg_t7] = ITEMP7,
+    [reg_a6] = ITEMP0,
+    [reg_s8] = ITEMP1,
+    [reg_a5] = ITEMP2,
+    /* [reg_t3] = ITEMP3, */
+    /* [reg_t4] = ITEMP4, */
+    /* [reg_t5] = ITEMP5, */
+    /* [reg_t6] = ITEMP6, */
+    /* [reg_t7] = ITEMP7, */
     /* [reg_t8] = ITEMP8, */
 };
 

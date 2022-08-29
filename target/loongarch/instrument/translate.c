@@ -129,7 +129,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     /* 5.2. load mapped gpr */
     /* tr_load_registers_from_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
-        if (gpr_is_mapped(gpr)) {
+        if (gpr != reg_zero && gpr_is_mapped(gpr)) {
             ins_append_3(LISA_LD_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr));
         }
     }
@@ -158,7 +158,7 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     /* 3.1 store mapped gpr */
     /* tr_save_registers_to_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
-        if (gpr_is_mapped(gpr)) {
+        if (gpr != reg_zero && gpr_is_mapped(gpr)) {
             ins_append_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr));
         }
     }
@@ -314,7 +314,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
         for (int i = 0; i < 4; ++i) {
             int reg = gpr[i];
-            if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
+            if (reg != -1 && !gpr_is_mapped(reg)) {
                 int mapped_gpr = ins->opnd[i].val;
                 if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
                     ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
@@ -334,7 +334,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 #endif
         for (int i = 0; i < 4; ++i) {
             int reg = gpr[i];
-            if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
+            if (reg != -1 && !gpr_is_mapped(reg)) {
                 /* skip duplicated regs */
                 bool skip = false;
                 for (int j = i - 1; j >= 0; --j) {
@@ -603,7 +603,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* 3. store guest registers to env */
         /* 3.1 store mapped gpr */
         for (int gpr = 0; gpr < 32; ++gpr) {
-            if (gpr_is_mapped(gpr)) {
+            if (gpr != reg_zero && gpr_is_mapped(gpr)) {
                 ins_insert_before(ins, ins_create_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr)));
                 ++before_nr;
             }
@@ -647,7 +647,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
     /* free mapped itemps */
     for (int i = 0; i < 4; ++i) {
         int reg = gpr[i];
-        if (reg != -1 && reg != reg_zero && !gpr_is_mapped(reg)) {
+        if (reg != -1 && !gpr_is_mapped(reg)) {
             reg_unmap_gpr_to_itemp(reg);
         }
     }
