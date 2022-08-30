@@ -3,6 +3,7 @@
 #include "error.h"
 #include <stdint.h>
 
+/* 映射26个寄存器的方案 */
 /* === 寄存器映射 === */
 const int reg_gpr_map[] = {
     /* [0 ... 31] = reg_invalid, */
@@ -40,20 +41,6 @@ const int reg_gpr_map[] = {
     [reg_s8] = reg_invalid,
 };
 
-#define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
-
-int gpr_is_mapped(int gpr) {
-    lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
-    return (reg_gpr_map[gpr] != reg_invalid);
-}
-
- /* 返回直接映射的寄存器，返回映射的寄存器 */
-/* TODO: rename to mapped_gpr */
-int reg_alloc_gpr(int gpr) {
-    lsassert(gpr_is_mapped(gpr));
-    return reg_gpr_map[gpr];
-}
-
 /* === 临时寄存器映射 === */
 static const int itemp_map[] = {
     [ITEMP0] = reg_a6,
@@ -80,6 +67,89 @@ static const int itemp_index_map[] = {
     /* [reg_t8] = ITEMP8, */
 };
 
+/* 只映射9个寄存器的方案 */
+/* const int reg_gpr_map[] = { */
+/*     /1* [0 ... 31] = reg_invalid, *1/ */
+/*     [reg_zero] = reg_zero, */
+/*     [reg_ra] = reg_invalid, */
+/*     [reg_tp] = reg_invalid, */
+/*     [reg_sp] = reg_invalid, */
+/*     [reg_a0] = reg_s6, */
+/*     [reg_a1] = reg_s7, */
+/*     [reg_a2] = reg_invalid, */
+/*     [reg_a3] = reg_invalid, */
+/*     [reg_a4] = reg_invalid, */
+/*     [reg_a5] = reg_invalid, */
+/*     [reg_a6] = reg_invalid, */
+/*     [reg_a7] = reg_invalid, */
+/*     [reg_t0] = reg_s0, */
+/*     [reg_t1] = reg_s1, */
+/*     [reg_t2] = reg_s2, */
+/*     [reg_t3] = reg_s3, */
+/*     [reg_t4] = reg_s4, */
+/*     [reg_t5] = reg_s5, */
+/*     [reg_t6] = reg_invalid, */
+/*     [reg_t7] = reg_invalid, */
+/*     [reg_t8] = reg_invalid, */
+/*     [reg_x] = reg_invalid, */
+/*     [reg_fp] = reg_invalid, */
+/*     [reg_s0] = reg_t8, */
+/*     [reg_s1] = reg_invalid, */
+/*     [reg_s2] = reg_invalid, */
+/*     [reg_s3] = reg_invalid, */
+/*     [reg_s4] = reg_invalid, */
+/*     [reg_s5] = reg_invalid, */
+/*     [reg_s6] = reg_invalid, */
+/*     [reg_s7] = reg_invalid, */
+/*     [reg_s8] = reg_invalid, */
+/* }; */
+
+/* static const int itemp_map[] = { */
+/*     [ITEMP0] = reg_t0, */
+/*     [ITEMP1] = reg_t1, */
+/*     [ITEMP2] = reg_t2, */
+/*     [ITEMP3] = reg_t3, */
+/*     [ITEMP4] = reg_t4, */
+/*     [ITEMP5] = reg_t5, */
+/*     [ITEMP6] = reg_t6, */
+/*     [ITEMP7] = reg_t7, */
+/*     /1* [ITEMP8] = reg_t8, *1/ */
+/* }; */
+
+/* static const int itemp_index_map[] = { */
+/*     /1* [0 ... 31] = INVALID_TEMP, *1/ */
+/*     [reg_t0] = ITEMP0, */
+/*     [reg_t1] = ITEMP1, */
+/*     [reg_t2] = ITEMP2, */
+/*     [reg_t3] = ITEMP3, */
+/*     [reg_t4] = ITEMP4, */
+/*     [reg_t5] = ITEMP5, */
+/*     [reg_t6] = ITEMP6, */
+/*     [reg_t7] = ITEMP7, */
+/*     /1* [reg_t8] = ITEMP8, *1/ */
+/* }; */
+
+
+
+
+/* === 寄存器映射 === */
+#define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
+
+int gpr_is_mapped(int gpr) {
+    lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
+    return (reg_gpr_map[gpr] != reg_invalid);
+}
+
+ /* 返回直接映射的寄存器，返回映射的寄存器 */
+/* TODO: rename to mapped_gpr */
+int reg_alloc_gpr(int gpr) {
+    lsassert(gpr_is_mapped(gpr));
+    return reg_gpr_map[gpr];
+}
+
+
+
+/* === 临时寄存器映射 === */
 static inline int get_itemp_index(int itemp)
 {
     return itemp_index_map[itemp];
