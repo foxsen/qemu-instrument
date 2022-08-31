@@ -3166,8 +3166,8 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_STLE_D, {GPR_READ, GPR_READ, GPR_READ}, true},
     {LISA_BEQZ, {GPR_READ, REG_ACCESS_INVALID}, true},
     {LISA_BNEZ, {GPR_READ, REG_ACCESS_INVALID}, true},
-    {LISA_BCEQZ, {CFR_READ, REG_ACCESS_INVALID}, true},
-    {LISA_BCNEZ, {CFR_READ, REG_ACCESS_INVALID}, true},
+    {LISA_BCEQZ, {FCC_READ, REG_ACCESS_INVALID}, true},
+    {LISA_BCNEZ, {FCC_READ, REG_ACCESS_INVALID}, true},
     {LISA_JISCR0, {REG_ACCESS_INVALID}, true},
     {LISA_JISCR1, {REG_ACCESS_INVALID}, true},
     {LISA_JIRL, {GPR_WRITE, GPR_READ, REG_ACCESS_INVALID}, true},
@@ -3221,43 +3221,43 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_MOVFR2GR_S, {GPR_WRITE, FPR_READ}, true},
     {LISA_MOVFR2GR_D, {GPR_WRITE, FPR_READ}, true},
     {LISA_MOVFRH2GR_S, {GPR_WRITE, FPR_READ}, true},
-    {LISA_MOVGR2FCSR, {}, false}, // LISA_MOVGR2FCSR {OPD_FCSRL, GPR_RJ}
-    {LISA_MOVFCSR2GR, {}, false}, // LISA_MOVFCSR2GR {GPR_RD, OPD_FCSRH}
-    {LISA_MOVFR2CF, {}, false}, // LISA_MOVFR2CF {FCC_CD, FPR_FJ}
-    {LISA_MOVCF2FR, {}, false}, // LISA_MOVCF2FR {FPR_FD, FCC_CJ}
-    {LISA_MOVGR2CF, {}, false}, // LISA_MOVGR2CF {FCC_CD, GPR_RJ}
-    {LISA_MOVCF2GR, {}, false}, // LISA_MOVCF2GR {GPR_RD, FCC_CJ}
+    {LISA_MOVGR2FCSR, {FCSR_WRITE, GPR_READ}, true},
+    {LISA_MOVFCSR2GR, {GPR_WRITE, FCSR_READ}, true},
+    {LISA_MOVFR2CF, {FCC_WRITE, FPR_READ}, true},
+    {LISA_MOVCF2FR, {FPR_WRITE, FCC_READ}, true},
+    {LISA_MOVGR2CF, {FCC_WRITE, GPR_READ}, true},
+    {LISA_MOVCF2GR, {GPR_WRITE, FCC_READ}, true},
     {LISA_FCVT_LD_D, {}, false}, // LISA_FCVT_LD_D {FPR_FD, FPR_FJ}
     {LISA_FCVT_UD_D, {}, false}, // LISA_FCVT_UD_D {FPR_FD, FPR_FJ}
     {LISA_FCVT_D_LD, {}, false}, // LISA_FCVT_D_LD {FPR_FD, FPR_FJ, FPR_FK}
-    {LISA_FCVT_S_D, {}, false}, // LISA_FCVT_S_D {FPR_FD, FPR_FJ}
-    {LISA_FCVT_D_S, {}, false}, // LISA_FCVT_D_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRM_W_S, {}, false}, // LISA_FTINTRM_W_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRM_W_D, {}, false}, // LISA_FTINTRM_W_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRM_L_S, {}, false}, // LISA_FTINTRM_L_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRM_L_D, {}, false}, // LISA_FTINTRM_L_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRP_W_S, {}, false}, // LISA_FTINTRP_W_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRP_W_D, {}, false}, // LISA_FTINTRP_W_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRP_L_S, {}, false}, // LISA_FTINTRP_L_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRP_L_D, {}, false}, // LISA_FTINTRP_L_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRZ_W_S, {}, false}, // LISA_FTINTRZ_W_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRZ_W_D, {}, false}, // LISA_FTINTRZ_W_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRZ_L_S, {}, false}, // LISA_FTINTRZ_L_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRZ_L_D, {}, false}, // LISA_FTINTRZ_L_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRNE_W_S, {}, false}, // LISA_FTINTRNE_W_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRNE_W_D, {}, false}, // LISA_FTINTRNE_W_D {FPR_FD, FPR_FJ}
-    {LISA_FTINTRNE_L_S, {}, false}, // LISA_FTINTRNE_L_S {FPR_FD, FPR_FJ}
-    {LISA_FTINTRNE_L_D, {}, false}, // LISA_FTINTRNE_L_D {FPR_FD, FPR_FJ}
-    {LISA_FTINT_W_S, {}, false}, // LISA_FTINT_W_S {FPR_FD, FPR_FJ}
-    {LISA_FTINT_W_D, {}, false}, // LISA_FTINT_W_D {FPR_FD, FPR_FJ}
-    {LISA_FTINT_L_S, {}, false}, // LISA_FTINT_L_S {FPR_FD, FPR_FJ}
-    {LISA_FTINT_L_D, {}, false}, // LISA_FTINT_L_D {FPR_FD, FPR_FJ}
-    {LISA_FFINT_S_W, {}, false}, // LISA_FFINT_S_W {FPR_FD, FPR_FJ}
-    {LISA_FFINT_S_L, {}, false}, // LISA_FFINT_S_L {FPR_FD, FPR_FJ}
-    {LISA_FFINT_D_W, {}, false}, // LISA_FFINT_D_W {FPR_FD, FPR_FJ}
-    {LISA_FFINT_D_L, {}, false}, // LISA_FFINT_D_L {FPR_FD, FPR_FJ}
-    {LISA_FRINT_S, {}, false}, // LISA_FRINT_S {FPR_FD, FPR_FJ}
-    {LISA_FRINT_D, {}, false}, // LISA_FRINT_D {FPR_FD, FPR_FJ}
+    {LISA_FCVT_S_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FCVT_D_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRM_W_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRM_W_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRM_L_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRM_L_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRP_W_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRP_W_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRP_L_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRP_L_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRZ_W_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRZ_W_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRZ_L_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRZ_L_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRNE_W_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRNE_W_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRNE_L_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINTRNE_L_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINT_W_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINT_W_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINT_L_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FTINT_L_D, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FFINT_S_W, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FFINT_S_L, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FFINT_D_W, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FFINT_D_L, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FRINT_S, {FPR_WRITE, FPR_READ}, true},
+    {LISA_FRINT_D, {FPR_WRITE, FPR_READ}, true},
     {LISA_FMADD_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
     {LISA_FMADD_D, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
     {LISA_FMSUB_S, {FPR_WRITE, FPR_READ, FPR_READ, FPR_READ}, true},
@@ -3282,8 +3282,8 @@ const lisa_insn_reg_access_format lisa_reg_access_table[] = {
     {LISA_XVFNMADD_D, {}, false}, // LISA_XVFNMADD_D {FPR_XD, FPR_XJ, FPR_XK, FPR_XA}
     {LISA_XVFNMSUB_S, {}, false}, // LISA_XVFNMSUB_S {FPR_XD, FPR_XJ, FPR_XK, FPR_XA}
     {LISA_XVFNMSUB_D, {}, false}, // LISA_XVFNMSUB_D {FPR_XD, FPR_XJ, FPR_XK, FPR_XA}
-    {LISA_FCMP_COND_S, {}, false}, // LISA_FCMP_COND_S {FCC_CD, FPR_FJ, FPR_FK, IMM_CONDF}
-    {LISA_FCMP_COND_D, {}, false}, // LISA_FCMP_COND_D {FCC_CD, FPR_FJ, FPR_FK, IMM_CONDF}
+    {LISA_FCMP_COND_S, {FCC_WRITE, FPR_READ, FPR_READ, REG_ACCESS_INVALID}, true},
+    {LISA_FCMP_COND_D, {FCC_WRITE, FPR_READ, FPR_READ, REG_ACCESS_INVALID}, true},
     {LISA_VFCMP_COND_S, {}, false}, // LISA_VFCMP_COND_S {FPR_VD, FPR_VJ, FPR_VK, IMM_CONDF}
     {LISA_VFCMP_COND_D, {}, false}, // LISA_VFCMP_COND_D {FPR_VD, FPR_VJ, FPR_VK, IMM_CONDF}
     {LISA_XVFCMP_COND_S, {}, false}, // LISA_XVFCMP_COND_S {FPR_XD, FPR_XJ, FPR_XK, IMM_CONDF}

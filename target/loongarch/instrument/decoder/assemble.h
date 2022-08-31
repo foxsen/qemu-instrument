@@ -101,14 +101,17 @@ extern const GM_LA_OPCODE_FORMAT lisa_format_table[];
 #include <stdbool.h>
 
 typedef enum {
-    REG_ACCESS_INVALID,
+    REG_ACCESS_INVALID,     /* for IMM opnd */
     GPR_READ,
     GPR_WRITE,
     GPR_READWRITE,
     FPR_READ,
     FPR_WRITE,
     FPR_READWRITE,
-    CFR_READ,   /* 浮点的条件标志寄存器 */
+    FCSR_READ,
+    FCSR_WRITE,
+    FCC_READ,
+    FCC_WRITE,
     REG_ACCESS_END,
 } LISA_REG_ACCESS_TYPE;
 
