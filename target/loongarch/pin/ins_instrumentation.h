@@ -27,4 +27,8 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...);
 VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...);
 VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...);
 
+/* add imm to value in ptr */
+VOID INS_InsertInlineAdd(INS ins, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic);
+VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic);
+
 #endif

@@ -745,3 +745,86 @@ VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
 {
 
 }
+
+
+
+/* add imm to value in ptr, not atmoic */
+static VOID insert_inline_add(INS ins, VOID* ptr, UINT64 imm)
+{
+    Ins *cur = ins->first_ins;
+    int ins_nr = 0;
+
+    int reg_addr = reg_alloc_itemp();
+    int reg_val = reg_alloc_itemp();
+    ins_nr += ins_insert_before_li_d(cur, reg_addr, (uint64_t)ptr);
+    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_val, reg_addr, 0));
+    ++ins_nr;
+    if (imm <= 0x7ff || imm >= 0xfffff800) {
+        /* if imm only 12 bits, use ADDI.D */
+        ins_insert_before(cur, ins_create_3(LISA_ADDI_D, reg_val, reg_val, imm));
+        ++ins_nr;
+    } else {
+        int reg_imm = reg_alloc_itemp();
+        ins_nr += ins_insert_before_li_d(cur, reg_imm, (uint64_t)imm);
+        ins_insert_before(cur, ins_create_3(LISA_ADD_D, reg_val, reg_val, reg_imm));
+        ++ins_nr;
+        reg_free_itemp(reg_imm);
+    }
+    ins_insert_before(cur, ins_create_3(LISA_ST_D, reg_val, reg_addr, 0));
+    ++ins_nr;
+    reg_free_itemp(reg_addr);
+    reg_free_itemp(reg_val);
+
+    /* update INS */
+    for (int i = 0; i < ins_nr; ++i) {
+        cur = cur->prev;
+    }
+    ins->first_ins = cur;
+    ins->len += ins_nr;
+}
+
+static VOID insert_inline_add_atomic(INS ins, VOID* ptr, UINT64 imm)
+{
+    Ins *cur = ins->first_ins;
+    int ins_nr = 0;
+
+    int reg_addr = reg_alloc_itemp();
+    int reg_imm = reg_alloc_itemp();
+    ins_nr += ins_insert_before_li_d(cur, reg_addr, (uint64_t)ptr);
+    ins_nr += ins_insert_before_li_d(cur, reg_imm, (uint64_t)imm);
+    ins_insert_before(cur, ins_create_3(LISA_AMADD_D, reg_zero, reg_imm, reg_addr));
+    ++ins_nr;
+    reg_free_itemp(reg_addr);
+    reg_free_itemp(reg_imm);
+
+    /* update INS */
+    for (int i = 0; i < ins_nr; ++i) {
+        cur = cur->prev;
+    }
+    ins->first_ins = cur;
+    ins->len += ins_nr;
+}
+
+VOID INS_InsertInlineAdd(INS ins, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)
+{
+    /* TODO: support IPONT_AFTER */
+    lsassert(action == IPOINT_BEFORE);
+
+    if (!atomic) {
+        insert_inline_add(ins, ptr, imm);
+    } else {
+        insert_inline_add_atomic(ins, ptr, imm);
+    }
+}
+
+VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)
+{
+    /* TODO: support IPONT_AFTER */
+    lsassert(action == IPOINT_BEFORE);
+
+    if (!atomic) {
+        insert_inline_add(bbl->ins_head, ptr, imm);
+    } else {
+        insert_inline_add_atomic(bbl->ins_head, ptr, imm);
+    }
+}
