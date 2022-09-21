@@ -112,7 +112,7 @@
 
 extern const int reg_gpr_map[];
 int gpr_is_mapped(int gpr);
-int reg_alloc_gpr(int gpr);
+int mapped_gpr(int gpr);
 
 int reg_alloc_itemp(void);
 void reg_free_itemp(int itemp);

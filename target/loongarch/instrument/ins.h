@@ -50,6 +50,7 @@ bool op_is_direct_branch(IR2_OPCODE op);
 bool op_is_indirect_branch(IR2_OPCODE op);
 bool op_is_condition_branch(IR2_OPCODE op);
 bool op_is_float_branch(IR2_OPCODE op);
+bool op_is_syscall(IR2_OPCODE op);
 bool op_is_ldst(IR2_OPCODE op);
 bool op_is_load(IR2_OPCODE op);
 bool op_is_store(IR2_OPCODE op);
@@ -67,6 +68,7 @@ bool opnd_is_gpr_readwrite(Ins *ins, int i);
 uint64_t ins_target_addr(Ins *ins);
 
 Ins *ins_b(long offset);
+Ins *ins_nop(void);
 Ins *ins_create_0(IR2_OPCODE op);
 Ins *ins_create_1(IR2_OPCODE op, int opnd0);
 Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1);

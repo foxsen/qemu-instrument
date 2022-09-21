@@ -170,15 +170,91 @@ typedef enum {
 /* not defined -- call should be eliminated at compile time */
 void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 #else
+#include "qemu/bitops.h"
 #include "target/loongarch/instrument/ins.h"
+#include "target/loongarch/instrument/decoder/disasm.h"
+#include "target/loongarch/instrument/error.h"
+/* Patch the branch destination */
+/* @jmp_rx(and jmp_rw): address of ins to be patched */
+/* rx and rw are two virtual address with different prot, but mapped to the same physical address */
+/* @addr: target address */
 static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
                                             uintptr_t jmp_rw, uintptr_t addr)
 {
-    /* patch the branch destination */
-    int offset = addr - jmp_rx;
-    Ins * b = ins_b(offset >> 2);
-    uint32_t opcode = la_assemble(b);
-    qatomic_set((int32_t *)jmp_rw, opcode);
+    /* debug: bcc out of range counter*/
+    static uint64_t bcc16_oor = 0;
+    static uint64_t bcc21_oor = 0;
+
+    /* offset is in 4 Bytes */
+    int offset = (addr - jmp_rx) >> 2;
+    uint32_t opcode = qatomic_read((int32_t *)jmp_rx);
+
+    Ins ins;
+    la_disasm(opcode, &ins);
+    IR2_OPCODE op = ins.op;
+
+    if (op_is_condition_branch(op)) {
+        /* 对于条件跳转，如果patch nop的话，tb_link后每次都要通过两次跳转指令到达目标TB：bcc->b->target_tb
+         * 为了提高性能，对其中一个跳转出口，直接patch bcc -> next TB（另一个出口还是patch nop），从而减少一条跳转指令
+         * 注意：当跳转目标超出bcc的跳转范围时，退化为patch nop */
+        int offset_opnd_idx;
+        int offset_bits;
+        /* 不同的bcc跳转范围不同 */
+        if (LISA_BEQZ <= op && op <= LISA_BCNEZ) {
+            offset_bits = 21;
+            offset_opnd_idx = 1;
+        } else if (LISA_BEQ <= op && op <= LISA_BGEU) {
+            offset_bits = 16;
+            offset_opnd_idx = 2;
+        } else {
+            lsassert(0);
+        }
+
+        if (offset == ins.opnd[offset_opnd_idx].val) {
+            /* tb_reset_jump
+             * we get here means BCC is not changed, so NOP ins need to be reset */
+            uintptr_t nop_addr_rw = jmp_rw + (offset << 2);
+#ifdef CONFIG_LMJ_DEBUG
+            uint32_t nop_opcode = qatomic_read((int32_t *)nop_addr_rw);
+            IR2_OPCODE op = get_ins_op(nop_opcode);
+            /* TB 刚翻译完的时候会为了初始化调用一次tb_reset_jump，所以op可能是nop(LISA_OR $0,$0,$0) */
+            lsassert(op == LISA_B || op == LISA_OR);
+#endif
+            Ins *nop = ins_nop();
+            opcode = la_assemble(nop);
+            qatomic_set((int32_t *)nop_addr_rw, opcode);
+        } else {
+            /* tb_add_jump */
+            if (offset == sextract64(offset, 0, offset_bits)) {
+                /* patch BCC (tb_jump_unlink may also get here) */
+                ins.opnd[offset_opnd_idx].val = offset;
+                opcode = la_assemble(&ins);
+                qatomic_set((int32_t *)jmp_rw, opcode);
+            } else {
+                /* offset is out of bcc branch range, patch the NOP ins */
+                fprintf(stderr, "bcc%d_out_of_range: %lu\n", offset_bits, (offset_bits == 21 ? ++bcc21_oor : ++bcc16_oor));
+                uintptr_t nop_addr_rx = jmp_rx + (ins.opnd[offset_opnd_idx].val << 2);
+                uintptr_t nop_addr_rw = jmp_rw + (ins.opnd[offset_opnd_idx].val << 2);
+                offset = (addr - nop_addr_rx) >> 2;
+                Ins * b = ins_b(offset);
+                opcode = la_assemble(b);
+                qatomic_set((int32_t *)nop_addr_rw, opcode);
+            }
+        }
+    } else {
+        /* 直接跳转指令（B，BL） Patch nop */
+        if (offset == 1) {
+            /* reset to NOP */
+            Ins *nop = ins_nop();
+            opcode = la_assemble(nop);
+            qatomic_set((int32_t *)jmp_rw, opcode);
+        } else {
+            /* patch NOP to B */
+            Ins *b = ins_b(offset);
+            opcode = la_assemble(b);
+            qatomic_set((int32_t *)jmp_rw, opcode);
+        }
+    }
 }
 #endif
 

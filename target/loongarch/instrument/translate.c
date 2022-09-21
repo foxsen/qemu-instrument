@@ -31,9 +31,8 @@ uint64_t context_switch_native_to_bt;
 #define FP_EXTRA_SPACE          (S8_EXTRA_SPACE + REG_LEN)
 #define RA_EXTRA_SPACE          (FP_EXTRA_SPACE + REG_LEN)
 #define R21_EXTRA_SPACE         (RA_EXTRA_SPACE + REG_LEN)
-#define TP_EXTRA_SPACE          (R21_EXTRA_SPACE + REG_LEN)
 
-#define FCSR_EXTRA_SPACE        (TP_EXTRA_SPACE + REG_LEN)
+#define FCSR_EXTRA_SPACE        (R21_EXTRA_SPACE + REG_LEN)
 #define FCC0_EXTRA_SPACE        (FCSR_EXTRA_SPACE + REG_LEN)
 #define FCC1_EXTRA_SPACE        (FCC0_EXTRA_SPACE + REG_LEN)
 #define FCC2_EXTRA_SPACE        (FCC1_EXTRA_SPACE + REG_LEN)
@@ -68,10 +67,9 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_3(LISA_ST_D, reg_s7, reg_sp, S7_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s8, reg_sp, S8_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_fp, reg_sp, FP_EXTRA_SPACE);
-    /* we also save ra, r21, tp */
+    /* we also save ra, r21 */
     ins_append_3(LISA_ST_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_x, reg_sp, R21_EXTRA_SPACE);
-    ins_append_3(LISA_ST_D, reg_tp, reg_sp, TP_EXTRA_SPACE);
 
     /* 2.2 FPR: save fcsr, fcc[8], fpr[24-31] */
     /* FIXME: is fcsr and fcc callee saved? */
@@ -105,14 +103,15 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     
     /* Now, all GPRs and FPRs is rewriteable (except arg a0 and a1) */
 
-    /* 3. process args
+    /* 3. process args (a0 and a1)
      * a0: env
      * a1: code_cache */
     ins_append_3(LISA_OR, reg_env, reg_a0, reg_zero);
     ins_append_3(LISA_OR, reg_code_ptr, reg_a1, reg_zero);
 
-    /* 4. save host $sp to env->host_sp */
+    /* 4. save host $sp and $tp to env */
     ins_append_3(LISA_ST_D, reg_sp, reg_env, env_offset_of_host_sp(cs));
+    ins_append_3(LISA_ST_D, reg_tp, reg_env, env_offset_of_host_tp(cs));
 
     /* 5. load guest registers from env. */
     /* 5.1 load fpr[32], fcc[8], fcsr0 */
@@ -130,7 +129,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     /* tr_load_registers_from_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr != reg_zero && gpr_is_mapped(gpr)) {
-            ins_append_3(LISA_LD_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr));
+            ins_append_3(LISA_LD_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr));
         }
     }
 
@@ -159,7 +158,7 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     /* tr_save_registers_to_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr != reg_zero && gpr_is_mapped(gpr)) {
-            ins_append_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr));
+            ins_append_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr));
         }
     }
     /* 3.2 store fpr[32], fcc[8], fcsr0 */
@@ -174,8 +173,9 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr);
     ins_append_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs)); 
 
-    /* 4. load host $sp */
+    /* 4. load host $sp, $tp */
     ins_append_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(cs));
+    ins_append_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(cs));
 
     /* 5. restore callee-saved LA registers. */
     /* 5.1. FPR: restore fcsr, fcc[8], fpr[24-31] */
@@ -217,10 +217,9 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
     ins_append_3(LISA_LD_D, reg_s7, reg_sp, S7_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_s8, reg_sp, S8_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_fp, reg_sp, FP_EXTRA_SPACE);
-    /* and restore ra, r21, tp */
+    /* and restore ra, r21 */
     ins_append_3(LISA_LD_D, reg_ra, reg_sp, RA_EXTRA_SPACE);
     ins_append_3(LISA_LD_D, reg_x, reg_sp, R21_EXTRA_SPACE);
-    ins_append_3(LISA_LD_D, reg_tp, reg_sp, TP_EXTRA_SPACE);
     /* 6. restore sp */
     ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, 512);
 
@@ -295,14 +294,14 @@ int INS_translate(CPUState *cs, INS pin_ins)
      */
     /* 1. record regs used, maping to itemp */
     /* gpr[4] 保存四个操作数用到的原寄存器(除了$zero) */
-    int gpr[4] = {-1, -1, -1, -1};
+    int origin_gpr[4] = {-1, -1, -1, -1};
     for (int i = 0; i < ins->opnd_count; i++) {
         int reg = ins->opnd[i].val;
         if (opnd_is_gpr(ins, i)) {
-            gpr[i] = reg;
+            origin_gpr[i] = reg;
             /* 用映射的寄存器替换指令中原始的寄存器 */
             if (gpr_is_mapped(reg)) {
-                ins->opnd[i].val = reg_alloc_gpr(reg);
+                ins->opnd[i].val = mapped_gpr(reg);
             } else {
                 ins->opnd[i].val = reg_map_gpr_to_itemp(reg);
             }
@@ -313,15 +312,15 @@ int INS_translate(CPUState *cs, INS pin_ins)
     /* BUG: 如果两个操作数都是同一个reg，如果都被READ,岂不是LOAD两次？ */
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
         for (int i = 0; i < 4; ++i) {
-            int reg = gpr[i];
-            if (reg != -1 && !gpr_is_mapped(reg)) {
-                int mapped_gpr = ins->opnd[i].val;
+            int gpr = origin_gpr[i];
+            if (gpr != -1 && !gpr_is_mapped(gpr)) {
+                int temp_gpr = ins->opnd[i].val;
                 if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
-                    ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
+                    ins_insert_before(ins, ins_create_3(LISA_LD_D, temp_gpr, reg_env, env_offset_of_gpr(cs, gpr)));
                     before_nr++;
                 }
                 if (opnd_is_gpr_write(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
-                    ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
+                    ins_insert_after(ins, ins_create_3(LISA_ST_D, temp_gpr, reg_env, env_offset_of_gpr(cs, gpr)));
                     after_nr++;
                 }
             }
@@ -333,12 +332,12 @@ int INS_translate(CPUState *cs, INS pin_ins)
         fprintf(stderr, "Reg access type undefined: %s\n", msg);
 #endif
         for (int i = 0; i < 4; ++i) {
-            int reg = gpr[i];
-            if (reg != -1 && !gpr_is_mapped(reg)) {
+            int gpr = origin_gpr[i];
+            if (gpr != -1 && !gpr_is_mapped(gpr)) {
                 /* skip duplicated regs */
                 bool skip = false;
                 for (int j = i - 1; j >= 0; --j) {
-                    if (gpr[i] == gpr[j]) {
+                    if (origin_gpr[i] == origin_gpr[j]) {
                         skip = true;
                         break;
                     }
@@ -347,9 +346,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
                     continue;
                 }
 
-                int mapped_gpr = ins->opnd[i].val;
-                ins_insert_before(ins, ins_create_3(LISA_LD_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
-                ins_insert_after(ins, ins_create_3(LISA_ST_D, mapped_gpr, reg_env, env_offset_of_gpr(cs, reg)));
+                int temp_gpr = ins->opnd[i].val;
+                ins_insert_before(ins, ins_create_3(LISA_LD_D, temp_gpr, reg_env, env_offset_of_gpr(cs, gpr)));
+                ins_insert_after(ins, ins_create_3(LISA_ST_D, temp_gpr, reg_env, env_offset_of_gpr(cs, gpr)));
                 before_nr++;
                 after_nr++;
             }
@@ -406,75 +405,75 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* 直接跳转：
          * 1. 保存目标地址到 reg_target
          * 2. 跳转到上下文切换代码（推迟到重定位再做）
-         * TODO: 添加stub for tb-link
          */
 
         /*
-         * BCC的翻译：
-         *   BEQ offset
-         * ->
-         *   BNE fallthrough
-         *   reg_traget <- pc + offset
-         *   B context_switch_native_to_bt
+         * 将B/BL/BCC翻译为如下指令：
+         *   1. if (BEQ) BNE fallthrough
+         *   2. if (BL) $ra <- origin_ins->pc + 4
+         *   3. nop
+         *   4. $reg_traget <- target addr
+         *   5. $reg_ret <- (tb_link) ? (tb | slot_index) : 0
+         *   6. B context_switch_native_to_bt
          * fallthrough:
          *   ...
          */
         tr_data.is_jmp = TRANS_NORETURN;
 
         /* bcc 根据条件选择出口 */
-        int bcc_jmp_over = enable_tb_link ? 11 : 7; /* BUG prompt */
-        switch (ins->op) {
-            case LISA_BEQZ:
-                /* FIXME: maybe we can calc the magic number and patch this ins later */
-                /* magic number 11: we will insert additional 10 ins before next ins */
-                ins_insert_before(ins, ins_create_2(LISA_BNEZ, ins->opnd[0].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BNEZ:
-                ins_insert_before(ins, ins_create_2(LISA_BEQZ, ins->opnd[0].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BCEQZ:
-                ins_insert_before(ins, ins_create_2(LISA_BCNEZ, ins->opnd[0].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BCNEZ:
-                ins_insert_before(ins, ins_create_2(LISA_BCEQZ, ins->opnd[0].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BEQ:
-                ins_insert_before(ins, ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BNE:
-                ins_insert_before(ins, ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BLT:
-                ins_insert_before(ins, ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BGE:
-                ins_insert_before(ins, ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BLTU:
-                ins_insert_before(ins, ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            case LISA_BGEU:
-                ins_insert_before(ins, ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over));
-                before_nr++;
-                break;
-            default:
-                break;
+        if (op_is_condition_branch(ins->op)) {
+            Ins *fallthrough_ins;
+            int bcc_jmp_over = enable_tb_link ? 11 : 7; /* BUG prompt */
+            switch (ins->op) {
+                case LISA_BEQZ:
+                    /* FIXME: maybe we can calc the magic number and patch this ins later */
+                    /* magic number 11: we will insert additional 10 ins before next ins */
+                    fallthrough_ins = ins_create_2(LISA_BNEZ, ins->opnd[0].val, bcc_jmp_over);
+                    break;
+                case LISA_BNEZ:
+                    fallthrough_ins = ins_create_2(LISA_BEQZ, ins->opnd[0].val, bcc_jmp_over);
+                    break;
+                case LISA_BCEQZ:
+                    fallthrough_ins = ins_create_2(LISA_BCNEZ, ins->opnd[0].val, bcc_jmp_over);
+                    break;
+                case LISA_BCNEZ:
+                    fallthrough_ins = ins_create_2(LISA_BCEQZ, ins->opnd[0].val, bcc_jmp_over);
+                    break;
+                case LISA_BEQ:
+                    fallthrough_ins = ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                case LISA_BNE:
+                    fallthrough_ins = ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                case LISA_BLT:
+                    fallthrough_ins = ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                case LISA_BGE:
+                    fallthrough_ins = ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                case LISA_BLTU:
+                    fallthrough_ins = ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                case LISA_BGEU:
+                    fallthrough_ins = ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    break;
+                default:
+                    lsassert(0);
+                    break;
+            }
+            ins_insert_before(ins, fallthrough_ins);
+            before_nr++;
+
+            if (enable_tb_link) {
+                tr_data.jmp_ins[1] = fallthrough_ins;
+            }
         }
 
         if (ins->op == LISA_BL) {
             /* save return address: $ra = PC + 4 */
             uint64_t next_pc = ins->pc + 4;
             if (gpr_is_mapped(reg_ra)) {
-                before_nr += ins_insert_before_li_d(ins, reg_alloc_gpr(reg_ra), next_pc);
+                before_nr += ins_insert_before_li_d(ins, mapped_gpr(reg_ra), next_pc);
             } else {
                 int itemp_ra = reg_alloc_itemp();
                 before_nr += ins_insert_before_li_d(ins, itemp_ra, next_pc);
@@ -488,7 +487,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
          * at first exec time it will fallthrough
          * this nop ins will be patched when tb_link */
         if (enable_tb_link) {
-            Ins *nop = ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
+            Ins *nop = ins_nop();
             tr_data.jmp_ins[0] = nop;
             ins_insert_before(ins, nop);
             before_nr++;
@@ -534,13 +533,13 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
         /* GR[rd] = PC + 4 */
         /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
-        if (gpr[0] != -1 && gpr[0] != reg_zero) {
+        if (origin_gpr[0] != -1 && origin_gpr[0] != reg_zero) {
             uint64_t next_pc = ins->pc + 4;
-            if (gpr_is_mapped(gpr[0])) {
-                before_nr += ins_insert_before_li_d(ins, reg_alloc_gpr(gpr[0]), next_pc);
+            if (gpr_is_mapped(origin_gpr[0])) {
+                before_nr += ins_insert_before_li_d(ins, mapped_gpr(origin_gpr[0]), next_pc);
             } else {
                 before_nr += ins_insert_before_li_d(ins, rd, next_pc);
-                ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, gpr[0])));
+                ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, origin_gpr[0])));
                 before_nr += 1;
             }
         }
@@ -604,7 +603,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* 3.1 store mapped gpr */
         for (int gpr = 0; gpr < 32; ++gpr) {
             if (gpr != reg_zero && gpr_is_mapped(gpr)) {
-                ins_insert_before(ins, ins_create_3(LISA_ST_D, reg_gpr_map[gpr], reg_env, env_offset_of_gpr(cs, gpr)));
+                ins_insert_before(ins, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr)));
                 ++before_nr;
             }
         }
@@ -623,10 +622,10 @@ int INS_translate(CPUState *cs, INS pin_ins)
         ins_insert_before(ins, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs))); 
         before_nr += 2;
 
-        /* 4. restore host tp */ 
+        /* 4. restore host sp, tp */ 
         /* FIXME: just for absolutely correct, maybe no need */
-        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tmp, reg_env, env_offset_of_host_sp(cs)));
-        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tp, reg_tmp, TP_EXTRA_SPACE));
+        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(cs)));
+        ins_insert_before(ins, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(cs)));
         before_nr += 2;
 
         /* 5. call cpu_loop_exit(CPUState *cpu) */
@@ -646,7 +645,7 @@ int INS_translate(CPUState *cs, INS pin_ins)
 
     /* free mapped itemps */
     for (int i = 0; i < 4; ++i) {
-        int reg = gpr[i];
+        int reg = origin_gpr[i];
         if (reg != -1 && !gpr_is_mapped(reg)) {
             reg_unmap_gpr_to_itemp(reg);
         }
@@ -679,20 +678,19 @@ int INS_append_exit(INS pin_ins, uint32_t index)
     int num = 0;
     bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
 
-    Ins *end;
-    if (enable_tb_link) {
-        /* tb_link: fallthrough, this nop ins will be patched when tb_link */
-        Ins *nop = ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
-        tr_data.jmp_ins[index] = nop;
-        ins_insert_after(pin_ins->last_ins, nop);
-        ++num;
+    /* b context_switch_native_to_bt */
+    Ins *end = ins_b(0);
+    ins_insert_after(pin_ins->last_ins, end);
+    ++num;
 
-        end = ins_b(0);
-        ins_insert_after(nop, end);
-        ++num;
-    } else {
-        end = ins_b(0);
-        ins_insert_after(pin_ins->last_ins, end);
+    /* tb_link: add a nop to fallthrough, this nop ins will be patched at tb_add_jump */
+    if (enable_tb_link) {
+        Ins *nop = ins_nop();
+        /* FIXME: BCC will call INS_append_exit, but we do not want it tb_linked at here */
+        if (!op_is_condition_branch(pin_ins->origin_ins->op)) {
+            tr_data.jmp_ins[index] = nop;
+        }
+        ins_insert_before(end, nop);
         ++num;
     }
 

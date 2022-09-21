@@ -5,6 +5,7 @@
 
 /* 映射26个寄存器的方案 */
 /* === 寄存器映射 === */
+/* guest_reg : host_reg */
 const int reg_gpr_map[] = {
     /* [0 ... 31] = reg_invalid, */
     [reg_zero] = reg_zero,
@@ -141,8 +142,7 @@ int gpr_is_mapped(int gpr) {
 }
 
  /* 返回直接映射的寄存器，返回映射的寄存器 */
-/* TODO: rename to mapped_gpr */
-int reg_alloc_gpr(int gpr) {
+int mapped_gpr(int gpr) {
     lsassert(gpr_is_mapped(gpr));
     return reg_gpr_map[gpr];
 }

@@ -33,16 +33,15 @@ static VOID Instruction(INS ins, VOID* v)
 /* BBL */
 static uint64_t bbl_exec_nr = 0;
 static uint64_t ins_exec_nr = 0;
-static VOID bbl_statistic(uint64_t ins_nr) {
-    ++bbl_exec_nr;
-    ins_exec_nr += ins_nr;
-}
 
 static VOID Trace(TRACE trace, VOID* v)
 {
+    BOOL is_atomic = false;
     for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl))
     {
-        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)bbl_statistic, IARG_UINT64, bbl->nr_ins, IARG_END);
+        /* inline add */
+        BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &bbl_exec_nr, 1, is_atomic);
+        BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &ins_exec_nr, bbl->nr_ins, is_atomic);
     }
 }
 

@@ -133,15 +133,31 @@ void la_relocation(CPUState *cs)
             }
         }
 
-        /* tb_link: 记录要patch的B的地址 */
+        /* tb_link: 记录要patch的nop指令（或BCC）的地址 */
         if (enable_tb_link) {
             if (tr_data.jmp_ins[0] == ins) {
                 tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
                 tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
             }
             if (tr_data.jmp_ins[1] == ins) {
-                tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                IR2_OPCODE op = ins->op;
+                if (op_is_condition_branch(op)) {
+                    int bcc_jmp_over;
+                    if (LISA_BEQZ <= op && op <= LISA_BCNEZ) {
+                        bcc_jmp_over = ins->opnd[1].val;
+                    } else if (LISA_BEQ <= op && op <= LISA_BGEU) {
+                        bcc_jmp_over = ins->opnd[2].val;
+                    } else {
+                        lsassert(0);
+                    }
+
+                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                    /* 恢复时让其跳转到nop的位置 */
+                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4 * bcc_jmp_over;
+                } else {
+                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                }
             }
         }
         ins_nr++;

@@ -1,6 +1,7 @@
 #include "ins.h"
 #include "error.h"
 #include <stdlib.h>
+#include "regs.h"
 
 #include "translate.h"
 
@@ -154,6 +155,11 @@ bool op_is_condition_branch(IR2_OPCODE op)
 bool op_is_float_branch(IR2_OPCODE op)
 {
     return (LISA_BCEQZ == op || LISA_BCNEZ == op);
+}
+
+bool op_is_syscall(IR2_OPCODE op)
+{
+    return (op == LISA_SYSCALL);
 }
 
 bool op_is_ldst(IR2_OPCODE op)
@@ -461,6 +467,11 @@ Ins *ins_b(long offset)
     /* note: the real offset is offset << 2 */
     lsassert(offset == sextract64(offset, 0, 26));
     return ins_create_1(LISA_B, offset);
+}
+
+Ins *ins_nop(void)
+{
+    return ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
 }
 
 Ins *ins_create_0(IR2_OPCODE op)

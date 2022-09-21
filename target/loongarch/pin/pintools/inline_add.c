@@ -18,10 +18,13 @@
 /* } */
 
 
+/* 每个BBL插1~2个inline_add的性能差不多，插3个以上性能又会下降。也许和微架构有关。 */
 
 /* BBL */
 static uint64_t bbl_exec_nr = 0;
 static uint64_t ins_exec_nr = 0;
+/* static uint64_t ins_exec_nr2 = 0; */
+/* static uint64_t ins_exec_nr3 = 0; */
 
 static VOID Trace(TRACE trace, VOID* v)
 {
@@ -30,6 +33,8 @@ static VOID Trace(TRACE trace, VOID* v)
     {
         BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &bbl_exec_nr, 1, is_atomic);
         BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &ins_exec_nr, bbl->nr_ins, is_atomic);
+        /* BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &ins_exec_nr2, bbl->nr_ins, is_atomic); */
+        /* BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &ins_exec_nr3, bbl->nr_ins, is_atomic); */
     }
 }
 
