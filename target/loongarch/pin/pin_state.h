@@ -16,18 +16,25 @@ typedef struct PIN_STATE {
     VOID* syscall_entry_cb_val;
     SYSCALL_EXIT_CALLBACK syscall_exit_cb;
     VOID* syscall_exit_cb_val;
+    
     CPU_EXEC_ENTER_CALLBACK cpu_exec_enter_cb;
     VOID* cpu_exec_enter_cb_val;
     CPU_EXEC_EXIT_CALLBACK cpu_exec_exit_cb;
     VOID* cpu_exec_exit_cb_val;
+
+    BOOL read_symbol;
+    IMAGECALLBACK img_cb;
+    VOID* img_cb_val;
 } PIN_STATE;
 
 extern PIN_STATE PIN_state;
 
 BOOL PIN_Init(INT32 argc, CHAR** argv);
+VOID PIN_InitSymbols(void);
 
 void INS_instrument(INS ins);
 void TRACE_instrument(TRACE trace);
+void IMG_instrument(IMG img);
 
 #include "../instrument/env.h"
 void pin_instrument_exit(CPUArchState *env, int code);

@@ -9,3 +9,4 @@ loongarch_tcg_ss.add(files(
 ))
 
 subdir('decoder')
+subdir('elf')

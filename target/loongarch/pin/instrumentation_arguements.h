@@ -96,4 +96,25 @@ typedef enum {
   PIN_OP_ELEMENT_ACCESS_READWRITE
 } PIN_OP_ELEMENT_ACCESS;
 
+
+/* 下面的不是Pin定义的类型 */
+#include "types.h"
+typedef enum {
+    IOBJECT_INS,
+    IOBJECT_BBL,
+    IOBJECT_RTN,
+} IOBJECT;
+
+typedef struct analysis_call_arg {
+    IARG_TYPE type;
+    uint64_t val;
+} IARG_T;
+
+typedef struct analysis_call {
+    AFUNPTR func;
+    IOBJECT object;
+    IPOINT action;
+    int arg_cnt;
+    IARG_T arg[8];
+} ANALYSIS_CALL;
 #endif

@@ -36,6 +36,13 @@ typedef struct pin_trace {
     BBL bbl_tail;
 } *TRACE;
 
+typedef void *IMG;
+
+typedef struct pin_rtn {
+    const char *name;
+    uintptr_t addr;
+} RTN;
+
 INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins);
 BBL BBL_alloc(uint64_t pc);
 TRACE TRACE_alloc(uint64_t pc);

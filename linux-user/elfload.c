@@ -2755,6 +2755,11 @@ static bool parse_elf_properties(int image_fd,
 
    On return: INFO values will be filled in, as necessary or available.  */
 
+#ifdef CONFIG_LMJ
+#include "target/loongarch/instrument/elf/elf_parser.h"
+#include "target/loongarch/instrument/pin_types.h"
+#include "target/loongarch/pin/pin_state.h"
+#endif
 static void load_elf_image(const char *image_name, int image_fd,
                            struct image_info *info, char **pinterp_name,
                            char bprm_buf[BPRM_BUF_SIZE])
@@ -3059,6 +3064,12 @@ static void load_elf_image(const char *image_name, int image_fd,
 
 #ifdef CONFIG_LMJ
     load_symbols(ehdr, image_fd, load_bias);
+    /* 如果函数插桩，则解析符号 */
+    if (PIN_state.read_symbol) {
+        IMG img;
+        parse_elf_symbol_with_fd(image_fd, load_bias, &img);
+        IMG_instrument(img);
+    }
 #else
     if (qemu_log_enabled()) {
         load_symbols(ehdr, image_fd, load_bias);

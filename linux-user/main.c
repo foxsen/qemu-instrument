@@ -890,6 +890,12 @@ int main(int argc, char **argv, char **envp)
 
     fd_trans_init();
 
+#ifdef CONFIG_LMJ
+    if (instru) {
+        ins_instru(argc, argv);
+    }
+#endif
+
     ret = loader_exec(execfd, exec_path, target_argv, target_environ, regs,
         info, &bprm);
     if (ret != 0) {
@@ -976,12 +982,6 @@ int main(int argc, char **argv, char **envp)
     tcg_prologue_init(tcg_ctx);
 #else
     pin_prologue_init(tcg_ctx, cpu);
-#endif
-
-#ifdef CONFIG_LMJ
-    if (instru) {
-        ins_instru(argc, argv);
-    }
 #endif
 
     target_cpu_copy_regs(env, regs);
