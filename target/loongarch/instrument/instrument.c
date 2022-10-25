@@ -123,8 +123,8 @@ void la_relocation(CPUState *cs)
     bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
 
     for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
+        /* 跳转指令重定向到context_switch */
         if (ins->op == LISA_B) {
-            /* 跳转指令重定向 */ 
             /* FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt */
             if (ins->opnd[0].val == 0x0) {
                 uintptr_t exit_offset = context_switch_native_to_bt - cur_ins_pos;

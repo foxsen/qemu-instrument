@@ -198,7 +198,7 @@ static bool gpr_is_mapped_in_instru(int gpr) {
 }
 
 /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-static void save_callee_saved_regs(Ins *cur, int *ins_nr)
+static void save_caller_saved_regs(Ins *cur, int *ins_nr)
 {
     /* gpr */
     for (int gpr = 0; gpr < 32; ++gpr) {
@@ -226,7 +226,7 @@ static void save_callee_saved_regs(Ins *cur, int *ins_nr)
 }
 
 /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-static void restore_callee_saved_regs(Ins *cur, int *ins_nr)
+static void restore_caller_saved_regs(Ins *cur, int *ins_nr)
 {
     /* 恢复 fpr[0,23], fcc[8], fcsr0 */
     if (save_fpr_regs) {
@@ -272,7 +272,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
 
 
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_callee_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(cur, &ins_nr);
 
 
     /* 1. 设置分析函数的参数 */
@@ -504,11 +504,9 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
 
 
     /* 切换为host的sp,tp */
-    /* TODO: reg_tp 要恢复成host的吗 */
     ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    ++ins_nr;
     ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-    ++ins_nr;
+    ins_nr += 2;
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
@@ -518,7 +516,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_callee_saved_regs(cur, &ins_nr);
+    restore_caller_saved_regs(cur, &ins_nr);
 
     /* update INS */
     for (int i = 0; i < ins_nr; ++i) {
@@ -547,7 +545,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
 
 
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_callee_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(cur, &ins_nr);
 
     /* 1. 设置分析函数的参数 */
     int itemp1 = reg_invalid;
@@ -760,11 +758,9 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
     }
 
     /* 切换为host的sp,tp */
-    /* TODO: reg_tp 要恢复成host的吗 */
     ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    ++ins_nr;
     ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-    ++ins_nr;
+    ins_nr += 2;
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
@@ -774,7 +770,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_callee_saved_regs(cur, &ins_nr);
+    restore_caller_saved_regs(cur, &ins_nr);
 
     /* update INS */
     for (int i = 0; i < ins_nr; ++i) {
@@ -790,15 +786,14 @@ VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
     assert(0);
 }
 
-static void RTN_insert_callback(INS ins, ANALYSIS_CALL cb)
+static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
 {
     Ins *cur = ins->first_ins;
     /* IR2_OPCODE op = ins->origin_ins->op; */
     int ins_nr = 0;
 
-
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_callee_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(cur, &ins_nr);
 
     /* 1. 设置分析函数的参数 */
     int gpr = reg_invalid;
@@ -846,7 +841,16 @@ static void RTN_insert_callback(INS ins, ANALYSIS_CALL cb)
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_callee_saved_regs(cur, &ins_nr);
+    restore_caller_saved_regs(cur, &ins_nr);
+
+    /* update INS */
+    for (int i = 0; i < ins_nr; ++i) {
+        cur = cur->prev;
+    }
+    ins->first_ins = cur;
+    ins->len += ins_nr;
+}
+
 
     /* update INS */
     for (int i = 0; i < ins_nr; ++i) {

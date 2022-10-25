@@ -2,17 +2,10 @@
 #define _ENV_H_
 
 #include "qemu/osdep.h"
-#include "qemu/log.h"
-#include "qemu/qemu-print.h"
-#include "qapi/error.h"
-#include "qemu/module.h"
-#include "sysemu/qtest.h"
 #include "exec/exec-all.h"
-#include "qapi/qapi-commands-machine-target.h"
-/* FIXME: include above 后可以 include cpu.h，也许可以更少 */
-
-#include  "target/loongarch/cpu.h"
-#include "qemu/typedefs.h"
+/* FIXME: include above 后可以 include cpu.h */
+#include "target/loongarch/cpu.h"
+/* #include "qemu/typedefs.h" // seems no need */
 
 
 static inline int env_offset_of_cpu_state(CPUState *cs)

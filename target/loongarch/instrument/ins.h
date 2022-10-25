@@ -4,7 +4,7 @@
 #include "decoder/assemble.h"
 #include "pin_types.h"
 
-/* FIXME: not realy used */
+/* FIXME: not used */
 typedef enum TransType {
     TRANS_NEXT,
     TRANS_TOO_MANY,
@@ -13,15 +13,16 @@ typedef enum TransType {
     TRANS_TARGET_1,
 } TransType;
 
+/* context in translation process */
 typedef struct TRANSLATION_DATA {
     void *curr_tb;
     TransType is_jmp;
-    Ins* jmp_ins[2];    // tb两个出口的B指令，用于被重定向到context_swicth
+    Ins *jmp_ins[2];    // tb两个出口的B跳转指令，会被被重定位到context_swicth
 
-    /* ins array: 提前分配好的ins对象池 */
+    /* ins array: 提前分配好的ins对象池，管理ins对象的分配 */
     Ins *ins_array;
     int max_ins_nr;
-    int cur_ins_nr;     // 下一个待分配的地址，每次开始翻译TB时清零
+    int cur_ins_nr;     // 下一个待分配的ins的位置，每次开始翻译TB时，通过tr_init清零
 
     /* ins list: 翻译过程中生成的指令链表 */
     int list_ins_nr;    // ins_nr in ins list
@@ -45,6 +46,7 @@ void ins_remove(Ins *ins);
 void ins_insert_before(Ins *old, Ins *ins);
 void ins_insert_after(Ins *old, Ins *ins);
 
+/* === ins inspection === */
 bool op_is_branch(IR2_OPCODE op);
 bool op_is_direct_branch(IR2_OPCODE op);
 bool op_is_indirect_branch(IR2_OPCODE op);
@@ -67,8 +69,9 @@ bool opnd_is_gpr_readwrite(Ins *ins, int i);
 
 uint64_t ins_target_addr(Ins *ins);
 
-Ins *ins_b(long offset);
 Ins *ins_nop(void);
+Ins *ins_b(long offs26);
+Ins *ins_pcaddi(int rd, long offs20);
 Ins *ins_create_0(IR2_OPCODE op);
 Ins *ins_create_1(IR2_OPCODE op, int opnd0);
 Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1);

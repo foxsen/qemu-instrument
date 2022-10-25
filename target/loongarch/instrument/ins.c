@@ -109,7 +109,9 @@ void ins_insert_before(Ins *old, Ins *ins)
     }
     ins->prev = old->prev;
     ins->next = old;
-    if (old->prev != NULL)    old->prev->next = ins;
+    if (old->prev != NULL) {
+        old->prev->next = ins;
+    }
     old->prev = ins;
 
     t->list_ins_nr++;
@@ -124,7 +126,9 @@ void ins_insert_after(Ins *old, Ins *ins)
     }
     ins->prev = old;
     ins->next = old->next;
-    if (old->next != NULL)    old->next->prev = ins;
+    if (old->next != NULL) {
+        old->next->prev = ins;
+    }
     old->next = ins;
 
     t->list_ins_nr++;
@@ -462,16 +466,23 @@ uint64_t ins_target_addr(Ins *ins)
 }
 
 #include "qemu/bitops.h"
-Ins *ins_b(long offset)
-{
-    /* note: the real offset is offset << 2 */
-    lsassert(offset == sextract64(offset, 0, 26));
-    return ins_create_1(LISA_B, offset);
-}
-
 Ins *ins_nop(void)
 {
     return ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
+}
+
+Ins *ins_b(long offs26)
+{
+    /* PC = PC + (offs26 << 2) */
+    lsassert(offs26 == sextract64(offs26, 0, 26));
+    return ins_create_1(LISA_B, offs26);
+}
+
+Ins *ins_pcaddi(int rd, long offs20)
+{
+    /* $rd = PC + (offs20 << 2) */
+    lsassert(offs20 == sextract64(offs20, 0, 20));
+    return ins_create_2(LISA_PCADDI, rd, offs20);
 }
 
 Ins *ins_create_0(IR2_OPCODE op)

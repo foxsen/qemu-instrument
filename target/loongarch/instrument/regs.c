@@ -5,7 +5,8 @@
 
 /* 映射26个寄存器的方案 */
 /* === 寄存器映射 === */
-/* guest_reg : host_reg */
+/* CoreMark: 9358, 1403(no instru, instru) */
+/* guest_reg : host_reg (physics_reg) */
 const int reg_gpr_map[] = {
     /* [0 ... 31] = reg_invalid, */
     [reg_zero] = reg_zero,
@@ -69,6 +70,7 @@ static const int itemp_index_map[] = {
 };
 
 /* 只映射9个寄存器的方案 */
+/* CoreMark: 8585, 2472(no instru, instru) */
 /* const int reg_gpr_map[] = { */
 /*     /1* [0 ... 31] = reg_invalid, *1/ */
 /*     [reg_zero] = reg_zero, */
@@ -130,7 +132,70 @@ static const int itemp_index_map[] = {
 /*     /1* [reg_t8] = ITEMP8, *1/ */
 /* }; */
 
+/* 兼顾插桩效率的方案（不映射caller-saved regs） */
+/* CoreMark: 8783, 2364(no instru, instru) */
+/* 不插桩的分数有点低，目前还没调整到最优 */
+/* const int reg_gpr_map[] = { */
+/*     /1* [0 ... 31] = reg_invalid, *1/ */
+/*     [reg_zero] = reg_zero, */
+/*     [reg_ra] = reg_ra, */
+/*     [reg_tp] = reg_invalid, */
+/*     [reg_sp] = reg_sp, */
+/*     [reg_a0] = reg_s1, */
+/*     [reg_a1] = reg_s2, */
+/*     [reg_a2] = reg_invalid, */
+/*     [reg_a3] = reg_invalid, */
+/*     [reg_a4] = reg_invalid, */
+/*     [reg_a5] = reg_invalid, */
+/*     [reg_a6] = reg_invalid, */
+/*     [reg_a7] = reg_invalid, */
+/*     [reg_t0] = reg_s3, */
+/*     [reg_t1] = reg_s4, */
+/*     [reg_t2] = reg_s5, */
+/*     [reg_t3] = reg_s6, */
+/*     [reg_t4] = reg_s7, */
+/*     [reg_t5] = reg_fp, */
+/*     [reg_t6] = reg_t6, */
+/*     [reg_t7] = reg_invalid, */
+/*     [reg_t8] = reg_invalid, */
+/*     [reg_x] = reg_invalid, */
+/*     [reg_fp] = reg_invalid, */
+/*     [reg_s0] = reg_s0, */
+/*     [reg_s1] = reg_invalid, */
+/*     [reg_s2] = reg_invalid, */
+/*     [reg_s3] = reg_invalid, */
+/*     [reg_s4] = reg_invalid, */
+/*     [reg_s5] = reg_invalid, */
+/*     [reg_s6] = reg_invalid, */
+/*     [reg_s7] = reg_invalid, */
+/*     [reg_s8] = reg_invalid, */
+/* }; */
 
+/* /1* === 临时寄存器映射 === *1/ */
+/* static const int itemp_map[] = { */
+/*     [ITEMP0] = reg_a6, */
+/*     [ITEMP1] = reg_s8, */
+/*     [ITEMP2] = reg_a5, */
+/*     [ITEMP3] = reg_t7, */
+/*     [ITEMP4] = reg_t8, */
+/*     [ITEMP5] = reg_a4, */
+/*     [ITEMP6] = reg_a3, */
+/*     [ITEMP7] = reg_a2, */
+/*     /1* [ITEMP8] = reg_t8, *1/ */
+/* }; */
+
+/* static const int itemp_index_map[] = { */
+/*     /1* [0 ... 31] = INVALID_TEMP, *1/ */
+/*     [reg_a6] = ITEMP0, */
+/*     [reg_s8] = ITEMP1, */
+/*     [reg_a5] = ITEMP2, */
+/*     [reg_t7] = ITEMP3, */
+/*     [reg_t8] = ITEMP4, */
+/*     [reg_a4] = ITEMP5, */
+/*     [reg_a3] = ITEMP6, */
+/*     [reg_a2] = ITEMP7, */
+/*     /1* [reg_t8] = ITEMP8, *1/ */
+/* }; */
 
 
 /* === 寄存器映射 === */
