@@ -1,12 +1,7 @@
-#include "example.h"
+#include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
-#include "qemu.h"
-#include "user-internals.h"
-#include "strace.h"
-#include "../../instrument/ins.h"
-#include "../../instrument/regs.h"
 
 
 /* INS */
@@ -50,7 +45,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int ins_instru(int argc, char* argv[])
+int pintool_install(int argc, char* argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
  

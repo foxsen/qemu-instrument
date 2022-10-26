@@ -38,6 +38,9 @@ void INS_instrument(INS ins);
 void TRACE_instrument(TRACE trace);
 void IMG_instrument(IMG img);
 
+/* load pintool */
+void qemu_pintool_opt_parse(const char *optarg, Error **errp);
+
 #include "../instrument/env.h"
 void pin_instrument_exit(CPUArchState *env, int code);
 void pin_instrument_syscall(CPUState *cpu);

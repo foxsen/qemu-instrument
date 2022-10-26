@@ -1,6 +1,5 @@
 loongarch_tcg_ss.add(files(
   # 'template.c',
-  # 'example.c',
   # 'icount.c',
   # 'bbl_count.c',
   # 'time_in_code_cache.c',
@@ -9,5 +8,5 @@ loongarch_tcg_ss.add(files(
   # 'branch.c',
   # 'inscount1.c',
   # 'shared_object.c',
-  'routine.c',
+  # 'routine.c',
 ))

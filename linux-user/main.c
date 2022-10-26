@@ -400,6 +400,7 @@ static void handle_arg_singlestep(const char *arg)
     singlestep = 1;
 }
 
+#ifdef CONFIG_LMJ
 static void handle_arg_showtrans(const char *arg)
 {
     showtrans = 1;
@@ -424,6 +425,14 @@ static void handle_arg_lmj_debug(const char *arg)
 {
     lmj_debug = 1;
 }
+
+#include "target/loongarch/pin/pin_state.h"
+
+static void handle_arg_pintool(const char *arg)
+{
+    qemu_pintool_opt_parse(arg, &error_fatal);
+}
+#endif
 
 static void handle_arg_strace(const char *arg)
 {
@@ -503,16 +512,20 @@ static const struct qemu_argument arg_table[] = {
      "pagesize",   "set the host page size to 'pagesize'"},
     {"singlestep", "QEMU_SINGLESTEP",  false, handle_arg_singlestep,
      "",           "run in singlestep mode"},
-    {"showtrans", "QEMU_SHOWTRANS",  false, handle_arg_showtrans,
+#ifdef CONFIG_LMJ
+    {"showtrans",  "QEMU_SHOWTRANS",   false, handle_arg_showtrans,
      "",           "show ins translation"},
-    {"instru", "QEMU_INSTRU",  false, handle_arg_instru,
+    {"instru",     "QEMU_INSTRU",      false, handle_arg_instru,
      "",           "enable instrument"},
-    {"fullregs", "QEMU_FULLREGS",  false, handle_arg_fullregs,
+    {"fullregs",   "QEMU_FULLREGS",    false, handle_arg_fullregs,
      "",           "ld/st every reg in instruction"},
-    {"noibtc", "QEMU_NOIBTC",  false, handle_arg_noibtc,
+    {"noibtc",     "QEMU_NOIBTC",      false, handle_arg_noibtc,
      "",           "not use jmp cache for JIRL"},
-    {"lmj_debug", "QEMU_LMJ_DEBUG",  false, handle_arg_lmj_debug,
+    {"lmj_debug",  "QEMU_LMJ_DEBUG",   false, handle_arg_lmj_debug,
      "",           "lmj's debug config"},
+    {"t",          "QEMU_PINTOOL",     true,  handle_arg_pintool,
+     "",           "use pintool to instrument"},
+#endif
     {"strace",     "QEMU_STRACE",      false, handle_arg_strace,
      "",           "log system calls"},
     {"seed",       "QEMU_RAND_SEED",   true,  handle_arg_seed,
@@ -891,9 +904,8 @@ int main(int argc, char **argv, char **envp)
     fd_trans_init();
 
 #ifdef CONFIG_LMJ
-    if (instru) {
-        ins_instru(argc, argv);
-    }
+    /* TODO 目前在 parse args 时就已经 load 了 */
+    /* load_pintool(); */
 #endif
 
     ret = loader_exec(execfd, exec_path, target_argv, target_environ, regs,

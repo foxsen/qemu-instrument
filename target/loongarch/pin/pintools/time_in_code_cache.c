@@ -1,12 +1,7 @@
-#include "example.h"
+#include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
-#include "qemu.h"
-#include "user-internals.h"
-#include "strace.h"
-#include "../../instrument/ins.h"
-#include "../../instrument/regs.h"
 
 static uint64_t bbl_exec_nr = 0;
 static uint64_t ins_exec_nr = 0;
@@ -27,6 +22,7 @@ static VOID Trace(TRACE trace, VOID* v)
 }
 
 #include <time.h>
+
 static UINT64 cpu_enter_cnt = 0;
 static UINT64 cpu_exit_cnt = 0;
 static UINT64 syscall_exit_cnt = 0;
@@ -91,7 +87,6 @@ static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD 
     ++syscall_exit_cnt;
 }
 
-#include "../../instrument/instrument.h"
 static VOID Fini(INT32 code, VOID* v)
 {
     fprintf(stderr, "CPU Enter Count: %lu\n", cpu_enter_cnt);
@@ -110,7 +105,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int ins_instru(int argc, char* argv[])
+int pintool_install(int argc, char* argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
  

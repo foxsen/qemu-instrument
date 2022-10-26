@@ -1,45 +1,47 @@
-#include "example.h"
+#include "pintool.h"
 #include "target/loongarch/pin/symbol.h"
 
 #define MALLOC "malloc"
 #define FREE "free"
- 
+#define FOO "foo"
 
 static VOID Arg1Before(CHAR* name, ADDRINT size) {
-    printf("%s(%lu)\n", name, size);
+    fprintf(stderr, "%s(%lu)\n", name, size);
 }
  
-/* static VOID MallocAfter(ADDRINT ret) { */
-/*     printf(" returns %lu\n", ret); */
-/* } */
- 
+static VOID MallocAfter(ADDRINT ret) {
+    fprintf(stderr, " returns %lx\n", ret);
+}
 
 static VOID Image(IMG img, VOID* v)
 {
-    //  Find the malloc() function.
+    /* Malloc */
     RTN mallocRtn = RTN_FindByName(img, MALLOC);
     if (RTN_Valid(mallocRtn))
     {
         RTN_Open(mallocRtn);
- 
-        // Instrument malloc() to print the input argument value and the return value.
-        RTN_InsertCall(mallocRtn, IPOINT_BEFORE, (AFUNPTR)Arg1Before, IARG_ADDRINT, MALLOC, IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-                       IARG_END);
-        /* TODO */
-        /* RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter, IARG_FUNCRET_EXITPOINT_VALUE, IARG_END); */
- 
+        RTN_InsertCall(mallocRtn, IPOINT_BEFORE, (AFUNPTR)Arg1Before, IARG_ADDRINT, MALLOC, IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
+        RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter, IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
         RTN_Close(mallocRtn);
     }
  
-    // Find the free() function.
+    /* Free */
     RTN freeRtn = RTN_FindByName(img, FREE);
     if (RTN_Valid(freeRtn))
     {
         RTN_Open(freeRtn);
-        // Instrument free() to print the input argument value.
-        RTN_InsertCall(freeRtn, IPOINT_BEFORE, (AFUNPTR)Arg1Before, IARG_ADDRINT, FREE, IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-                       IARG_END);
+        RTN_InsertCall(freeRtn, IPOINT_BEFORE, (AFUNPTR)Arg1Before, IARG_ADDRINT, FREE, IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
         RTN_Close(freeRtn);
+    }
+
+    /* Foo */
+    RTN fooRtn = RTN_FindByName(img, FOO);
+    if (RTN_Valid(fooRtn))
+    {
+        RTN_Open(fooRtn);
+        RTN_InsertCall(fooRtn, IPOINT_BEFORE, (AFUNPTR)Arg1Before, IARG_ADDRINT, FOO, IARG_FUNCARG_ENTRYPOINT_VALUE, 0, IARG_END);
+        RTN_InsertCall(fooRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter, IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
+        RTN_Close(fooRtn);
     }
 }
  
@@ -55,7 +57,7 @@ static INT32 Usage(void)
 }
  
 
-int ins_instru(int argc, char* argv[])
+int pintool_install(int argc, char* argv[])
 {
     // Initialize pin & symbol manager
     PIN_InitSymbols();

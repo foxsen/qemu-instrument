@@ -1,13 +1,10 @@
-#include "example.h"
+#include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
-#include "qemu.h"
-#include "user-internals.h"
-#include "strace.h"
-#include "../../instrument/ins.h"
-#include "../../instrument/regs.h"
-
+/* #include "qemu.h" */
+/* #include "user-internals.h" */
+/* #include "strace.h" */
 #include "../../instrument/elf/elf_parser.h"
 #include <fcntl.h>
 
@@ -28,7 +25,7 @@ static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD 
     if (syscall_nr != 222 || (prot & PROT_EXEC) == 0) {
         return;
     }
-    print_syscall(env, syscall_nr, env->gpr[4], env->gpr[5], env->gpr[6], env->gpr[7], env->gpr[8], env->gpr[9]);
+    /* print_syscall(env, syscall_nr, env->gpr[4], env->gpr[5], env->gpr[6], env->gpr[7], env->gpr[8], env->gpr[9]); */
     printf("Thread %u: SYSCALL: %s (a0-a6: %lx, %lx, %lx, %lx, %lx, %lx, %lx)\n", threadIndex, syscall_name(syscall_nr), ctxt->env->gpr[4], ctxt->env->gpr[5], ctxt->env->gpr[6], ctxt->env->gpr[7], ctxt->env->gpr[8], ctxt->env->gpr[9], ctxt->env->gpr[10]);
 
     /* TODO check MMAP_FIXED */
@@ -69,7 +66,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int ins_instru(int argc, char* argv[])
+int pintool_install(int argc, char* argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
  

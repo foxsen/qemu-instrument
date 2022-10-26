@@ -1,17 +1,13 @@
-#include "example.h"
+#include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
-#include "qemu.h"
-#include "user-internals.h"
-#include "strace.h"
-#include "../../instrument/ins.h"
-#include "../../instrument/regs.h"
 
 
 /* BBL */
 static uint64_t bbl_exec_nr = 0;
 static uint64_t ins_exec_nr = 0;
+static UINT64 icount = 0;
 static VOID bbl_statistic(uint64_t ins_nr) {
     ++bbl_exec_nr;
     ins_exec_nr += ins_nr;
@@ -21,7 +17,8 @@ static VOID Trace(TRACE trace, VOID* v)
 {
     for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl))
     {
-        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)bbl_statistic, IARG_UINT64, bbl->nr_ins, IARG_END);
+        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)bbl_statistic, IARG_UINT64, BBL_NumIns(bbl), IARG_END);
+        BBL_InsertInlineAdd(bbl, IPOINT_BEFORE, &icount, BBL_NumIns(bbl), false);
     }
 }
 
@@ -36,7 +33,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int ins_instru(int argc, char* argv[])
+int pintool_install(int argc, char* argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
 
