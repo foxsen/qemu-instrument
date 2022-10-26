@@ -67,7 +67,7 @@ void PIN_AddCpuExecExitFunction(CPU_EXEC_EXIT_CALLBACK fun, VOID *val)
  */
 static ANALYSIS_CALL parse_iarg(IOBJECT object, IPOINT action, AFUNPTR funptr, va_list va)
 {
-    lsassert(action == IPOINT_BEFORE);
+    /* lsassert(action == IPOINT_BEFORE); */
 
     ANALYSIS_CALL cb;
     IARG_TYPE type;
@@ -786,7 +786,7 @@ VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
     assert(0);
 }
 
-static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
+static void _RTN_InsertCall(INS ins, ANALYSIS_CALL *cb)
 {
     Ins *cur = ins->first_ins;
     /* IR2_OPCODE op = ins->origin_ins->op; */
@@ -797,23 +797,23 @@ static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
 
     /* 1. 设置分析函数的参数 */
     int gpr = reg_invalid;
-    for (int i = cb.arg_cnt - 1; i >= 0; --i) {
+    for (int i = cb->arg_cnt - 1; i >= 0; --i) {
         int argi = arg_reg_map[i];
-        IARG_TYPE type = cb.arg[i].type;
+        IARG_TYPE type = cb->arg[i].type;
         switch(type) {
         case IARG_ADDRINT:
         case IARG_PTR:
         case IARG_BOOL:
         case IARG_UINT32:
         case IARG_UINT64:
-            ins_nr += ins_insert_before_li_d(cur, argi, cb.arg[i].val);
+            ins_nr += ins_insert_before_li_d(cur, argi, cb->arg[i].val);
             break;
         case IARG_INST_PTR:
             ins_nr += ins_insert_before_li_d(cur, argi, INS_Address(ins));
             break;
         case IARG_FUNCARG_ENTRYPOINT_VALUE:
-            assert(cb.action == IPOINT_BEFORE);
-            gpr = arg_reg_map[cb.arg[i].val];
+            assert(cb->action == IPOINT_BEFORE);
+            gpr = arg_reg_map[cb->arg[i].val];
             assert(reg_a0 <= gpr && gpr <= reg_a7);
             if (gpr_is_mapped_in_instru(gpr)) {
                 ins_insert_before(cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
@@ -822,8 +822,13 @@ static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
             }
             ++ins_nr;
             break;
+        case IARG_FUNCRET_EXITPOINT_VALUE:
+            assert(cb->action == IPOINT_AFTER);
+            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0)));
+            ++ins_nr;
+            break;
         default:
-            lsassertm(0, "Invalid IARG_TYPE %d\n", cb.arg[i].type);
+            lsassertm(0, "Invalid IARG_TYPE %d\n", cb->arg[i].type);
             break;
         }
     }
@@ -835,7 +840,7 @@ static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)cb.func);
+    ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)cb->func);
     ins_insert_before(cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
     ++ins_nr;
     reg_free_itemp(itemp_target);
@@ -852,14 +857,6 @@ static void RTN_instrument_enrty(INS ins, ANALYSIS_CALL cb)
 }
 
 
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
-}
-
 #include "symbol.h"
 /* 只是记录插桩信息，直到翻译时，遇到函数入口时再插桩 */
 VOID RTN_InsertCall(RTN rtn, IPOINT action, AFUNPTR funptr, ...)
@@ -870,29 +867,57 @@ VOID RTN_InsertCall(RTN rtn, IPOINT action, AFUNPTR funptr, ...)
     ANALYSIS_CALL cb = parse_iarg(IOBJECT_RTN, action, funptr, valist);
     va_end(valist);
 
-    /* recored the cb */
-    RTN_save_cb(rtn.addr, cb);
+    /* recored cb */
+    if (action == IPOINT_BEFORE) {
+        RTN_add_entry_cb(rtn, &cb);
+    } else if (action == IPOINT_AFTER) {
+        RTN_add_exit_cb(rtn, &cb);
+    } else {
+        lsassertm(0, "invalid rtn ipoint\n");
+    }
 }
 
 /* 检查是否需要函数插桩
  * 非PinAPI */
+/* TODO 移到pin_state.h */
 VOID RTN_instrument(TRACE trace)
 {
     BBL bbl = TRACE_BblHead(trace);
-    if (!BBL_Valid(bbl)) {
-        return;
-    }
+    lsassert(BBL_Valid(bbl));
     INS ins = BBL_InsHead(bbl);
-    if (!INS_Valid(ins)) {
-        return;
-    }
+    lsassert(INS_Valid(ins));
 
     /* 检查trace的第一条指令是否为要函数插桩的函数入口 */
-    uintptr_t pc = ins->pc;
-    int cb_nr;
-    ANALYSIS_CALL * cbs = RTN_get_cbs(pc, &cb_nr);
-    for (int i = 0; i < cb_nr; ++i) {
-        RTN_insert_callback(ins, cbs[i]);
+    int cb_cnt;
+    ANALYSIS_CALL * cbs = RTN_get_entry_cbs(ins->pc, &cb_cnt);
+    for (int i = 0; i < cb_cnt; ++i) {
+        if (cbs[i].action == IPOINT_BEFORE) {
+            _RTN_InsertCall(ins, &cbs[i]);
+        } else {
+            lsassertm(0, "invalid rtn instument point %d\n", cbs[i].action);
+        }
+    }
+
+    /* 检查trace的最后一条指令是否为要函数插桩的函数出口 */
+    bbl = TRACE_BblTail(trace);
+    lsassert(BBL_Valid(bbl));
+    ins = BBL_InsTail(bbl);
+    lsassert(INS_Valid(ins));
+
+    Ins * origin_ins = ins->origin_ins;
+    if (origin_ins->op == LISA_JIRL &&
+        origin_ins->opnd[0].val == reg_zero &&
+        origin_ins->opnd[1].val == reg_ra &&
+        origin_ins->opnd[2].val == 0) {
+
+        cbs = RTN_get_exit_cbs(ins->pc, &cb_cnt);
+        for (int i = 0; i < cb_cnt; ++i) {
+            if (cbs[i].action == IPOINT_AFTER) {
+                _RTN_InsertCall(ins, &cbs[i]);
+            } else {
+                lsassertm(0, "invalid rtn instument point %d\n", cbs[i].action);
+            }
+        }
     }
 }
 

@@ -18,8 +18,10 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    VOID RTN_save_cb(uintptr_t addr, ANALYSIS_CALL cb);
-    ANALYSIS_CALL *RTN_get_cbs(uintptr_t addr, int *n);
+    VOID RTN_add_entry_cb(RTN rtn, ANALYSIS_CALL *cb);
+    ANALYSIS_CALL *RTN_get_entry_cbs(uintptr_t pc, int *cnt);
+    VOID RTN_add_exit_cb(RTN rtn, ANALYSIS_CALL *cb);
+    ANALYSIS_CALL *RTN_get_exit_cbs(uintptr_t pc, int *cnt);
 #ifdef __cplusplus
 }
 #endif

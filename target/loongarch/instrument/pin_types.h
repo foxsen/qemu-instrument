@@ -36,16 +36,26 @@ typedef struct pin_trace {
     BBL bbl_tail;
 } *TRACE;
 
+/* the real type of IMG is defined in elf/symbol.cpp called image */
 typedef void *IMG;
 
 typedef struct pin_rtn {
     const char *name;
-    uintptr_t addr;
-} RTN;
+    uint64_t addr;
+    uint64_t size;
+} *RTN;
 
 INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins);
 BBL BBL_alloc(uint64_t pc);
 TRACE TRACE_alloc(uint64_t pc);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+RTN RTN_alloc(const char *name, uint64_t addr, uint64_t size);
+#ifdef __cplusplus
+}
+#endif
 
 void INS_set_range(INS ins, Ins *start, Ins *end, int len);
 

@@ -535,10 +535,8 @@ int INS_translate(CPUState *cs, INS pin_ins)
         /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
         if (origin_gpr[0] != -1 && origin_gpr[0] != reg_zero) {
             uint64_t next_pc = ins->pc + 4;
-            if (gpr_is_mapped(origin_gpr[0])) {
-                before_nr += ins_insert_before_li_d(ins, mapped_gpr(origin_gpr[0]), next_pc);
-            } else {
-                before_nr += ins_insert_before_li_d(ins, rd, next_pc);
+            before_nr += ins_insert_before_li_d(ins, rd, next_pc);
+            if (!gpr_is_mapped(origin_gpr[0])) {
                 ins_insert_before(ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, origin_gpr[0])));
                 before_nr += 1;
             }
@@ -559,9 +557,9 @@ int INS_translate(CPUState *cs, INS pin_ins)
             /* 3. tb = *(tb_jmp_cache + offset) */
             ins_insert_before(ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));
             /* 4. if (tb != 0 && tb->pc == target) JIRL tb->tc.ptr */
-            ins_insert_before(ins, ins_create_2(LISA_BEQZ, itemp_tb, 5));   /* magic num: 5 */
+            ins_insert_before(ins, ins_create_2(LISA_BEQZ, itemp_tb, 5));   /* FIXME magic num: 5 */
             ins_insert_before(ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, pc)));
-            ins_insert_before(ins, ins_create_3(LISA_BNE, itemp, reg_target, 3));   /* magic num: 3 */
+            ins_insert_before(ins, ins_create_3(LISA_BNE, itemp, reg_target, 3));   /*  FIXME magic num: 3 */
             ins_insert_before(ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, tc) + offsetof(struct tb_tc, ptr)));
             ins_insert_before(ins, ins_create_3(LISA_JIRL, 0, itemp, 0));
             before_nr += li_nr + 11;

@@ -187,11 +187,11 @@ void parse_elf_symbol(const char* pathname, uint64_t map_base, void **pp_img)
             || syms[i].st_shndx >= SHN_LORESERVE
             || ELF64_ST_TYPE(syms[i].st_info) != STT_FUNC) {
             /* Throw away entries which we do not need.  */
-            /* FIXME we ignore IFUNC, which seems mainly used by glibc */
+            /* FIXME we ignore IFUNC, which seems merely used by glibc */
             continue;
         }
         /* printf("find symbol: %p: %s\n", (void *)(map_base + syms[i].st_value), strs + syms[i].st_name); */
-        image_collect_symbol(*pp_img, strs + syms[i].st_name, map_base + syms[i].st_value);
+        image_collect_symbol(*pp_img, strs + syms[i].st_name, map_base + syms[i].st_value, syms[i].st_size);
     }
 give_up:
     free(strs);
