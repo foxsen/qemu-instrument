@@ -36,7 +36,7 @@ typedef struct pin_trace {
     BBL bbl_tail;
 } *TRACE;
 
-/* the real type of IMG is defined in elf/symbol.cpp called image */
+/* the real type of IMG is defined in elf/symbol.cpp named struct image */
 typedef void *IMG;
 
 typedef struct pin_rtn {

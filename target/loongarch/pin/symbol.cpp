@@ -5,26 +5,31 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <limits>
 
 RTN RTN_FindByName(IMG img, const CHAR *name)
 {
-    symbol_info sym = image_get_symbol_by_name(img, name);
-    if (sym.addr == 0) {
+    symbol_info *sym = image_get_symbol_by_name((image *)img, name);
+    if (sym == NULL || sym->addr == 0) {
         return NULL;
     }
 
-    if (sym.size == 0) {
-        /* FIXME Can we instrument a function whose size is zero? */
-        fprintf(stderr, "find symbol with zero size: name: %s, addr: 0x%lx, size: 0\n", name, sym.addr);
+    if (is_symbol_name_dupcalited(name)) {
+        fprintf(stderr, "[debug] [Warn] symbol %s is duplicated in image.\n", name);
     }
-    RTN rtn = RTN_alloc(name, sym.addr, sym.size);
+    if (sym->size == 0) {
+        /* FIXME! can we instrument a function whose size is zero? */
+        fprintf(stderr, "[debug] [Warn] Find a symbol with zero size: name: %s, addr: 0x%lx, size: 0\n", name, sym->addr);
+    }
+
+    RTN rtn = RTN_alloc(name, sym->addr, sym->size);
     return rtn;
 }
 
 BOOL RTN_Valid(RTN x)
 {
     return (x != NULL && x->addr != 0);
-    /* FIXME maybe this one is better? */
+    /* FIXME maybe size should not be zero? */
     /* return (x != NULL && x->addr != 0 && x->size != 0); */
 }
 
@@ -41,7 +46,7 @@ VOID RTN_Close(RTN rtn)
 
 /* === 下面为内部实现所需接口 === */
 
-static auto cmp_rtn = [](RTN lhs, RTN rhs)
+static auto compare_rtn = [](const RTN lhs, const RTN rhs)
 {
     if (lhs->addr != rhs->addr) {
         return lhs->addr < rhs->addr;
@@ -50,8 +55,13 @@ static auto cmp_rtn = [](RTN lhs, RTN rhs)
     }
 };
 
+/* 函数插桩
+ * 1. RTN_FindByName 会创建一个 RTN
+ * 2. RTN_InsertCall 向 RTN 注册 callbacks（目前是通过 rtn_entry_cbs 和 rtn_exit_cbs 维护 callbacks）
+ * BUG: 以相同的image的name多次调用 RTN_FindByName 会创建多个相同的 RTN，导致 rtn_exit_cbs 里有多个相同的 rtn
+ */
 static std::unordered_map<uintptr_t, std::vector<ANALYSIS_CALL>> rtn_entry_cbs;
-static std::map<RTN, std::vector<ANALYSIS_CALL>, decltype(cmp_rtn)> rtn_exit_cbs(cmp_rtn);
+static std::map<RTN, std::vector<ANALYSIS_CALL>, decltype(compare_rtn)> rtn_exit_cbs(compare_rtn);
 
 VOID RTN_add_entry_cb(RTN rtn, ANALYSIS_CALL *cb)
 {
@@ -75,32 +85,18 @@ VOID RTN_add_exit_cb(RTN rtn, ANALYSIS_CALL *cb)
 
 ANALYSIS_CALL *RTN_get_exit_cbs(uintptr_t pc, int *cnt)
 {
-    /* 1. find rtn contains pc */
+    /* find a rtn which contains the pc */
     /* FIXME 目前假设所有rtn不重叠，因此pc只出现在一个rnt的范围中 */
-    /* TODO 现在是在注册了cb的rtn中搜索符合pc的rtn，也可以写一个函数：在所有的符号信息中查找rtn */
-    RTN find_routine = NULL;
-    struct pin_rtn key = { .addr = pc, .size = 0 };
-    auto iter = rtn_exit_cbs.lower_bound(&key);
-    if (iter != rtn_exit_cbs.end()) {
-        RTN rtn = iter->first;
+    struct pin_rtn key = { .addr = pc, .size = std::numeric_limits<uint64_t>::max() };
+    auto iter = rtn_exit_cbs.upper_bound(&key);
+    if (iter != rtn_exit_cbs.begin()) {
+        RTN rtn = prev(iter)->first;
         if (rtn->addr <= pc && pc < rtn->addr + rtn->size) {
-            find_routine = rtn;
-        }
-    }
-    if (!find_routine && iter != rtn_exit_cbs.begin()) {
-        iter = prev(iter);
-        RTN rtn = iter->first;
-        if (rtn->addr <= pc && pc < rtn->addr + rtn->size) {
-            find_routine = rtn;
+            *cnt = rtn_exit_cbs[rtn].size();
+            return rtn_exit_cbs[rtn].data();
         }
     }
 
-    if (!find_routine) {
-        *cnt = 0;
-        return NULL;
-    }
-
-    /* 2. return cbs */
-    *cnt = rtn_exit_cbs[find_routine].size();
-    return rtn_exit_cbs[find_routine].data();
+    *cnt = 0;
+    return NULL;
 }

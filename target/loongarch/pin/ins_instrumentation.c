@@ -61,7 +61,6 @@ void PIN_AddCpuExecExitFunction(CPU_EXEC_EXIT_CALLBACK fun, VOID *val)
     PIN_state.cpu_exec_exit_cb_val = val;
 }
 
-#include <stdarg.h>
 /* Parse Instrument Arguments
  * 只支持整数类型的参数，最多8个
  */
@@ -877,8 +876,8 @@ VOID RTN_InsertCall(RTN rtn, IPOINT action, AFUNPTR funptr, ...)
     }
 }
 
-/* 检查是否需要函数插桩
- * 非PinAPI */
+/* 检查是否需要函数插桩 */
+/* 非PinAPI */
 /* TODO 移到pin_state.h */
 VOID RTN_instrument(TRACE trace)
 {

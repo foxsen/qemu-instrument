@@ -6,7 +6,7 @@
 #define FOO "foo"
 
 static VOID Arg1Before(CHAR* name, ADDRINT size) {
-    fprintf(stderr, "%s(%lu)\n", name, size);
+    fprintf(stderr, "%s(%lx)\n", name, size);
 }
  
 static VOID MallocAfter(ADDRINT ret) {

@@ -191,7 +191,7 @@ void parse_elf_symbol(const char* pathname, uint64_t map_base, void **pp_img)
             continue;
         }
         /* printf("find symbol: %p: %s\n", (void *)(map_base + syms[i].st_value), strs + syms[i].st_name); */
-        image_collect_symbol(*pp_img, strs + syms[i].st_name, map_base + syms[i].st_value, syms[i].st_size);
+        image_add_symbol((image *)*pp_img, strs + syms[i].st_name, map_base + syms[i].st_value, syms[i].st_size);
     }
 give_up:
     free(strs);

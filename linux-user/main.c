@@ -56,7 +56,6 @@
 #include "user-mmap.h"
 #ifdef CONFIG_LMJ
 #include "target/loongarch/instrument/translate.h"
-#include "target/loongarch/pin/pintools/example.h"
 #endif
 
 #ifndef AT_FLAGS_PRESERVE_ARGV0
