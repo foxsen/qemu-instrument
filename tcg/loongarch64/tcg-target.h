@@ -170,10 +170,11 @@ typedef enum {
 /* not defined -- call should be eliminated at compile time */
 void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 #else
+
 #include "qemu/bitops.h"
 #include "target/loongarch/instrument/ins.h"
 #include "target/loongarch/instrument/decoder/disasm.h"
-#include "target/loongarch/instrument/error.h"
+#include "target/loongarch/instrument/util/error.h"
 /* Patch the branch destination */
 /* @jmp_rx(and jmp_rw): address of ins to be patched */
 /* rx and rw are two virtual address with different prot, but mapped to the same physical address */
@@ -194,8 +195,9 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
     IR2_OPCODE op = ins.op;
 
     if (op_is_condition_branch(op)) {
-        /* 对于条件跳转，如果patch nop的话，tb_link后每次都要通过两次跳转指令到达目标TB：bcc->b->target_tb
-         * 为了提高性能，对其中一个跳转出口，直接patch bcc -> next TB（另一个出口还是patch nop），从而减少一条跳转指令
+        /* 对于条件跳转，如果patch nop，tb_link后bcc的每个出口都要通过两条跳转指令到达目标TB：bcc->b->target_tb
+         * 为了提高性能，对bcc的其中一个跳转出口，直接patch bcc指令本身（另一个出口还是patch nop），从而该出口可以减少一条跳转指令
+         * （虽然这样变得很复杂，但是实测会有10%的性能提升）
          * 注意：当跳转目标超出bcc的跳转范围时，退化为patch nop */
         int offset_opnd_idx;
         int offset_bits;
@@ -217,8 +219,8 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
 #ifdef CONFIG_LMJ_DEBUG
             uint32_t nop_opcode = qatomic_read((int32_t *)nop_addr_rw);
             IR2_OPCODE op = get_ins_op(nop_opcode);
-            /* TB 刚翻译完的时候会为了初始化调用一次tb_reset_jump，所以op可能是nop(LISA_OR $0,$0,$0) */
-            lsassert(op == LISA_B || op == LISA_OR);
+            /* TB 刚翻译完的时候会为了初始化调用一次tb_reset_jump，所以op可能是nop(LISA_ORI $0,$0,0) */
+            lsassert(op == LISA_B || op == LISA_ORI);
 #endif
             Ins *nop = ins_nop();
             opcode = la_assemble(nop);

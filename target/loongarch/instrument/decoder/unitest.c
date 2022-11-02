@@ -1,5 +1,6 @@
 /* Unit Test for la_disasm & la_assemble 
- * Build: gcc *.c -I ~/code/qemu -o main
+ * Build: gcc *.c -o unitest
+ * Requirement: need `decoder` and `common` two folders
  */
 #include "disasm.h"
 #include "assemble.h"

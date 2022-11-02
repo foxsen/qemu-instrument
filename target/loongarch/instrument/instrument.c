@@ -1,4 +1,3 @@
-#include "types.h"
 #include "decoder/assemble.h"
 #include "decoder/disasm.h"
 #include "decoder/la_print.h"
@@ -6,7 +5,7 @@
 #include "instrument.h"
 #include "regs.h"
 #include "env.h"
-#include "error.h"
+#include "util/error.h"
 #include "pin_types.h"
 #include "translate.h"
 #include "../pin/pin_state.h"
@@ -23,11 +22,10 @@ static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
  */
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 {
-    addr_t start_pc = tb->pc;
-    addr_t pc = start_pc;
-    Ins *la_ins = NULL;
+    uint64_t start_pc = tb->pc;
+    uint64_t pc = start_pc;
+    Ins *origin_ins = NULL;
     int ins_nr = 0;
-    int real_ins_nr = 0;
 
     TRACE trace = TRACE_alloc(pc);
     BBL bbl = BBL_alloc(pc);
@@ -35,66 +33,58 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 
     lsassert(tr_data.is_jmp == TRANS_NEXT);
     while (1) {
-        /* disasm */
+        /* disassemble */
         uint32_t opcode = read_opcode(cs, pc);
-        la_ins = ins_alloc(pc);
-        la_disasm(opcode, la_ins);
-        /* ins_append(la_ins); */  /* FIXME: maybe no use anymore */
+        origin_ins = ins_alloc();
+        la_disasm(opcode, origin_ins);
 
-        /* 注：现在 INS_tanslate, INS_instrument, INS_append_exit 内部都会正确更新 ins->len */
-        INS ins = INS_alloc(pc, opcode, la_ins);
+        /* translate */
+        INS ins = INS_alloc(pc, opcode, origin_ins);
         INS_translate(cs, ins);
         INS_instrument(ins);
         ++ins_nr;
 
+        /* append exit */
         if (tr_data.is_jmp == TRANS_NEXT && ins_nr == max_insns) {
             tr_data.is_jmp = TRANS_TOO_MANY;
             INS_append_exit(ins, 0);
-        } else if (op_is_condition_branch(la_ins->op)) {
+        } else if (op_is_condition_branch(origin_ins->op)) {
             INS_append_exit(ins, 1); /* 条件跳转也作为tb结束, tb_link第二个跳转出口 */
         }
 
-        BBL_append_ins(bbl, ins);
-
-        pc += 4;
-        real_ins_nr += ins->len;
-
 #ifdef CONFIG_LMJ_DEBUG
-        /* check length of ins list == PIN_INS.len  */
-        int c1 = 0;
-        for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
-            c1++;
-            if (i->next == NULL && i != ins->last_ins) {
-                fprintf(stderr, "assert fail\n");
-                char msg[128];
-                sprint_ins(ins->origin_ins, msg);
-                fprintf(stderr, "origin: %p, %s\n", ins->origin_ins, msg);
-                sprint_ins(i, msg);
-                fprintf(stderr, "i: %p, %s\n", i, msg);
-                sprint_ins(ins->last_ins, msg);
-                fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
-                fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->len, c1);
-                /* move this to INS_dump() */
-                for (Ins *in = ins->first_ins; in != NULL; in = in->next) {
-                    sprint_ins(in, msg);
-                    fprintf(stderr, "%p: %08x\t%s\n", in, opcode, msg);
+        {
+            /* check length(ins_list in INS) == INS->len  */
+            int l = 0;
+            for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
+                l++;
+                if (i->next == NULL && i != ins->last_ins) {
+                    fprintf(stderr, "assert fail\n");
+                    char msg[128];
+                    sprint_ins(ins->origin_ins, msg);
+                    fprintf(stderr, "origin: %p, %s\n", ins->origin_ins, msg);
+                    sprint_ins(i, msg);
+                    fprintf(stderr, "i: %p, %s\n", i, msg);
+                    sprint_ins(ins->last_ins, msg);
+                    fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
+                    fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->len, l);
+                    /* move this to INS_dump() */
+                    for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
+                        sprint_ins(i, msg);
+                        fprintf(stderr, "%p: %08x\t%s\n", i, opcode, msg);
+                    }
+                    lsassert(0);
                 }
-                lsassert(0);
             }
+            lsassertm(l == ins->len, "c1: %d, read: %d", l, ins->len);
         }
-        lsassertm(c1 == ins->len, "c1: %d, read: %d", c1, ins->len);
 #endif
 
-        /* 现在一个trace只有一个bbl */
+        pc += 4;
+        BBL_append_ins(bbl, ins);
         if (tr_data.is_jmp != TRANS_NEXT) {
             TRACE_append_bbl(trace, bbl);
             break;
-        /* if (ins_nr == max_insns || op_is_branch(la_ins->op) || la_ins->op == LISA_SYSCALL || la_ins->op == LISA_BREAK) { */
-            /* if (op_is_condition_branch(la_ins->op)) { */
-            /*     bbl = BBL_alloc(pc); */
-            /* } else { */
-            /*     break; */
-            /* } */
         }
     }
     lsassertm(ins_nr <= max_insns, "tb ins_nr >= max_insns(%d)\n", max_insns);
@@ -103,8 +93,17 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 
     tr_data.first_ins = trace->bbl_head->ins_head->first_ins;
     tr_data.last_ins = trace->bbl_tail->ins_tail->last_ins;
-    /* lsassertm(tr_data.list_ins_nr == real_ins_nr, "list_ins_nr(%d) != real_ins_nr(%d), trace->ins_nr=%d\n", tr_data.list_ins_nr, real_ins_nr, trace->nr_ins); */
-    /* tr_data.list_ins_nr = real_ins_nr; */
+
+    {
+        /* check length(link_list) == SUM(INS->len) */
+        int real_ins_nr = 0;
+        for (BBL B = tr_data.trace->bbl_head; B != NULL; B = B->next) {
+            for (INS I = B->ins_head; I != NULL; I = I->next) {
+                real_ins_nr += I->len;
+            }
+        }
+        lsassertm(tr_data.list_ins_nr == real_ins_nr, "tr_data.list_ins_nr(%d) != real_ins_nr(%d), origin_ins_nr(trace->ins_nr)=%d\n", tr_data.list_ins_nr, real_ins_nr, trace->nr_ins);
+    }
 
     /* The disas_log hook may use these values rather than recompute.  */
     tb->size = pc - start_pc;
@@ -186,7 +185,6 @@ extern int showtrans;
     /* } */
 int la_encode(TCGContext *tcg_ctx, void* code_buf)
 {
-    TRANSLATION_DATA *t = &tr_data;
     uint64_t code_size = tr_data.list_ins_nr * 4;
 
     /* check code_cache overflow. */
@@ -199,55 +197,52 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
     int ins_nr = 0;
     uint32_t *code_ptr = code_buf;
     if (tr_data.trace == NULL) {
-        /* FIXME: gen_prologue 目前用这种方式来encode */
-        /* FIXed: 其实现在普通的tb也能这样encode */
-        for (Ins *ins = t->first_ins; ins != NULL; ins = ins->next) {
+        /* FIXME: gen_prologue 目前只能用这种方式来encode */
+        /* （其实普通的tb也能这样encode） */
+        for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
             uint32_t opcode = la_assemble(ins);
             *code_ptr = opcode;
             ++code_ptr;
             ++ins_nr;
         }
-    }
-    else {
+    } else {
         for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
-            for (INS ins = bbl->ins_head; ins != NULL; ins = ins->next) {
-                Ins *la_ins = ins->first_ins;
-                while (la_ins) {
-                    uint32_t opcode = la_assemble(la_ins);
+            for (INS INS = bbl->ins_head; INS != NULL; INS = INS->next) {
+                Ins *ins = INS->first_ins;
+                while (ins) {
+                    uint32_t opcode = la_assemble(ins);
                     *code_ptr = opcode;
                     ++code_ptr;
                     ++ins_nr;
-
-                    if (la_ins == ins->last_ins)
+                    if (ins == INS->last_ins)
                         break;
-                    la_ins = la_ins->next;
+                    ins = ins->next;
                 }
             }
         }
     }
 
 #ifdef CONFIG_LMJ_DEBUG
-    /* Print origin_ins and translated_ins */
+    /* print translation result */
     if (showtrans == 1 && tr_data.trace != NULL) {
         fprintf(stderr, "\n==== TB_ENCODE ====\n");
-        char ins_info[128];
+        char msg[128];
         uint32_t *pc = code_buf;
         for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
-            for (INS ins = bbl->ins_head; ins != NULL; ins = ins->next) {
-                sprint_disasm(ins->opcode, ins_info);
-                fprintf(stderr, "0x%-16lx: %08x\t%s\n", ins->pc, ins->opcode, ins_info);
+            for (INS INS = bbl->ins_head; INS != NULL; INS = INS->next) {
+                sprint_ins(INS->origin_ins, msg);
+                fprintf(stderr, "0x%-16lx: %08x\t%s\n", INS->pc, INS->opcode, msg);
+                fprintf(stderr, "..................\n");
 
-                fprintf(stderr, "------------------\n");
-                Ins *inst = ins->first_ins;
-                while (inst) {
-                    uint32_t opcode = la_assemble(inst);
-                    sprint_disasm(opcode, ins_info);
-                    fprintf(stderr, "%-18p: %08x\t%s\n", pc, opcode, ins_info);
-
+                Ins *ins = INS->first_ins;
+                while (ins) {
+                    uint32_t opcode = la_assemble(ins);
+                    sprint_ins(ins, msg);
+                    fprintf(stderr, "%-18p: %08x\t%s\n", pc, opcode, msg);
                     ++pc;
-                    if (inst == ins->last_ins)
+                    if (ins == INS->last_ins)
                         break;
-                    inst = inst->next;
+                    ins = ins->next;
                 }
                 fprintf(stderr, "------------------\n");
             }
@@ -257,7 +252,7 @@ int la_encode(TCGContext *tcg_ctx, void* code_buf)
     }
 #endif
 
-    lsassertm(t->list_ins_nr == ins_nr, "t->list_ins_nr(%d) != ins_nr(%d)\n", t->list_ins_nr, ins_nr);
+    lsassertm(tr_data.list_ins_nr == ins_nr, "tr_data.list_ins_nr(%d) != ins_nr(%d)\n", tr_data.list_ins_nr, ins_nr);
     return ins_nr;
 }
 

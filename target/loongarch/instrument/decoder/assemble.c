@@ -1,5 +1,5 @@
 #include "assemble.h"
-#include "target/loongarch/instrument/error.h"
+#include "../util/error.h"
 
 const IR2_OPND_TYPE ir2_opnd_type_table[] ={
     IR2_OPND_NONE, //OPD_INVALID

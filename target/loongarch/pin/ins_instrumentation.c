@@ -2,11 +2,11 @@
 #include "ins_inspection.h"
 #include "pin_state.h"
 #include <stdarg.h>
-#include "../instrument/error.h"
+#include "../instrument/util/error.h"
 #include "../instrument/ins.h"
 #include "../instrument/regs.h"
 #include "../instrument/env.h"
-#include "../instrument/bitopts.h"
+#include "../instrument/util/bitopts.h"
 #include "../instrument/decoder/la_print.h"
 
 /* 插桩分析函数时，是否需要保存浮点上下文（保存了的话，coremark只有92...） */
@@ -191,69 +191,61 @@ static bool gpr_need_saved_in_instru(int gpr) {
     return gpr_is_mapped(gpr) && (reg_ra <= mapped_gpr(gpr) && mapped_gpr(gpr) <= reg_t8);
 }
 
-/* 调用分析时，还被直接映射的寄存器 */
+/* 调用分析函数时，还被直接映射的寄存器 */
 static bool gpr_is_mapped_in_instru(int gpr) {
     return gpr_is_mapped(gpr) && !gpr_need_saved_in_instru(gpr);
 }
 
 /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-static void save_caller_saved_regs(Ins *cur, int *ins_nr)
+static void save_caller_saved_regs(INS INS, Ins *cur)
 {
     /* gpr */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_need_saved_in_instru(gpr)) {
-            ins_insert_before(cur, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
-            ++(*ins_nr);
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
         }
     }
     /* save fpr[0,23], fcc[8], fcsr0 */
     if (save_fpr_regs) {
         int reg_tmp = reg_t8;
         for (int fpr = 0; fpr < 24; ++fpr) {
-            ins_insert_before(cur, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
-            ++(*ins_nr);
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
         }
         for (int fcc = 0; fcc < 8; ++fcc) {
-            ins_insert_before(cur, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
-            ins_insert_before(cur, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
-            *ins_nr += 2;
+            INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
         }
-        ins_insert_before(cur, ins_create_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr));
-        ins_insert_before(cur, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(current_cpu))); 
-        *ins_nr += 2;
+        INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr));
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(current_cpu))); 
     }
 }
 
 /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-static void restore_caller_saved_regs(Ins *cur, int *ins_nr)
+static void restore_caller_saved_regs(INS INS, Ins *cur)
 {
     /* 恢复 fpr[0,23], fcc[8], fcsr0 */
     if (save_fpr_regs) {
         int reg_tmp = reg_t8;
         for (int fpr = 0; fpr < 24; ++fpr) {
-            ins_insert_before(cur, ins_create_3(LISA_FLD_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
-            ++(*ins_nr);
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FLD_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
         }
         for (int fcc = 0; fcc < 8; ++fcc) {
-            ins_insert_before(cur, ins_create_3(LISA_LD_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
-            ins_insert_before(cur, ins_create_2(LISA_MOVGR2CF, reg_tmp, fcc));
-            *ins_nr += 2;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
+            INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2CF, reg_tmp, fcc));
         }
-        ins_insert_before(cur, ins_create_3(LISA_LD_W, reg_tmp, reg_env, env_offset_of_fscr0(current_cpu))); 
-        ins_insert_before(cur, ins_create_2(LISA_MOVGR2FCSR, reg_tmp, reg_fcsr));
-        *ins_nr += 2;
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_W, reg_tmp, reg_env, env_offset_of_fscr0(current_cpu))); 
+        INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2FCSR, reg_tmp, reg_fcsr));
     }
 
     /* 恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_need_saved_in_instru(gpr)) {
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
-            ++(*ins_nr);
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
         }
     }
 }
 
-VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
+VOID INS_InsertCall(INS INS, IPOINT action, AFUNPTR funptr, ...)
 {
     /* TODO: support IPONT_AFTER */
     lsassert(action == IPOINT_BEFORE);
@@ -265,13 +257,12 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
     va_end(valist);
 
 
-    Ins *cur = ins->first_ins;
-    IR2_OPCODE op = ins->origin_ins->op;
-    int ins_nr = 0;
+    Ins *cur = INS->first_ins;
+    IR2_OPCODE op = INS->origin_ins->op;
 
 
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(INS, cur);
 
 
     /* 1. 设置分析函数的参数 */
@@ -288,21 +279,20 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
         case IARG_BOOL:
         case IARG_UINT32:
         case IARG_UINT64:
-            ins_nr += ins_insert_before_li_d(cur, argi, cb.arg[i].val);
+            INS_load_imm64_before(INS, cur, argi, cb.arg[i].val);
             break;
         case IARG_INST_PTR:
-            ins_nr += ins_insert_before_li_d(cur, argi, INS_Address(ins));
+            INS_load_imm64_before(INS, cur, argi, INS_Address(INS));
             break;
         case IARG_REG_VALUE:
             /* only support gpr for now */
             gpr = cb.arg[i].val;
             assert(gpr < reg_end);
             if (gpr_is_mapped_in_instru(gpr)) {
-                ins_insert_before(cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
             } else {
-                ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
             }
-            ++ins_nr;
             break;
         case IARG_REG_REFERENCE:
         case IARG_REG_CONST_REFERENCE:
@@ -337,24 +327,22 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             case LISA_XVST:
                 gpr = cb.arg[i].val;
                 if (gpr_is_mapped_in_instru(gpr)) {
-                    ins_insert_before(cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
+                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
                 } else {
-                    ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
                 }
                 /* NOTE: make sure the offset is si12 */
-                ins_insert_before(cur, ins_create_3(LISA_ADDI_D, argi, argi, ins->origin_ins->opnd[2].val));
-                ins_nr += 2;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, argi, argi, INS->origin_ins->opnd[2].val));
                 break;
             default:
-                print_ins(ins->origin_ins);
+                print_ins(INS->origin_ins);
                 lsassertm(0, "unhandled op\n");
             }
             break;
         case IARG_MEMORYREAD_SIZE:
         case IARG_MEMORYWRITE_SIZE:
         case IARG_MEMORYOP_SIZE:
-            ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, INS_MemoryOperandSize(ins, 0)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, INS_MemoryOperandSize(INS, 0)));
             break;
         case IARG_MEMORYREAD_PTR:
         case IARG_MEMORYWRITE_PTR:
@@ -373,36 +361,31 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
                  * BEQ rj, rd, 2        // jump over 2 ins if branch taken
                  * ORI $argi, $zero, 0
                  */
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
-                ++ins_nr;
+
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
 
                 switch (op) {
                 case LISA_BEQZ:
                 case LISA_BNEZ:
-                    itemp1 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[0].val;
+                    gpr = INS->origin_ins->opnd[0].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_2(op, mapped_gpr(gpr), 2));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        itemp1 = reg_alloc_itemp();
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+                        INS_insert_ins_before(INS, cur, ins_create_2(op, itemp1, 2));
+                        reg_free_itemp(itemp1);
                     }
-                    ins_insert_before(cur, ins_create_2(op, itemp1, 2));
-                    ++ins_nr;
-                    reg_free_itemp(itemp1);
                     break;
                 case LISA_BCEQZ:
                 case LISA_BCNEZ:
                     itemp1 = reg_alloc_itemp();
-                    fcc = ins->origin_ins->opnd[0].val;
                     if (save_fpr_regs) {
-                        ins_append_3(LISA_LD_B, itemp1, reg_env, env_offset_of_fcc(current_cpu, fcc)); 
-                        ins_append_2(LISA_MOVGR2CF, fcc, itemp1);
-                        ins_nr += 2;
+                        fcc = INS->origin_ins->opnd[0].val;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_B, itemp1, reg_env, env_offset_of_fcc(current_cpu, fcc))); 
+                        INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2CF, fcc, itemp1));
                     }
-                    ins_insert_before(cur, ins_create_2(op, itemp1, 2));
-                    ++ins_nr;
+                    INS_insert_ins_before(INS, cur, ins_create_2(op, itemp1, 2));
                     reg_free_itemp(itemp1);
                     break;
                 case LISA_BEQ:
@@ -413,26 +396,21 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
                 case LISA_BGEU:
                     /* FIXME */
                     itemp1 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[0].val;
+                    gpr = INS->origin_ins->opnd[0].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
                     }
 
                     itemp2 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[1].val;
+                    gpr = INS->origin_ins->opnd[1].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, itemp2, mapped_gpr(gpr), reg_zero));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp2, reg_env, env_offset_of_gpr(current_cpu, gpr)));
                     }
-                    ins_insert_before(cur, ins_create_3(op, itemp1, itemp2, 2));
-                    ++ins_nr;
+                    INS_insert_ins_before(INS, cur, ins_create_3(op, itemp1, itemp2, 2));
 
                     reg_free_itemp(itemp1);
                     reg_free_itemp(itemp2);
@@ -441,36 +419,31 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
                     lsassertm(0, "invalid ins: not a condition branch\n");
                     break;
                 }
-
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
             } else if (op_is_branch(op)) {
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
             } else {
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
             }
             break;
         case IARG_BRANCH_TARGET_ADDR:
             if (op_is_direct_branch(op)) {
-                ins_nr += ins_insert_before_li_d(cur, argi, ins_target_addr(ins->origin_ins));
+                INS_load_imm64_before(INS, cur, argi, ins_target_addr(INS->origin_ins, INS->pc));
             } else if (op_is_indirect_branch(op)) {
                 itemp1 = reg_alloc_itemp();
-                ins_nr += ins_insert_before_li_d(cur, itemp1, sign_extend(ins->origin_ins->opnd[2].val << 2, 18));
+                INS_load_imm64_before(INS, cur, itemp1, sign_extend(INS->origin_ins->opnd[2].val << 2, 18));
                 /* FIXME */
                 lsassertm(0, "FIXME: check gpr is mapped");
-                ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, ins->origin_ins->opnd[1].val)));
-                ins_insert_before(cur, ins_create_3(LISA_ADD_D, argi, argi, itemp1));
-                ins_nr += 2;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, INS->origin_ins->opnd[1].val)));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, argi, argi, itemp1));
                 reg_free_itemp(itemp1);
             } else {
                 lsassertm(0, "not a branch ins\n");
             }
             break;
         case IARG_FALLTHROUGH_ADDR:
-            lsassert(INS_HasFallThrough(ins));
-            ins_nr += ins_insert_before_li_d(cur, argi, ins->pc + 4);
+            lsassert(INS_HasFallThrough(INS));
+            INS_load_imm64_before(INS, cur, argi, INS->pc + 4);
             break;
         case IARG_EXECUTING:
             /* TODO: LA中似乎没有 CMOVcc, FCMOVcc, REP */
@@ -481,8 +454,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             /* FIXME */
             lsassertm(0, "FIXME: check gpr is mapped");
             lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a7)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a7)));
             break;
         case IARG_SYSARG_REFERENCE:
             lsassert(0);
@@ -492,7 +464,7 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
             lsassertm(0, "FIXME: check gpr is mapped");
             lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
             lsassert(cb.arg[i].val < 7);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0 + cb.arg[i].val)));
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0 + cb.arg[i].val)));
             break;
 
         default:
@@ -503,26 +475,17 @@ VOID INS_InsertCall(INS ins, IPOINT action, AFUNPTR funptr, ...)
 
 
     /* 切换为host的sp,tp */
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-    ins_nr += 2;
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)funptr);
-    ins_insert_before(cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    ++ins_nr;
+    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)funptr);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(cur, &ins_nr);
-
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
+    restore_caller_saved_regs(INS, cur);
 }
 
 VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
@@ -537,14 +500,12 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
     ANALYSIS_CALL cb = parse_iarg(IOBJECT_BBL, action, funptr, valist);
     va_end(valist);
 
-    INS ins = bbl->ins_head;
-    Ins *cur = ins->first_ins;
-    IR2_OPCODE op = ins->origin_ins->op;
-    int ins_nr = 0;
-
+    INS INS = bbl->ins_head;
+    Ins *cur = INS->first_ins;
+    IR2_OPCODE op = INS->origin_ins->op;
 
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(INS, cur);
 
     /* 1. 设置分析函数的参数 */
     int itemp1 = reg_invalid;
@@ -560,16 +521,15 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
         case IARG_BOOL:
         case IARG_UINT32:
         case IARG_UINT64:
-            ins_nr += ins_insert_before_li_d(cur, argi, cb.arg[i].val);
+            INS_load_imm64_before(INS, cur, argi, cb.arg[i].val);
             break;
         case IARG_INST_PTR:
-            ins_nr += ins_insert_before_li_d(cur, argi, INS_Address(ins));
+            INS_load_imm64_before(INS, cur, argi, INS_Address(INS));
             break;
         case IARG_REG_VALUE:
             /* only support gpr for now */
             assert(cb.arg[i].val < reg_end);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, cb.arg[i].val)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, cb.arg[i].val)));
             break;
         case IARG_REG_REFERENCE:
         case IARG_REG_CONST_REFERENCE:
@@ -602,9 +562,8 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
             case LISA_VST:
             case LISA_XVLD:
             case LISA_XVST:
-                ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, cb.arg[i].val)));
-                ins_insert_before(cur, ins_create_3(LISA_ADDI_D, argi, argi, ins->origin_ins->opnd[2].val));
-                ins_nr += 2;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, cb.arg[i].val)));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, argi, argi, INS->origin_ins->opnd[2].val));
                 break;
             default:
                 lsassertm(0, "unhandled op\n");
@@ -613,8 +572,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
         case IARG_MEMORYREAD_SIZE:
         case IARG_MEMORYWRITE_SIZE:
         case IARG_MEMORYOP_SIZE:
-            ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, INS_MemoryOperandSize(ins, 0)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, INS_MemoryOperandSize(INS, 0)));
             break;
         case IARG_MEMORYREAD_PTR:
         case IARG_MEMORYWRITE_PTR:
@@ -633,36 +591,31 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
                  * BEQ rj, rd, 2        // jump over 2 ins if branch taken
                  * ORI $argi, $zero, 0
                  */
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
-                ++ins_nr;
+
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
 
                 switch (op) {
                 case LISA_BEQZ:
                 case LISA_BNEZ:
-                    itemp1 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[0].val;
+                    gpr = INS->origin_ins->opnd[0].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_2(op, mapped_gpr(gpr), 2));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        itemp1 = reg_alloc_itemp();
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+                        INS_insert_ins_before(INS, cur, ins_create_2(op, itemp1, 2));
+                        reg_free_itemp(itemp1);
                     }
-                    ins_insert_before(cur, ins_create_2(op, itemp1, 2));
-                    ++ins_nr;
-                    reg_free_itemp(itemp1);
                     break;
                 case LISA_BCEQZ:
                 case LISA_BCNEZ:
                     itemp1 = reg_alloc_itemp();
-                    fcc = ins->origin_ins->opnd[0].val;
                     if (save_fpr_regs) {
-                        ins_append_3(LISA_LD_B, itemp1, reg_env, env_offset_of_fcc(current_cpu, fcc)); 
-                        ins_append_2(LISA_MOVGR2CF, fcc, itemp1);
-                        ins_nr += 2;
+                        fcc = INS->origin_ins->opnd[0].val;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_B, itemp1, reg_env, env_offset_of_fcc(current_cpu, fcc))); 
+                        INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2CF, fcc, itemp1));
                     }
-                    ins_insert_before(cur, ins_create_2(op, itemp1, 2));
-                    ++ins_nr;
+                    INS_insert_ins_before(INS, cur, ins_create_2(op, itemp1, 2));
                     reg_free_itemp(itemp1);
                     break;
                 case LISA_BEQ:
@@ -673,26 +626,21 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
                 case LISA_BGEU:
                     /* FIXME */
                     itemp1 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[0].val;
+                    gpr = INS->origin_ins->opnd[0].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
                     }
 
                     itemp2 = reg_alloc_itemp();
-                    gpr = ins->origin_ins->opnd[1].val;
+                    gpr = INS->origin_ins->opnd[1].val;
                     if (gpr_is_mapped_in_instru(gpr)) {
-                        ins_insert_before(cur, ins_create_3(LISA_OR, itemp1, mapped_gpr(gpr), reg_zero));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, itemp2, mapped_gpr(gpr), reg_zero));
                     } else {
-                        ins_insert_before(cur, ins_create_3(LISA_LD_D, itemp1, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                        ++ins_nr;
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp2, reg_env, env_offset_of_gpr(current_cpu, gpr)));
                     }
-                    ins_insert_before(cur, ins_create_3(op, itemp1, itemp2, 2));
-                    ++ins_nr;
+                    INS_insert_ins_before(INS, cur, ins_create_3(op, itemp1, itemp2, 2));
 
                     reg_free_itemp(itemp1);
                     reg_free_itemp(itemp2);
@@ -701,34 +649,29 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
                     lsassertm(0, "invalid ins: not a condition branch\n");
                     break;
                 }
-
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
             } else if (op_is_branch(op)) {
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 1));
             } else {
-                ins_insert_before(cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
-                ++ins_nr;
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, argi, reg_zero, 0));
             }
             break;
         case IARG_BRANCH_TARGET_ADDR:
             if (op_is_direct_branch(op)) {
-                ins_nr += ins_insert_before_li_d(cur, argi, ins_target_addr(ins->origin_ins));
+                INS_load_imm64_before(INS, cur, argi, ins_target_addr(INS->origin_ins, INS->pc));
             } else if (op_is_indirect_branch(op)) {
                 itemp1 = reg_alloc_itemp();
-                ins_nr += ins_insert_before_li_d(cur, itemp1, sign_extend(ins->origin_ins->opnd[2].val << 2, 18));
-                ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, ins->origin_ins->opnd[1].val)));
-                ins_insert_before(cur, ins_create_3(LISA_ADD_D, argi, argi, itemp1));
-                ins_nr += 2;
+                INS_load_imm64_before(INS, cur, itemp1, sign_extend(INS->origin_ins->opnd[2].val << 2, 18));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, INS->origin_ins->opnd[1].val)));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, argi, argi, itemp1));
                 reg_free_itemp(itemp1);
             } else {
                 lsassertm(0, "not a branch ins\n");
             }
             break;
         case IARG_FALLTHROUGH_ADDR:
-            lsassert(INS_HasFallThrough(ins));
-            ins_nr += ins_insert_before_li_d(cur, argi, ins->pc + 4);
+            lsassert(INS_HasFallThrough(INS));
+            INS_load_imm64_before(INS, cur, argi, INS->pc + 4);
             break;
         case IARG_EXECUTING:
             /* TODO: LA中似乎没有 CMOVcc, FCMOVcc, REP */
@@ -737,8 +680,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
             break;
         case IARG_SYSCALL_NUMBER:
             lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a7)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a7)));
             break;
         case IARG_SYSARG_REFERENCE:
             lsassert(0);
@@ -746,7 +688,7 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
         case IARG_SYSARG_VALUE:
             lsassert(action == IPOINT_BEFORE && op == LISA_SYSCALL);
             lsassert(cb.arg[i].val < 7);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0 + cb.arg[i].val)));
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0 + cb.arg[i].val)));
             break;
 
         default:
@@ -757,26 +699,17 @@ VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...)
     }
 
     /* 切换为host的sp,tp */
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-    ins_nr += 2;
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)funptr);
-    ins_insert_before(cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    ++ins_nr;
+    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)funptr);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(cur, &ins_nr);
-
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
+    restore_caller_saved_regs(INS, cur);
 }
 
 
@@ -785,14 +718,13 @@ VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
     assert(0);
 }
 
-static void _RTN_InsertCall(INS ins, ANALYSIS_CALL *cb)
+static void _RTN_InsertCall(INS INS, ANALYSIS_CALL *cb)
 {
-    Ins *cur = ins->first_ins;
+    Ins *cur = INS->first_ins;
     /* IR2_OPCODE op = ins->origin_ins->op; */
-    int ins_nr = 0;
 
     /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(cur, &ins_nr);
+    save_caller_saved_regs(INS, cur);
 
     /* 1. 设置分析函数的参数 */
     int gpr = reg_invalid;
@@ -805,26 +737,24 @@ static void _RTN_InsertCall(INS ins, ANALYSIS_CALL *cb)
         case IARG_BOOL:
         case IARG_UINT32:
         case IARG_UINT64:
-            ins_nr += ins_insert_before_li_d(cur, argi, cb->arg[i].val);
+            INS_load_imm64_before(INS, cur, argi, cb->arg[i].val);
             break;
         case IARG_INST_PTR:
-            ins_nr += ins_insert_before_li_d(cur, argi, INS_Address(ins));
+            INS_load_imm64_before(INS, cur, argi, INS_Address(INS));
             break;
         case IARG_FUNCARG_ENTRYPOINT_VALUE:
             assert(cb->action == IPOINT_BEFORE);
             gpr = arg_reg_map[cb->arg[i].val];
             assert(reg_a0 <= gpr && gpr <= reg_a7);
             if (gpr_is_mapped_in_instru(gpr)) {
-                ins_insert_before(cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_OR, argi, mapped_gpr(gpr), reg_zero));
             } else {
-                ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, gpr)));
             }
-            ++ins_nr;
             break;
         case IARG_FUNCRET_EXITPOINT_VALUE:
             assert(cb->action == IPOINT_AFTER);
-            ins_insert_before(cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0)));
-            ++ins_nr;
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, argi, reg_env, env_offset_of_gpr(current_cpu, reg_a0)));
             break;
         default:
             lsassertm(0, "Invalid IARG_TYPE %d\n", cb->arg[i].type);
@@ -833,26 +763,17 @@ static void _RTN_InsertCall(INS ins, ANALYSIS_CALL *cb)
     }
 
     /* 2. 切换为host的sp,tp */
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-    ins_nr += 2;
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
 
     /* 3. 插入对分析函数的调用 */
     int itemp_target = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, itemp_target, (uint64_t)cb->func);
-    ins_insert_before(cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    ++ins_nr;
+    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)cb->func);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
     reg_free_itemp(itemp_target);
 
     /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(cur, &ins_nr);
-
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
+    restore_caller_saved_regs(INS, cur);
 }
 
 
@@ -923,60 +844,39 @@ VOID RTN_instrument(TRACE trace)
 
 
 /* add imm to value in ptr, not atmoic */
-static VOID insert_inline_add(INS ins, VOID* ptr, UINT64 imm)
+static VOID insert_inline_add(INS INS, VOID* ptr, UINT64 imm)
 {
-    Ins *cur = ins->first_ins;
-    int ins_nr = 0;
+    Ins *cur = INS->first_ins;
 
     int reg_addr = reg_alloc_itemp();
     int reg_val = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, reg_addr, (uint64_t)ptr);
-    ins_insert_before(cur, ins_create_3(LISA_LD_D, reg_val, reg_addr, 0));
-    ++ins_nr;
+    INS_load_imm64_before(INS, cur, reg_addr, (uint64_t)ptr);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_val, reg_addr, 0));
     if (imm <= 0x7ff || imm >= 0xfffff800) {
         /* if imm only 12 bits, use ADDI.D */
-        ins_insert_before(cur, ins_create_3(LISA_ADDI_D, reg_val, reg_val, imm));
-        ++ins_nr;
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, reg_val, reg_val, imm));
     } else {
         int reg_imm = reg_alloc_itemp();
-        ins_nr += ins_insert_before_li_d(cur, reg_imm, (uint64_t)imm);
-        ins_insert_before(cur, ins_create_3(LISA_ADD_D, reg_val, reg_val, reg_imm));
-        ++ins_nr;
+        INS_load_imm64_before(INS, cur, reg_imm, (uint64_t)imm);
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, reg_val, reg_val, reg_imm));
         reg_free_itemp(reg_imm);
     }
-    ins_insert_before(cur, ins_create_3(LISA_ST_D, reg_val, reg_addr, 0));
-    ++ins_nr;
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_D, reg_val, reg_addr, 0));
     reg_free_itemp(reg_addr);
     reg_free_itemp(reg_val);
-
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
 }
 
-static VOID insert_inline_add_atomic(INS ins, VOID* ptr, UINT64 imm)
+static VOID insert_inline_add_atomic(INS INS, VOID* ptr, UINT64 imm)
 {
-    Ins *cur = ins->first_ins;
-    int ins_nr = 0;
+    Ins *cur = INS->first_ins;
 
     int reg_addr = reg_alloc_itemp();
     int reg_imm = reg_alloc_itemp();
-    ins_nr += ins_insert_before_li_d(cur, reg_addr, (uint64_t)ptr);
-    ins_nr += ins_insert_before_li_d(cur, reg_imm, (uint64_t)imm);
-    ins_insert_before(cur, ins_create_3(LISA_AMADD_D, reg_zero, reg_imm, reg_addr));
-    ++ins_nr;
+    INS_load_imm64_before(INS, cur, reg_addr, (uint64_t)ptr);
+    INS_load_imm64_before(INS, cur, reg_imm, (uint64_t)imm);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_AMADD_D, reg_zero, reg_imm, reg_addr));
     reg_free_itemp(reg_addr);
     reg_free_itemp(reg_imm);
-
-    /* update INS */
-    for (int i = 0; i < ins_nr; ++i) {
-        cur = cur->prev;
-    }
-    ins->first_ins = cur;
-    ins->len += ins_nr;
 }
 
 VOID INS_InsertInlineAdd(INS ins, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)

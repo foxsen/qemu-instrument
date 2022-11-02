@@ -2624,8 +2624,8 @@ typedef struct IR2 {
     IR2_OPCODE op;
     IR2_OPND opnd[4];
     int opnd_count;
-    uint64_t pc; /* origin pc */
 
+    /* linked list */
     struct IR2 *prev;
     struct IR2 *next;
 } IR2;

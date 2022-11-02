@@ -1,14 +1,14 @@
 #include "pin_types.h"
-#include "error.h"
+#include "util/error.h"
 #include <stdlib.h>
 
-INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *la_ins)
+INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *origin_ins)
 {
     /* FIXME: never free, memory leakage */
     INS ins = malloc(sizeof(struct pin_ins));
     ins->pc = pc;
     ins->opcode = opcode;
-    ins->origin_ins = la_ins;
+    ins->origin_ins = origin_ins;
     ins->first_ins = NULL;
     ins->last_ins = NULL;
     ins->len = 0;
@@ -40,22 +40,6 @@ TRACE TRACE_alloc(uint64_t pc)
     return trace;
 }
 
-RTN RTN_alloc(const char *name, uint64_t addr, uint64_t size)
-{
-    RTN rtn = malloc(sizeof(struct pin_rtn));
-    rtn->name = name;
-    rtn->addr = addr;
-    rtn->size = size;
-    return rtn;
-}
-
-void INS_set_range(INS ins, Ins *start, Ins *end, int len)
-{
-    ins->first_ins = start;
-    ins->last_ins = end;
-    ins->len = len;
-}
-
 void BBL_append_ins(BBL bbl, INS ins)
 {
     bbl->nr_ins++;
@@ -63,8 +47,8 @@ void BBL_append_ins(BBL bbl, INS ins)
         lsassert(bbl->ins_tail == NULL);
         bbl->ins_head = ins;
         bbl->ins_tail = ins;
-        return;
     } else {
+        lsassert(bbl->ins_tail != NULL);
         ins->prev = bbl->ins_tail;
         bbl->ins_tail->next = ins;
         bbl->ins_tail = ins;
@@ -84,6 +68,7 @@ void TRACE_append_bbl(TRACE trace, BBL bbl)
         trace->bbl_head = bbl;
         trace->bbl_tail = bbl;
     } else {
+        lsassert(trace->bbl_tail != NULL);
         bbl->prev = trace->bbl_tail;
         trace->bbl_tail->next = bbl;
         trace->bbl_tail = bbl;
@@ -93,3 +78,13 @@ void TRACE_append_bbl(TRACE trace, BBL bbl)
         bbl->prev->ins_tail->last_ins->next = bbl->ins_head->first_ins;
     }
 }
+
+RTN RTN_alloc(const char *name, uint64_t addr, uint64_t size)
+{
+    RTN rtn = malloc(sizeof(struct pin_rtn));
+    rtn->name = name;
+    rtn->addr = addr;
+    rtn->size = size;
+    return rtn;
+}
+

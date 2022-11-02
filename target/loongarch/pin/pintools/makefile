@@ -16,6 +16,7 @@ NAMES += template
 NAMES += ins_count
 NAMES += bbl_count
 NAMES += inline_add
+NAMES += strace
 NAMES += routine
 NAMES += shared_object
 NAMES += bcc

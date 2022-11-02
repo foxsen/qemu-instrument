@@ -1,6 +1,6 @@
 #include "ins_inspection.h"
 #include "../instrument/ins.h"
-#include "../instrument/error.h"
+#include "../instrument/util/error.h"
 #include "../instrument/decoder/la_print.h"
 
 ADDRINT INS_Address(INS ins)

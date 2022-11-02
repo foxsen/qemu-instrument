@@ -1,6 +1,6 @@
 #include "disasm.h"
 #include <stdbool.h>
-#include "target/loongarch/instrument/error.h"
+#include "../util/error.h"
 
 static bool is_la_sign_opnd[] = {
     0,//OPD_INVALID

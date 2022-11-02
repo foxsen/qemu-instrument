@@ -1,5 +1,5 @@
-#ifndef _ERROR_H_
-#define _ERROR_H_
+#ifndef _LA_ERROR_H_
+#define _LA_ERROR_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,5 +31,5 @@
 #define lsassertm(cond, ...)    ((void)0)
 #endif
 
-#endif /* _ERROR_H_ */
+#endif
 

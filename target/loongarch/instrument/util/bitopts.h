@@ -1,5 +1,5 @@
-#ifndef _BITOPTS_H_
-#define _BITOPTS_H_
+#ifndef _LA_BITOPTS_H_
+#define _LA_BITOPTS_H_
 
 /* n: 0~63 */
 #define BitSet(x, n) (x | (1 << n))

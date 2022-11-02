@@ -1,6 +1,6 @@
 #include "regs.h"
-#include "bitopts.h"
-#include "error.h"
+#include "util/bitopts.h"
+#include "util/error.h"
 #include <stdint.h>
 
 /* 映射26个寄存器的方案 */

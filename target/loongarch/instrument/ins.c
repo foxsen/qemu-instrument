@@ -1,5 +1,5 @@
 #include "ins.h"
-#include "error.h"
+#include "util/error.h"
 #include <stdlib.h>
 #include "regs.h"
 
@@ -32,7 +32,7 @@ void tr_fini(void)
 {}
 
 
-Ins *ins_alloc(uint64_t pc)
+Ins *ins_alloc(void)
 {
     TRANSLATION_DATA *t = &tr_data;
     lsassertm(t->cur_ins_nr < t->max_ins_nr, "too many ins\n");
@@ -40,7 +40,8 @@ Ins *ins_alloc(uint64_t pc)
     Ins *ins = t->ins_array + t->cur_ins_nr;
     t->cur_ins_nr++;
 
-    ins->pc = pc;
+    /* memset(ins, 0, sizeof(*ins)); */
+    ins->opnd_count = 0;
     ins->prev = NULL;
     ins->next = NULL;
     return ins;
@@ -48,7 +49,7 @@ Ins *ins_alloc(uint64_t pc)
 
 Ins *ins_copy(Ins *old)
 {
-    Ins *ins = ins_alloc(old->pc);
+    Ins *ins = ins_alloc();
     ins->op = old->op;
     ins->opnd_count = old->opnd_count;
     ins->opnd[0].val = old->opnd[0].val;
@@ -58,7 +59,6 @@ Ins *ins_copy(Ins *old)
     return ins;
 }
 
-/* 所有的链表操作都要修改 list_ins_nr */
 void ins_append(Ins *ins)
 {
     TRANSLATION_DATA *t = &tr_data;
@@ -80,33 +80,55 @@ void ins_append(Ins *ins)
     t->list_ins_nr++;
 }
 
-/* 只将元素从链表中移除，但是仍然可以通过它可以访问到前后元素 */
-void ins_remove(Ins *ins)
+void INS_append_ins(INS INS, Ins *ins)
 {
-    /* TODO: this is all no more use */
-    TRANSLATION_DATA *t = &tr_data;
-    if (t->first_ins == ins) {
-        t->first_ins = ins->next;
+    if (INS->first_ins == NULL) {
+        lsassert(INS->last_ins == NULL && INS->len == 0);
+        INS->first_ins = ins;
+        INS->last_ins = ins;
+        INS->len = 1;
+        tr_data.list_ins_nr++;
+        return;
     }
-    if (t->last_ins == ins) {
-        t->last_ins = ins->prev;
+
+    lsassert(INS->last_ins != NULL && INS->len != 0);
+    /* 更新ins */
+    ins->prev = INS->last_ins;
+    INS->last_ins->next = ins;
+    /* 更新INS */
+    INS->last_ins = ins;
+    INS->len++;
+    /* 更新tr_data */
+    tr_data.list_ins_nr++;
+}
+
+/* 只将元素从链表中移除，但是仍然可以通过它可以访问到前后元素 */
+/* BUG prompt: 调用此接口时，必须保证ins在INS内 */
+void INS_remove_ins(INS INS, Ins *ins)
+{
+    if (INS->first_ins == INS->last_ins) {
+        lsassert(ins == INS->first_ins);
+        INS->first_ins = NULL;
+        INS->last_ins = NULL;
+    } else if (INS->first_ins == ins) {
+        INS->first_ins = ins->next;
+    } else if (INS->last_ins == ins) {
+        INS->last_ins = ins->prev;
     }
-    /* 以上这些好像可以删掉了 */
 
     if (ins->prev != NULL)  ins->prev->next = ins->next;
     if (ins->next != NULL)  ins->next->prev = ins->prev;
 
-    t->list_ins_nr--;
-    /* ins still have prev and last */
+    INS->len--;
+    tr_data.list_ins_nr--;
 }
 
-void ins_insert_before(Ins *old, Ins *ins)
+void INS_insert_ins_before(INS INS, Ins *old, Ins *ins)
 {
-    lsassert(old && ins);
-    TRANSLATION_DATA *t = &tr_data;
-    if (t->first_ins == old) {
-        t->first_ins = ins;
+    if (INS->first_ins == old) {
+        INS->first_ins = ins;
     }
+
     ins->prev = old->prev;
     ins->next = old;
     if (old->prev != NULL) {
@@ -114,16 +136,16 @@ void ins_insert_before(Ins *old, Ins *ins)
     }
     old->prev = ins;
 
-    t->list_ins_nr++;
+    INS->len++;
+    tr_data.list_ins_nr++;
 }
 
-void ins_insert_after(Ins *old, Ins *ins)
+void INS_insert_ins_after(INS INS, Ins *old, Ins *ins)
 {
-    lsassert(old && ins);
-    TRANSLATION_DATA *t = &tr_data;
-    if (t->last_ins == old) {
-        t->last_ins = ins;
+    if (INS->last_ins == old) {
+        INS->last_ins = ins;
     }
+
     ins->prev = old;
     ins->next = old->next;
     if (old->next != NULL) {
@@ -131,9 +153,129 @@ void ins_insert_after(Ins *old, Ins *ins)
     }
     old->next = ins;
 
-    t->list_ins_nr++;
+    INS->len++;
+    tr_data.list_ins_nr++;
 }
 
+void INS_load_imm64_before(INS INS, Ins *ins, int reg, uint64_t imm)
+{
+    uint32_t lo32 = imm & 0xffffffff;
+    uint32_t hi32 = imm >> 32;
+    INS_insert_ins_before(INS, ins, ins_create_2(LISA_LU12I_W, reg, lo32 >> 12));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ORI, reg, reg, lo32 & 0xfff));
+    INS_insert_ins_before(INS, ins, ins_create_2(LISA_LU32I_D, reg, hi32 & 0xfffff));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_LU52I_D, reg, reg, hi32 >> 20));
+}
+
+Ins *ins_create_0(IR2_OPCODE op)
+{
+    Ins *ins = ins_alloc();
+    ins->op = op;
+    ins->opnd_count = 0;
+    return ins;
+}
+
+Ins *ins_create_1(IR2_OPCODE op, int opnd0)
+{
+    Ins *ins = ins_alloc();
+    ins->op = op;
+    ins->opnd_count = 1;
+    ins->opnd[0].val = opnd0;
+    return ins;
+}
+
+Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1)
+{
+    Ins *ins = ins_alloc();
+    ins->op = op;
+    ins->opnd_count = 2;
+    ins->opnd[0].val = opnd0;
+    ins->opnd[1].val = opnd1;
+    return ins;
+}
+
+Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
+{
+    Ins *ins = ins_alloc();
+    ins->op = op;
+    ins->opnd_count = 3;
+    ins->opnd[0].val = opnd0;
+    ins->opnd[1].val = opnd1;
+    ins->opnd[2].val = opnd2;
+    return ins;
+}
+
+Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
+{
+    Ins *ins = ins_alloc();
+    ins->op = op;
+    ins->opnd_count = 4;
+    ins->opnd[0].val = opnd0;
+    ins->opnd[1].val = opnd1;
+    ins->opnd[2].val = opnd2;
+    ins->opnd[3].val = opnd3;
+    return ins;
+}
+
+
+Ins *ins_append_0(IR2_OPCODE op)
+{
+    Ins *ins = ins_create_0(op);
+    ins_append(ins);
+    return ins;
+}
+
+Ins *ins_append_1(IR2_OPCODE op, int opnd0)
+{
+    Ins *ins = ins_create_1(op, opnd0);
+    ins_append(ins);
+    return ins;
+}
+
+Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1)
+{
+    Ins *ins = ins_create_2(op, opnd0, opnd1);
+    ins_append(ins);
+    return ins;
+}
+
+Ins *ins_append_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
+{
+    Ins *ins = ins_create_3(op, opnd0, opnd1, opnd2);
+    ins_append(ins);
+    return ins;
+}
+
+Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
+{
+    Ins *ins = ins_create_4(op, opnd0, opnd1, opnd2, opnd3);
+    ins_append(ins);
+    return ins;
+}
+
+#include "qemu/bitops.h"
+Ins *ins_nop(void)
+{
+    return ins_create_3(LISA_ORI, reg_zero, reg_zero, 0);
+}
+
+Ins *ins_b(long offs26)
+{
+    /* PC = PC + (offs26 << 2) */
+    lsassert(offs26 == sextract64(offs26, 0, 26));
+    return ins_create_1(LISA_B, offs26);
+}
+
+Ins *ins_pcaddi(int rd, long offs20)
+{
+    /* $rd = PC + (offs20 << 2) */
+    lsassert(offs20 == sextract64(offs20, 0, 20));
+    return ins_create_2(LISA_PCADDI, rd, offs20);
+}
+
+
+
+/* === ins inspection === */
 
 bool op_is_branch(IR2_OPCODE op)
 {
@@ -425,13 +567,12 @@ bool opnd_is_gpr_readwrite(Ins *ins, int i)
     return (type == GPR_READWRITE);
 }
 
-#include "bitopts.h"
-uint64_t ins_target_addr(Ins *ins)
+#include "util/bitopts.h"
+uint64_t ins_target_addr(Ins *ins, uint64_t pc)
 {
     lsassert(op_is_direct_branch(ins->op));
-    lsassertm(ins->pc != 0x0, "pc == 0");
+    lsassertm(pc != 0x0, "pc == 0");
 
-    uint64_t pc = ins->pc;
     uint64_t offset;
     uint64_t target;
     switch (ins->op) {
@@ -463,122 +604,4 @@ uint64_t ins_target_addr(Ins *ins)
 
     target = pc + offset;
     return target;
-}
-
-#include "qemu/bitops.h"
-Ins *ins_nop(void)
-{
-    return ins_create_3(LISA_OR, reg_zero, reg_zero, reg_zero);
-}
-
-Ins *ins_b(long offs26)
-{
-    /* PC = PC + (offs26 << 2) */
-    lsassert(offs26 == sextract64(offs26, 0, 26));
-    return ins_create_1(LISA_B, offs26);
-}
-
-Ins *ins_pcaddi(int rd, long offs20)
-{
-    /* $rd = PC + (offs20 << 2) */
-    lsassert(offs20 == sextract64(offs20, 0, 20));
-    return ins_create_2(LISA_PCADDI, rd, offs20);
-}
-
-Ins *ins_create_0(IR2_OPCODE op)
-{
-    Ins *ins = ins_alloc(0x0);
-    ins->op = op;
-    ins->opnd_count = 0;
-    return ins;
-}
-
-Ins *ins_create_1(IR2_OPCODE op, int opnd0)
-{
-    Ins *ins = ins_alloc(0x0);
-    ins->op = op;
-    ins->opnd_count = 1;
-    ins->opnd[0].val = opnd0;
-    return ins;
-}
-
-Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1)
-{
-    Ins *ins = ins_alloc(0x0);
-    ins->op = op;
-    ins->opnd_count = 2;
-    ins->opnd[0].val = opnd0;
-    ins->opnd[1].val = opnd1;
-    return ins;
-}
-
-Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
-{
-    Ins *ins = ins_alloc(0x0);
-    ins->op = op;
-    ins->opnd_count = 3;
-    ins->opnd[0].val = opnd0;
-    ins->opnd[1].val = opnd1;
-    ins->opnd[2].val = opnd2;
-    return ins;
-}
-
-Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
-{
-    Ins *ins = ins_alloc(0x0);
-    ins->op = op;
-    ins->opnd_count = 4;
-    ins->opnd[0].val = opnd0;
-    ins->opnd[1].val = opnd1;
-    ins->opnd[2].val = opnd2;
-    ins->opnd[3].val = opnd3;
-    return ins;
-}
-
-Ins *ins_append_0(IR2_OPCODE op)
-{
-    Ins *ins = ins_create_0(op);
-    ins_append(ins);
-    return ins;
-}
-
-Ins *ins_append_1(IR2_OPCODE op, int opnd0)
-{
-    Ins *ins = ins_create_1(op, opnd0);
-    ins_append(ins);
-    return ins;
-}
-
-Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1)
-{
-    Ins *ins = ins_create_2(op, opnd0, opnd1);
-    ins_append(ins);
-    return ins;
-}
-
-Ins *ins_append_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2)
-{
-    Ins *ins = ins_create_3(op, opnd0, opnd1, opnd2);
-    ins_append(ins);
-    return ins;
-}
-
-Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3)
-{
-    Ins *ins = ins_create_4(op, opnd0, opnd1, opnd2, opnd3);
-    ins_append(ins);
-    return ins;
-}
-
-
-/* 在指令ins前，将64位立即数装入通用寄存器reg，返回插入的指令数 */
-int ins_insert_before_li_d(Ins *ins, int reg, uint64_t imm)
-{
-    uint32_t lo32 = imm & 0xffffffff;
-    uint32_t hi32 = imm >> 32;
-    ins_insert_before(ins, ins_create_2(LISA_LU12I_W, reg, lo32 >> 12));
-    ins_insert_before(ins, ins_create_3(LISA_ORI, reg, reg, lo32 & 0xfff));
-    ins_insert_before(ins, ins_create_2(LISA_LU32I_D, reg, hi32 & 0xfffff));
-    ins_insert_before(ins, ins_create_3(LISA_LU52I_D, reg, reg, hi32 >> 20));
-    return 4;
 }

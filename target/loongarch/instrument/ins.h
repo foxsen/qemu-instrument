@@ -39,12 +39,35 @@ extern __thread TRANSLATION_DATA tr_data;
 void tr_init(void *tb);
 void tr_fini(void);
 
-Ins *ins_alloc(uint64_t pc);
+Ins *ins_alloc(void);
 Ins *ins_copy(Ins *old);
 void ins_append(Ins *ins);
-void ins_remove(Ins *ins);
-void ins_insert_before(Ins *old, Ins *ins);
-void ins_insert_after(Ins *old, Ins *ins);
+
+/* INS系列API维护ins链表、INS、tr_data的正确性 */
+/* BUG prompt: 不能保证old是属于pin_ins内的 */
+void INS_append_ins(INS INS, Ins *ins);
+void INS_remove_ins(INS INS, Ins *ins);
+void INS_insert_ins_before(INS INS, Ins *old, Ins *ins);
+void INS_insert_ins_after(INS INS, Ins *old, Ins *ins);
+void INS_load_imm64_before(INS INS, Ins *ins, int reg, uint64_t imm);
+
+Ins *ins_create_0(IR2_OPCODE op);
+Ins *ins_create_1(IR2_OPCODE op, int opnd0);
+Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1);
+Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2);
+Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
+
+/* ins_append 系列目前只给 gen_prologue/epilogue 使用 */
+Ins *ins_append_0(IR2_OPCODE op);
+Ins *ins_append_1(IR2_OPCODE op, int opnd0);
+Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1);
+Ins *ins_append_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2);
+Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
+
+Ins *ins_nop(void);
+Ins *ins_b(long offs26);
+Ins *ins_pcaddi(int rd, long offs20);
+
 
 /* === ins inspection === */
 bool op_is_branch(IR2_OPCODE op);
@@ -67,23 +90,6 @@ bool opnd_is_gpr_read(Ins *ins, int i);
 bool opnd_is_gpr_write(Ins *ins, int i);
 bool opnd_is_gpr_readwrite(Ins *ins, int i);
 
-uint64_t ins_target_addr(Ins *ins);
-
-Ins *ins_nop(void);
-Ins *ins_b(long offs26);
-Ins *ins_pcaddi(int rd, long offs20);
-Ins *ins_create_0(IR2_OPCODE op);
-Ins *ins_create_1(IR2_OPCODE op, int opnd0);
-Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1);
-Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2);
-Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
-
-Ins *ins_append_0(IR2_OPCODE op);
-Ins *ins_append_1(IR2_OPCODE op, int opnd0);
-Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1);
-Ins *ins_append_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2);
-Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
-
-int ins_insert_before_li_d(Ins *ins, int reg, uint64_t imm);
+uint64_t ins_target_addr(Ins *ins, uint64_t pc);
 
 #endif
