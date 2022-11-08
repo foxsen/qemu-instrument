@@ -222,7 +222,6 @@ typedef struct CPUArchState {
 
 #ifdef CONFIG_LMJ
     /* TODO: need init */
-    uint64_t last_executed_tb;
     uint64_t host_sp;
     uint64_t host_tp;
 #endif

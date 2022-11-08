@@ -67,12 +67,6 @@ static inline int env_offset_of_exception_index(CPUState *cs)
 /*     /1* to be continue ... *1/ */
 /* } */
 
-static inline int env_offset_of_last_executed_tb(CPUState *cs)
-{
-    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
-    return (int)((uint64_t)(&cpu->last_executed_tb) - (uint64_t)cpu);
-}
-
 static inline int env_offset_of_host_sp(CPUState *cs)
 {
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
@@ -84,11 +78,6 @@ static inline int env_offset_of_host_tp(CPUState *cs)
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
     return (int)((uint64_t)(&cpu->host_tp) - (uint64_t)cpu);
 }
-
-/* static inline int env_offset_of_eip(CPUState *cs) */
-/* { */
-/*     return env_offset_of_gpr(cs, 2); */
-/* } */
 
 #endif
 

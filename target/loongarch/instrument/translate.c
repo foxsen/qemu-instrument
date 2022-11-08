@@ -56,7 +56,7 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_3(LISA_ADDI_D, reg_sp, reg_sp, -512);
 
     /* 2 save callee-saved LA registers. */
-    /* 2.1 GPR: save s0-sa8, fp */
+    /* 2.1 GPR: save s0-s8, fp */
     ins_append_3(LISA_ST_D, reg_s0, reg_sp, S0_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s1, reg_sp, S1_EXTRA_SPACE);
     ins_append_3(LISA_ST_D, reg_s2, reg_sp, S2_EXTRA_SPACE);
@@ -106,8 +106,10 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     /* 3. process args (a0 and a1)
      * a0: env
      * a1: code_cache */
+    /* Move $a1 to reg_ret which is used as a temp register,
+     * so its value will not be covered in the following "load mapped gpr" step */
     ins_append_3(LISA_OR, reg_env, reg_a0, reg_zero);
-    ins_append_3(LISA_OR, reg_code_ptr, reg_a1, reg_zero);
+    ins_append_3(LISA_OR, reg_ret, reg_a1, reg_zero);
 
     /* 4. save host $sp and $tp to env */
     ins_append_3(LISA_ST_D, reg_sp, reg_env, env_offset_of_host_sp(cs));
@@ -126,7 +128,6 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     ins_append_2(LISA_MOVGR2FCSR, reg_fcsr, reg_tmp);
 
     /* 5.2. load mapped gpr */
-    /* tr_load_registers_from_env(0xff, 0x0, 0x0, options_to_save()); */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr != reg_zero && gpr_is_mapped(gpr)) {
             ins_append_3(LISA_LD_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr));
@@ -134,19 +135,13 @@ static void generate_context_switch_bt_to_native(CPUState *cs)
     }
 
     /* 6. jump to code cache */
-    /* FIXME: we can save code_ptr to SCR, then we have one more temp reg */
-    ins_append_3(LISA_JIRL, reg_zero, reg_code_ptr, 0);
+    ins_append_3(LISA_JIRL, reg_zero, reg_ret, 0);
 }
 
 static void generate_context_switch_native_to_bt(CPUState *cs)
 {
-    /* 0. set return value as 0 */
+    /* 1. set return value as 0 */
     ins_append_3(LISA_OR, reg_ret, reg_zero, reg_zero);
-
-    /* 1. store the last executed TB */
-    /* FIXME: do we use this? */
-    lsassert(env_offset_of_last_executed_tb(cs) >= -2048 && env_offset_of_last_executed_tb(cs) <= 2047);
-    ins_append_3(LISA_ST_D, reg_code_ptr, reg_env, env_offset_of_last_executed_tb(cs));
 
     /* 2. store guest's next(target) pc */
     /* reg_target is setted at translating branch instruction */

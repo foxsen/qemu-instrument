@@ -39,7 +39,7 @@ const int reg_gpr_map[] = {
     [reg_s4] = reg_s4,
     [reg_s5] = reg_s5,
     [reg_s6] = reg_s6,
-    [reg_s7] = reg_invalid,
+    [reg_s7] = reg_s7,
     [reg_s8] = reg_invalid,
 };
 
