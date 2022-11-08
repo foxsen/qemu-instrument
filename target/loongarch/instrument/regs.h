@@ -40,7 +40,7 @@
 
 /* save native info in bt context */
 #define reg_env reg_x
-#define reg_target reg_tp
+#define reg_target reg_s7
 /* FIXME reg_code_ptr好像没用到?
  * 目前只用在：
  * 1. context_switch_bt_to_native: 把a1放到reg_code_ptr,并跳转过去执行
@@ -49,7 +49,7 @@
 /* NOTE: reg_ret saves the return value: ( tb | jmp_slot )
  * consider the context_switch_native_to_bt process, it should be mapped to a reg that:
  * 1. is a temp reg, so its value will not be spilled to env
- * 2. can not be a callee-saved reg, whose value will be filled from stack */
+ * 2. can not be a callee-saved reg, whose value will be covered when fill from stack */
 #define reg_ret reg_a6
 
 /* FCSR0 */
