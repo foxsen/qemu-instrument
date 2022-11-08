@@ -3,19 +3,26 @@
 
 
 /* syscall */
-static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v)
+static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctx, SYSCALL_STANDARD std, VOID *v)
 {
-    CPULoongArchState * env= ctxt->env;
-    uint64_t syscall_nr = env->gpr[11];
-    /* print_syscall(env, num, env->gpr[4], env->gpr[5], env->gpr[6], env->gpr[7], env->gpr[8], env->gpr[9]); */
-    fprintf(stderr, "Thread %u: [SYSCALL] %s (a0-a6: %lx, %lx, %lx, %lx, %lx, %lx, %lx)\n", threadIndex, syscall_name(syscall_nr), ctxt->env->gpr[4], ctxt->env->gpr[5], ctxt->env->gpr[6], ctxt->env->gpr[7], ctxt->env->gpr[8], ctxt->env->gpr[9], ctxt->env->gpr[10]);
+    /* QEMU API: print_syscall(env, num, env->gpr[4], env->gpr[5], env->gpr[6], env->gpr[7], env->gpr[8], env->gpr[9]); */
+    int syscall_nr = PIN_GetSyscallNumber(ctx, std);
+    fprintf(stderr, "Thread %u: SYSCALL: %s (a0-a6: %lx, %lx, %lx, %lx, %lx, %lx, %lx)\n",
+            threadIndex,
+            syscall_name(syscall_nr), 
+            PIN_GetSyscallArgument(ctx, std, 0),
+            PIN_GetSyscallArgument(ctx, std, 1),
+            PIN_GetSyscallArgument(ctx, std, 2),
+            PIN_GetSyscallArgument(ctx, std, 3),
+            PIN_GetSyscallArgument(ctx, std, 4),
+            PIN_GetSyscallArgument(ctx, std, 5),
+            PIN_GetSyscallArgument(ctx, std, 6));
 }
 
-static VOID syscall_exit(THREADID threadIndex, CONTEXT *ctxt, SYSCALL_STANDARD std, VOID *v)
+static VOID syscall_exit(THREADID threadIndex, CONTEXT *ctx, SYSCALL_STANDARD std, VOID *v)
 {
-    /* 提前知道 syscall_nr 才能 ... */
-    CPULoongArchState * env= ctxt->env;
-    fprintf(stderr, "Thread %u: [SYSCALL_RET] %ld\n", threadIndex, env->gpr[4]);
+    fprintf(stderr, "Thread %u: SYSCALL_RET: %ld\n",
+            threadIndex, PIN_GetSyscallReturn(ctx, std));
 }
 
 

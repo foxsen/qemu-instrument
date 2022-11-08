@@ -29,10 +29,6 @@ typedef struct PIN_STATE {
 
 extern PIN_STATE PIN_state;
 
-BOOL PIN_Init(INT32 argc, CHAR** argv);
-VOID PIN_InitSymbols(void);
-
-
 /* === 以下接口只在 QEMU 内部调用 === */
 void INS_instrument(INS ins);
 void TRACE_instrument(TRACE trace);

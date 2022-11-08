@@ -5,6 +5,8 @@
 #include "instrumentation_arguements.h"
 #include "thread.h"
 #include "context.h"
+#include "reg.h"
+#include "qemu/typedefs.h" /* only for CPU_EXEC_ENTER(EXIT)_CALLBACK */
 
 typedef VOID (*INS_INSTRUMENT_CALLBACK) (INS ins, VOID* v);
 typedef VOID (*TRACE_INSTRUMENT_CALLBACK) (TRACE trace, VOID *v);
@@ -14,6 +16,12 @@ typedef VOID (*SYSCALL_EXIT_CALLBACK) (THREADID threadIndex, CONTEXT *ctxt, SYSC
 typedef VOID (*CPU_EXEC_ENTER_CALLBACK) (CPUState *cpu, TranslationBlock *tb);
 typedef VOID (*CPU_EXEC_EXIT_CALLBACK) (CPUState *cpu, TranslationBlock *last_tb, int tb_exit);
 typedef VOID (*IMAGECALLBACK) (IMG img, VOID *v);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL PIN_Init(INT32 argc, CHAR** argv);
+VOID PIN_InitSymbols(void);
 
 /* FIXME: change the return type(PIN_CALLBACK) to (void) because I do not know the class of PIN_CALLBACK */
 void INS_AddInstrumentFunction(INS_INSTRUMENT_CALLBACK fun, VOID* val);
@@ -35,11 +43,20 @@ VOID RTN_instrument(TRACE trace);
 VOID INS_InsertInlineAdd(INS ins, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic);
 VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic);
 
+ADDRINT PIN_GetContextReg(const CONTEXT* ctxt, REG reg);
+VOID PIN_SetContextReg (CONTEXT *ctxt, REG reg, ADDRINT val);
+
 /* TODO PIN doc: In Linux systems with kernel 5.3 and above, calling this API while jumping to vsyscall area will return special number - VSYSCALL_NR. */
 ADDRINT PIN_GetSyscallNumber (const CONTEXT *ctxt, SYSCALL_STANDARD std);
-ADDRINT PIN_GetSyscallArgument (const CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum);
 VOID PIN_SetSyscallNumber (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val);
+ADDRINT PIN_GetSyscallArgument (const CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum);
 VOID PIN_SetSyscallArgument (CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum, ADDRINT val);
+ADDRINT PIN_GetSyscallReturn (const CONTEXT *ctxt, SYSCALL_STANDARD std);
+VOID PIN_SetSyscallReturn (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

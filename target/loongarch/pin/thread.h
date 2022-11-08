@@ -5,9 +5,17 @@
 
 typedef UINT32 THREADID;
 
-/* 仅内部使用 */
-void PIN_Thread_create(void);
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 THREADID PIN_ThreadId(void);
+#ifdef __cplusplus
+}
+#endif
+
+
+/* 仅内部使用 */
+void PIN_thread_create(void);
+
 
 #endif

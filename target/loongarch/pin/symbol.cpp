@@ -7,6 +7,15 @@
 #include <map>
 #include <limits>
 
+const CHAR *RTN_FindNameByAddress(ADDRINT address)
+{
+    symbol_info *sym = get_symbol_by_pc(address);
+    if (sym == NULL || sym->addr == 0) {
+        return "";
+    }
+    return sym->name;
+}
+
 RTN RTN_FindByName(IMG img, const CHAR *name)
 {
     symbol_info *sym = image_get_symbol_by_name((image *)img, name);

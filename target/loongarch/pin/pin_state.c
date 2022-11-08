@@ -20,16 +20,6 @@ PIN_STATE PIN_state = {
     .img_cb_val = NULL,
 };
 
-BOOL PIN_Init(INT32 argc, CHAR** argv)
-{
-    return 0;
-}
-
-VOID PIN_InitSymbols(void)
-{
-    PIN_state.read_symbol = true;
-}
-
 void INS_instrument(INS ins)
 {
     if (PIN_state.ins_cb != NULL) {

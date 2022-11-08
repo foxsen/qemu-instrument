@@ -1,6 +1,8 @@
 #ifndef INSTRUMENTATION_ARGUMENTS_H
 #define INSTRUMENTATION_ARGUMENTS_H
 
+#include "types.h"
+
 /*! @ingroup INST_ARGS
  *
  * Determines where the analysis call is inserted relative to the instrumented
@@ -98,7 +100,6 @@ typedef enum {
 
 
 /* 下面的不是Pin定义的类型 */
-#include "types.h"
 typedef enum {
     IOBJECT_INS,
     IOBJECT_BBL,

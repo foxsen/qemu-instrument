@@ -2,6 +2,8 @@
 #define _LA_ASSEMBLE_H_
 
 #include "ir2.h"
+#include <stdbool.h>
+
 typedef enum {
     OPD_INVALID = 0,
     FCC_CA,
@@ -97,8 +99,7 @@ extern const GM_OPERAND_PLACE_RELATION bit_field_table[];
 
 extern const GM_LA_OPCODE_FORMAT lisa_format_table[];
 
-#include "ir2.h"
-#include <stdbool.h>
+
 
 typedef enum {
     REG_ACCESS_INVALID,     /* for IMM opnd */

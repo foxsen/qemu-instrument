@@ -12,6 +12,15 @@
 /* 插桩分析函数时，是否需要保存浮点上下文（保存了的话，coremark只有92...） */
 bool save_fpr_regs = false;
 
+BOOL PIN_Init(INT32 argc, CHAR** argv)
+{
+    return 0;
+}
+
+VOID PIN_InitSymbols(void)
+{
+    PIN_state.read_symbol = true;
+}
 
 void INS_AddInstrumentFunction(INS_INSTRUMENT_CALLBACK fun, VOID* val)
 {
@@ -903,23 +912,48 @@ VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL ato
     }
 }
 
+
+ADDRINT PIN_GetContextReg(const CONTEXT* ctxt, REG reg)
+{
+    assert(REG_GR_BASE <= reg && reg <= REG_GR_LAST);
+    return ctxt->env->gpr[reg - REG_GR_BASE];
+}
+
+VOID PIN_SetContextReg (CONTEXT *ctxt, REG reg, ADDRINT val)
+{
+    assert(REG_GR_BASE <= reg && reg <= REG_GR_LAST);
+    ctxt->env->gpr[reg - REG_GR_BASE] = val;
+}
+
 ADDRINT PIN_GetSyscallNumber (const CONTEXT *ctxt, SYSCALL_STANDARD std)
 {
-    return ctxt->env->gpr[11];
+    return ctxt->env->gpr[reg_a7];
 }
 
 VOID PIN_SetSyscallNumber (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val)
 {
-    ctxt->env->gpr[11] = val;
+    ctxt->env->gpr[reg_a7] = val;
 }
 
 ADDRINT PIN_GetSyscallArgument (const CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum)
 {
-    assert(0);
-    return -1;
+    /* SYSCALL_STANDARD is not used */
+    assert(argNum <= 6);
+    return ctxt->env->gpr[reg_a0 + argNum];
 }
 
 VOID PIN_SetSyscallArgument (CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum, ADDRINT val)
 {
-    assert(0);
+    assert(argNum <= 6);
+    ctxt->env->gpr[reg_a0 + argNum] = val;
+}
+
+ADDRINT PIN_GetSyscallReturn(const CONTEXT* ctxt, SYSCALL_STANDARD std)
+{
+    return ctxt->env->gpr[reg_a0];
+}
+
+VOID PIN_SetSyscallReturn (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val)
+{
+    ctxt->env->gpr[reg_a0] = val;
 }

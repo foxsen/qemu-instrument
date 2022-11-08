@@ -1,5 +1,6 @@
 #include "pintool.h"
-#include "target/loongarch/pin/symbol.h"
+#include "../symbol.h"
+#include "../../instrument/elf/symbol.h"
 
 #define MALLOC "malloc"
 #define FREE "free"
@@ -46,7 +47,6 @@ static VOID Image(IMG img, VOID* v)
 }
  
 
-#include "target/loongarch/instrument/elf/symbol.h"
 static VOID Fini(INT32 code, VOID* v) {
     /* print_collected_symbols(); */
 }

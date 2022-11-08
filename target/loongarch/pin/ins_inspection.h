@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ADDRINT INS_Address(INS ins);
 BOOL INS_IsMemoryRead(INS ins);
 BOOL INS_IsMemoryWrite(INS ins);
@@ -24,4 +28,8 @@ BOOL BBL_Valid(BBL x);
 BOOL INS_Valid(INS x);
 
 const char* syscall_name(uint64_t nr);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
