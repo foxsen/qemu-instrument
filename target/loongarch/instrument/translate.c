@@ -525,23 +525,36 @@ int INS_translate(CPUState *cs, INS INS)
             /* 1. get cpu->tb_jmp_cache (here offset is larger than 12bits, so load the imm) */
             INS_load_imm64_before(INS, ins, itemp, env_offset_of_tb_jmp_cache(cs));
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, itemp_tb, reg_env, itemp));
-            /* 2. offset = hash(pc) << 3 */
+            /* 2. hash = ((pc >> 12) ^ pc) & 0xfff (same as tb_jmp_cache_hash_func())*/
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, TB_JMP_CACHE_BITS));
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_XOR, itemp, itemp, reg_target));
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
+            /* 3. tb = *(tb_jmp_cache + (hash << 3)) */
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 3));
-            /* 3. tb = *(tb_jmp_cache + offset) */
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));
-            /* 4. if (tb != 0 && tb->pc == target) JIRL tb->tc.ptr */
-            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BEQZ, itemp_tb, 5));   /* FIXME magic num: 5 */
+            /* 4. check tb valid */
+            /* if (tb == 0) goto miss */
+            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BEQZ, itemp_tb, 10));         /* FIXME magic num: 10 */
+            /* if (tb->pc != target) goto miss */
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, pc)));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_BNE, itemp, reg_target, 3));   /*  FIXME magic num: 3 */
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_BNE, itemp, reg_target, 8));  /* FIXME magic num: 8 */
+            /* jmp_cache race condition: check CF_INVALID, 9318 -> 9230(add following check) -> 8944(use LL.W) */
+            /* if (jmp_lock is set) goto miss */
+            lsassert(0 == (offsetof(TranslationBlock, jmp_lock) & 0b11));
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LL_W, itemp, itemp_tb, offsetof(TranslationBlock, jmp_lock) >> 2));    /* FIXME why use ll_w? */
+            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 6));             /* FIXME magic num: 6 */
+            /* if (CF_INVALID != 0) goto miss */
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, cflags)));
+            INS_insert_ins_before(INS, ins, ins_create_4(LISA_BSTRPICK_W, itemp, itemp, 18, 18));
+            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 3));             /* FIXME magic num: 3 */
+            /* lable: jmp_cache hit */
             INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, tc) + offsetof(struct tb_tc, ptr)));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, 0, itemp, 0));
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
             reg_free_itemp(itemp_tb);
             reg_free_itemp(itemp);
         }
 
+        /* lable: jmp_cache miss */
         /* set return value = 0, for not tb_link */
         INS_insert_ins_before(INS, ins, ins_create_3(LISA_OR, reg_ret, reg_zero, reg_zero));
 
