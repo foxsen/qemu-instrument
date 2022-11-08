@@ -195,8 +195,8 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
     IR2_OPCODE op = ins.op;
 
     if (op_is_condition_branch(op)) {
-        /* 对于条件跳转，如果patch nop，tb_link后bcc的每个出口都要通过两条跳转指令到达目标TB：bcc->b->target_tb
-         * 为了提高性能，对bcc的其中一个跳转出口，直接patch bcc指令本身（另一个出口还是patch nop），从而该出口可以减少一条跳转指令
+        /* 对于条件跳转，如果patch的是nop，tb_link后bcc的每个出口都要通过两条跳转指令到达目标TB：bcc->b(patched nop)->target_tb
+         * 为了提高性能，对bcc的其中一个跳转出口(第二个出口)，直接patch bcc指令本身（另一个出口还是patch nop），从而该出口可以减少一条跳转指令
          * （虽然这样变得很复杂，但是实测会有10%的性能提升）
          * 注意：当跳转目标超出bcc的跳转范围时，退化为patch nop */
         int offset_opnd_idx;

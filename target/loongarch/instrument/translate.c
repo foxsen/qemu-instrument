@@ -399,56 +399,65 @@ int INS_translate(CPUState *cs, INS INS)
          *   4. $reg_traget <- target addr
          *   5. $reg_ret <- (tb_link) ? (tb | slot_index) : 0
          *   6. B context_switch_native_to_bt
-         * fallthrough: (also second exit for BCC)
+         * fallthrough: (also the second exit for BCC)
          *   ...
          */
         tr_data.is_jmp = TRANS_NORETURN;
 
         /* bcc 根据条件选择出口 */
+        Ins *bcc = NULL;
+        int bcc_offset_opnd_idx = -1;
         if (op_is_condition_branch(ins->op)) {
-            Ins *fallthrough_ins;
-            int bcc_jmp_over = enable_tb_link ? 11 : 7; /* BUG prompt */
             switch (ins->op) {
                 case LISA_BEQZ:
-                    /* FIXME: maybe we can calc the magic number and patch this ins later */
-                    /* magic number 11: we will insert additional 10 ins before next ins */
-                    fallthrough_ins = ins_create_2(LISA_BNEZ, ins->opnd[0].val, bcc_jmp_over);
+                    /* fallthrough offset will be set at the end of translate */
+                    bcc = ins_create_2(LISA_BNEZ, ins->opnd[0].val, 0);
+                    bcc_offset_opnd_idx = 1;
                     break;
                 case LISA_BNEZ:
-                    fallthrough_ins = ins_create_2(LISA_BEQZ, ins->opnd[0].val, bcc_jmp_over);
+                    bcc = ins_create_2(LISA_BEQZ, ins->opnd[0].val, 0);
+                    bcc_offset_opnd_idx = 1;
                     break;
                 case LISA_BCEQZ:
-                    fallthrough_ins = ins_create_2(LISA_BCNEZ, ins->opnd[0].val, bcc_jmp_over);
+                    bcc = ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 0);
+                    bcc_offset_opnd_idx = 1;
                     break;
                 case LISA_BCNEZ:
-                    fallthrough_ins = ins_create_2(LISA_BCEQZ, ins->opnd[0].val, bcc_jmp_over);
+                    bcc = ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 0);
+                    bcc_offset_opnd_idx = 1;
                     break;
                 case LISA_BEQ:
-                    fallthrough_ins = ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 case LISA_BNE:
-                    fallthrough_ins = ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 case LISA_BLT:
-                    fallthrough_ins = ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 case LISA_BGE:
-                    fallthrough_ins = ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 case LISA_BLTU:
-                    fallthrough_ins = ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 case LISA_BGEU:
-                    fallthrough_ins = ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, bcc_jmp_over);
+                    bcc = ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, 0);
+                    bcc_offset_opnd_idx = 2;
                     break;
                 default:
                     lsassert(0);
                     break;
             }
-            INS_insert_ins_before(INS, ins, fallthrough_ins);
+            INS_insert_ins_before(INS, ins, bcc);
 
             if (enable_tb_link) {
-                tr_data.jmp_ins[1] = fallthrough_ins;
+                tr_data.jmp_ins[1] = bcc;
             }
         }
 
@@ -489,7 +498,19 @@ int INS_translate(CPUState *cs, INS INS)
         }
 
         /* Branch to context_switch_native_to_bt, will be modify in relocation process */
-        INS_insert_ins_before(INS, ins, ins_b(0));
+        Ins *b = ins_b(0);
+        INS_insert_ins_before(INS, ins, b);
+
+        if (op_is_condition_branch(ins->op)) {
+            /* set bcc fallthrough offset */
+            int offset = 1;
+            Ins *cur = bcc;
+            while (cur != b) {
+                ++offset;
+                cur = cur->next;
+            }
+            bcc->opnd[bcc_offset_opnd_idx].val = offset;
+        }
 
         INS_remove_ins(INS, ins);
     } else if (op_is_indirect_branch(ins->op)) {
