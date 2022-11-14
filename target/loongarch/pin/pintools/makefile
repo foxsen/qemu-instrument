@@ -16,7 +16,6 @@ NAMES += template
 NAMES += ins_count
 NAMES += bbl_count
 NAMES += hotblock
-NAMES += jmp_cache
 NAMES += inline_add
 NAMES += strace
 NAMES += routine

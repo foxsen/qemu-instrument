@@ -229,14 +229,14 @@ static void generate_context_switch_native_to_bt(CPUState *cs)
 /* bt -> native */
 int la_gen_prologue(CPUState *cs, TCGContext *tcg_ctx)
 {
-    int ins_nr = 0;
     lsassert(context_switch_bt_to_native == 0);
-    void *code_buf = tcg_ctx->code_ptr;
-    context_switch_bt_to_native = (uint64_t)code_buf;
+    void *code_buf_rw = tcg_ctx->code_ptr;
+    const void *code_buf_rx = tcg_splitwx_to_rx(code_buf_rw);
+    context_switch_bt_to_native = (uint64_t)code_buf_rx;
 
     tr_init(NULL);
     generate_context_switch_bt_to_native(cs);
-    ins_nr = la_encode(tcg_ctx, (void*)context_switch_bt_to_native);
+    int ins_nr = la_encode(tcg_ctx, code_buf_rw);
     tr_fini();
 
     return ins_nr;
@@ -245,15 +245,15 @@ int la_gen_prologue(CPUState *cs, TCGContext *tcg_ctx)
 /* native -> bt */
 int la_gen_epilogue(CPUState *cs, TCGContext *tcg_ctx)
 {
-    int ins_nr = 0;
     lsassert(context_switch_native_to_bt == 0);
-    void *code_buf = tcg_ctx->code_ptr;
-    context_switch_native_to_bt_ret_0 = (uint64_t)code_buf;
-    context_switch_native_to_bt = (uint64_t)code_buf + 4;
+    void *code_buf_rw = tcg_ctx->code_ptr;
+    const void *code_buf_rx = tcg_splitwx_to_rx(code_buf_rw);
+    context_switch_native_to_bt_ret_0 = (uint64_t)code_buf_rx;
+    context_switch_native_to_bt = (uint64_t)code_buf_rx + 4;
 
     tr_init(NULL);
     generate_context_switch_native_to_bt(cs);
-    ins_nr = la_encode(tcg_ctx, (void*)context_switch_native_to_bt_ret_0);
+    int ins_nr = la_encode(tcg_ctx, code_buf_rw);
     tr_fini();
 
     return ins_nr;
@@ -482,10 +482,7 @@ int INS_translate(CPUState *cs, INS INS)
         INS_load_imm64_before(INS, ins, reg_target, ins_target_addr(ins, INS->pc));
 
         /* set return value */
-        /* if tb_link:
-         *     ret = (tb | slot_index)
-         * else:
-         *     ret = 0 */
+        /* ret = tb_link ? (tb | slot_index) : 0; */
         if (enable_tb_link) {
             INS_load_imm64_before(INS, ins, reg_ret, ((uint64_t)tr_data.curr_tb | 0));
         } else {

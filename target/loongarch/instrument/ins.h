@@ -17,7 +17,7 @@ typedef enum TransType {
 typedef struct TRANSLATION_DATA {
     void *curr_tb;
     TransType is_jmp;
-    Ins *jmp_ins[2];    // tb两个出口的B跳转指令，会被被重定位到context_swicth
+    Ins *jmp_ins[2];    // tb两个出口的B跳转指令，用于tb_link
 
     /* ins array: 提前分配好的ins对象池，管理ins对象的分配 */
     Ins *ins_array;
@@ -42,6 +42,7 @@ void tr_fini(void);
 Ins *ins_alloc(void);
 Ins *ins_copy(Ins *old);
 void ins_append(Ins *ins);
+void ins_append_load_imm64(int reg, uint64_t imm);
 
 /* INS系列API维护ins链表、INS、tr_data的正确性 */
 /* BUG prompt: 不能保证old是属于pin_ins内的 */

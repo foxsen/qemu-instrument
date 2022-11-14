@@ -114,29 +114,35 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 
 
 /* 此时所有指令在code cache中位置已经确定，不会再添加新的指令 */
-void la_relocation(CPUState *cs)
+void la_relocation(CPUState *cs, const void *code_buf_rx)
 {
     int ins_nr = 0;
     TranslationBlock *tb = tr_data.curr_tb;
-    uintptr_t cur_ins_pos = (uintptr_t)tb->tc.ptr;
-    bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
+    bool enable_tb_link = false;
+    if (tb) {
+        enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
+    }
+
+    /* uintptr_t cur_ins_pos = (uintptr_t)tb->tc.ptr; */
+    uintptr_t cur = (uintptr_t)code_buf_rx;
 
     for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
-        /* 跳转指令重定向到context_switch */
-        if (ins->op == LISA_B) {
-            /* FIXME：目前假设所有的 B 0 指令都是要跳转到 context_switch_native_to_bt */
-            if (ins->opnd[0].val == 0x0) {
-                uintptr_t exit_offset = context_switch_native_to_bt - cur_ins_pos;
-                lsassert(exit_offset == sextract64(exit_offset, 0, 28));
-                ins->opnd[0].val = exit_offset >> 2;
-            }
+        /* 跳转指令重定向 */
+        /* FIXME：目前假设所有翻译出的 B 0 指令都是需要被重定位的
+         * 1. 默认重定位到 context_switch_native_to_bt
+         * */
+        if (ins->op == LISA_B && ins->opnd[0].val == 0x0) {
+            uintptr_t target = context_switch_native_to_bt;
+            uintptr_t offset = target - cur;
+            lsassert(offset == sextract64(offset, 0, 28));
+            ins->opnd[0].val = offset >> 2;
         }
 
         /* tb_link: 记录要patch的nop指令（或BCC）的地址 */
         if (enable_tb_link) {
             if (tr_data.jmp_ins[0] == ins) {
-                tb->jmp_target_arg[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                tb->jmp_reset_offset[0] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                tb->jmp_target_arg[0] = cur - (uintptr_t)tb->tc.ptr;
+                tb->jmp_reset_offset[0] = cur - (uintptr_t)tb->tc.ptr + 4;
             }
             if (tr_data.jmp_ins[1] == ins) {
                 IR2_OPCODE op = ins->op;
@@ -150,17 +156,17 @@ void la_relocation(CPUState *cs)
                         lsassert(0);
                     }
 
-                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
+                    tb->jmp_target_arg[1] = cur - (uintptr_t)tb->tc.ptr;
                     /* 恢复时让其跳转到nop的位置 */
-                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4 * bcc_jmp_over;
+                    tb->jmp_reset_offset[1] = cur - (uintptr_t)tb->tc.ptr + 4 * bcc_jmp_over;
                 } else {
-                    tb->jmp_target_arg[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr;
-                    tb->jmp_reset_offset[1] = cur_ins_pos - (uintptr_t)tb->tc.ptr + 4;
+                    tb->jmp_target_arg[1] = cur - (uintptr_t)tb->tc.ptr;
+                    tb->jmp_reset_offset[1] = cur - (uintptr_t)tb->tc.ptr + 4;
                 }
             }
         }
         ins_nr++;
-        cur_ins_pos += 4;
+        cur += 4;
     }
 
     /* TODO: handle segv scenario */
@@ -183,7 +189,7 @@ extern int showtrans;
     /* if (unlikely((void *)s->code_ptr > s->code_gen_highwater)) { */
     /*     return -1; */
     /* } */
-int la_encode(TCGContext *tcg_ctx, void* code_buf)
+int la_encode(TCGContext *tcg_ctx, void *code_buf)
 {
     uint64_t code_size = tr_data.list_ins_nr * 4;
 

@@ -80,6 +80,17 @@ void ins_append(Ins *ins)
     t->list_ins_nr++;
 }
 
+void ins_append_load_imm64(int reg, uint64_t imm)
+{
+    /* TODO reduce ins number */
+    uint32_t lo32 = imm & 0xffffffff;
+    uint32_t hi32 = imm >> 32;
+    ins_append_2(LISA_LU12I_W, reg, lo32 >> 12);
+    ins_append_3(LISA_ORI, reg, reg, lo32 & 0xfff);
+    ins_append_2(LISA_LU32I_D, reg, hi32 & 0xfffff);
+    ins_append_3(LISA_LU52I_D, reg, reg, hi32 >> 20);
+}
+
 void INS_append_ins(INS INS, Ins *ins)
 {
     if (INS->first_ins == NULL) {
