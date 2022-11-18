@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+extern int lmj_debug_log;
+
 #ifdef CONFIG_LMJ_DEBUG
 #define lsassert(cond)                                                  \
     do {                                                                \
@@ -26,9 +28,35 @@
         }                                                                     \
     } while (0)
 
+#define lslog(...)                          \
+    do {                                    \
+        if (lmj_debug_log) {                \
+            fprintf(stderr, __VA_ARGS__);   \
+        }                                   \
+    } while (0)
+
+#define lsdebug(...)                        \
+    do {                                    \
+        if (lmj_debug_log) {                \
+            fprintf(stderr, "[LS debug] "); \
+            fprintf(stderr, __VA_ARGS__);   \
+        }                                   \
+    } while (0)
+
+#define lswarn(...)                                 \
+    do {                                            \
+        if (lmj_debug_log) {                        \
+            fprintf(stderr, "[LS debug] [warn] ");  \
+            fprintf(stderr, __VA_ARGS__);           \
+        }                                           \
+    } while (0)
+
 #else
 #define lsassert(cond)          ((void)0)
 #define lsassertm(cond, ...)    ((void)0)
+#define lslog(...)              ((void)0)
+#define lsdebug(...)            ((void)0)
+#define lswarn(...)             ((void)0)
 #endif
 
 #endif

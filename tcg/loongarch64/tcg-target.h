@@ -234,7 +234,7 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
                 qatomic_set((int32_t *)jmp_rw, opcode);
             } else {
                 /* offset is out of bcc branch range, patch the NOP ins */
-                fprintf(stderr, "[debug] bcc%d_out_of_range: %lu, degrade to patch NOP to B\n", offset_bits, (offset_bits == 21 ? ++bcc21_oor : ++bcc16_oor));
+                lsdebug("bcc%d_out_of_range: %lu, degrade to patch NOP to B\n", offset_bits, (offset_bits == 21 ? ++bcc21_oor : ++bcc16_oor));
                 uintptr_t nop_addr_rx = jmp_rx + (ins.opnd[offset_opnd_idx].val << 2);
                 uintptr_t nop_addr_rw = jmp_rw + (ins.opnd[offset_opnd_idx].val << 2);
                 offset = (addr - nop_addr_rx) >> 2;

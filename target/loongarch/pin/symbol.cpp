@@ -1,6 +1,7 @@
 #include "symbol.h"
 #include <stdio.h>
-#include "target/loongarch/instrument/elf/symbol.h"
+#include "../instrument/elf/symbol.h"
+#include "../instrument/util/error.h"
 
 #include <vector>
 #include <unordered_map>
@@ -24,11 +25,11 @@ RTN RTN_FindByName(IMG img, const CHAR *name)
     }
 
     if (is_symbol_name_dupcalited(name)) {
-        fprintf(stderr, "[debug] [Warn] symbol %s is duplicated in image.\n", name);
+        lswarn("symbol %s is duplicated in image.\n", name);
     }
     if (sym->size == 0) {
         /* FIXME! can we instrument a function whose size is zero? */
-        fprintf(stderr, "[debug] [Warn] Find a symbol with zero size: name: %s, addr: 0x%lx, size: 0\n", name, sym->addr);
+        lswarn("Find a symbol with zero size: name: %s, addr: 0x%lx, size: 0\n", name, sym->addr);
     }
 
     RTN rtn = RTN_alloc(name, sym->addr, sym->size);

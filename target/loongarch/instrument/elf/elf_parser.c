@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "symbol.h"
+#include "../util/error.h"
 
 /* typedef struct */
 /* { */
@@ -100,7 +101,7 @@ void parse_elf_symbol_with_fd(int fd, uint64_t map_base, void **pp_img)
     }
     filepath[n] = 0;    /* readlink不会给结尾加NULL */
 
-    printf("read symbol in %s\n", filepath);
+    lsdebug("read symbol in %s\n", filepath);
     parse_elf_symbol(filepath, map_base, pp_img);
 }
 

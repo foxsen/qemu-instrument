@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <limits>
 #include "string.h"
+#include "../util/error.h"
 
 struct compare_symbol_info {
     bool operator()(const symbol_info *lhs, const symbol_info *rhs) const
@@ -55,12 +56,12 @@ void image_add_symbol(image *img, const char * name, uint64_t addr, uint64_t siz
 
     /* fprintf(stderr, "[debug] Find a symbol. image: %s, symbol: %s, addr: 0x%lx, size: 0x%lx\n", img->path.c_str(), name, addr, size); */
     if (addr == 0 || size == 0) {
-        fprintf(stderr, "[debug] Find a symbol with invalid addr or size. name: %s, addr: 0x%lx, size: 0x%lx\n", name, addr, size);
+        lsdebug("Find a symbol with invalid addr or size. name: %s, addr: 0x%lx, size: 0x%lx\n", name, addr, size);
     }
 
     /* check duplicate */
     if (img->symbol_name_map.count(name) != 0) {
-        fprintf(stderr, "[debug] Duplicated symbol name in the same image. image: %s, symbol: %s, addr: %lu, size: %lu\n", img->path.c_str(), name, addr, size);
+        lsdebug("Duplicated symbol name in the same image. image: %s, symbol: %s, addr: %lu, size: %lu\n", img->path.c_str(), name, addr, size);
         /* 注：这个重复的列表是不完整的，同一个image内，相同name的最后一个符号没有被加入到该列表 */
         debug_dup_symbols[name].push_back(img->symbol_name_map[name]);
     }

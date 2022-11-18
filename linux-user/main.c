@@ -71,6 +71,7 @@ int showtrans;
 int instru;
 int fullregs;
 int enable_jmp_cache = 1;
+int lmj_debug_log = 1;
 int lmj_debug;
 #endif
 static const char *argv0;
@@ -420,6 +421,11 @@ static void handle_arg_noibtc(const char *arg)
     enable_jmp_cache = 0;
 }
 
+static void handle_arg_no_debug_log(const char *arg)
+{
+    lmj_debug_log = 0;
+}
+
 static void handle_arg_lmj_debug(const char *arg)
 {
     lmj_debug = 1;
@@ -520,6 +526,8 @@ static const struct qemu_argument arg_table[] = {
      "",           "ld/st every reg in instruction"},
     {"noibtc",     "QEMU_NOIBTC",      false, handle_arg_noibtc,
      "",           "not use jmp cache for JIRL"},
+    {"no-debug-log",  "QEMU_NO_DEBUG_LOG",   false, handle_arg_no_debug_log,
+     "",           "not print debug log"},
     {"lmj_debug",  "QEMU_LMJ_DEBUG",   false, handle_arg_lmj_debug,
      "",           "lmj's debug config"},
     {"t",          "QEMU_PINTOOL",     true,  handle_arg_pintool,
