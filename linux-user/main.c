@@ -946,6 +946,7 @@ int main(int argc, char **argv, char **envp)
         qemu_log("auxv_start  0x" TARGET_ABI_FMT_lx "\n", info->saved_auxv);
     }
 
+#ifdef CONFIG_LMJ
     if (lmj_debug) {
         /* debug info */
         fprintf(stderr, "\n[argv]\n");
@@ -989,6 +990,7 @@ int main(int argc, char **argv, char **envp)
         *auxv_rnd = 0xdecd87838024d629;
         *(auxv_rnd + 1) = 0xfc1a8d02fa4152e4;
     }
+#endif
 
     target_set_brk(info->brk);
     syscall_init();
