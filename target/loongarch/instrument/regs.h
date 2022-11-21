@@ -1,6 +1,8 @@
 #ifndef _REGS_H_
 #define _REGS_H_
 
+#include <stdbool.h>
+
 /* LA registers */
 /* GPR */
 #define reg_invalid -1
@@ -114,7 +116,7 @@
 #define ITEMP8          8
 
 extern const int reg_gpr_map[];
-int gpr_is_mapped(int gpr);
+bool gpr_is_mapped(int gpr);
 int mapped_gpr(int gpr);
 
 int reg_alloc_itemp(void);

@@ -201,7 +201,7 @@ static const int itemp_index_map[] = {
 /* === 寄存器映射 === */
 #define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
 
-int gpr_is_mapped(int gpr) {
+bool gpr_is_mapped(int gpr) {
     lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
     return (reg_gpr_map[gpr] != reg_invalid);
 }
