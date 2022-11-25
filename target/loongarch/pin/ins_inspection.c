@@ -1,5 +1,6 @@
 #include "ins_inspection.h"
 #include "../instrument/ins.h"
+#include "../instrument/regs.h"
 #include "../instrument/util/error.h"
 #include "../instrument/decoder/la_print.h"
 
@@ -10,91 +11,146 @@ ADDRINT INS_Address(INS ins)
 
 BOOL INS_IsMemoryRead(INS ins)
 {
+    /* FIXME AM*系列的原子指令算load吗？ */
     return op_is_load(ins->origin_ins->op);
 }
 
 BOOL INS_IsMemoryWrite(INS ins)
 {
+    /* FIXME AM*系列的原子指令算write吗？ */
     return op_is_store(ins->origin_ins->op);
 }
 
 USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
 {
-    /* memoryOp is not used */
+    /* LoongArch has only one memoryOp */
+    lsassert(memoryOp == 0);
+
     IR2_OPCODE op = ins->origin_ins->op;
+
     switch (op) {
-    case LISA_LD_B:
-    case LISA_ST_B:
-    case LISA_LD_BU:
-    case LISA_VLDREPL_B:
-    case LISA_VSTELM_B:
-    case LISA_XVLDREPL_B:
-    case LISA_XVSTELM_B:
-    case LISA_LDX_B:
-    case LISA_STX_B:
-    case LISA_LDX_BU:
-        return 1;
-    case LISA_LD_H:
-    case LISA_ST_H:
-    case LISA_LD_HU:
-    case LISA_VLDREPL_H:
-    case LISA_VSTELM_H:
-    case LISA_XVLDREPL_H:
-    case LISA_XVSTELM_H:
-    case LISA_LDX_H:
-    case LISA_STX_H:
-    case LISA_LDX_HU:
-        return 2;
-    case LISA_LD_W:
-    case LISA_ST_W:
-    case LISA_LL_W:
-    case LISA_SC_W:
-    case LISA_LDPTR_W:
-    case LISA_STPTR_W:
-    case LISA_LD_WU:
-    case LISA_FLD_S:
-    case LISA_FST_S:
-    case LISA_VLDREPL_W:
-    case LISA_VSTELM_W:
-    case LISA_XVLDREPL_W:
-    case LISA_XVSTELM_W:
-    case LISA_LDX_W:
-    case LISA_STX_W:
-    case LISA_LDX_WU:
-        return 4;
-    case LISA_LD_D:
-    case LISA_ST_D:
-    case LISA_LL_D:
-    case LISA_SC_D:
-    case LISA_LDPTR_D:
-    case LISA_STPTR_D:
-    case LISA_FLD_D:
-    case LISA_FST_D:
-    case LISA_VLDREPL_D:
-    case LISA_VSTELM_D:
-    case LISA_XVLDREPL_D:
-    case LISA_XVSTELM_D:
-    case LISA_LDX_D:
-    case LISA_STX_D:
-        return 8;
-    case LISA_VLD:
-    case LISA_VST:
-        return 16;
-    case LISA_XVLD:
-    case LISA_XVST:
-        return 32;
-    case LISA_PRELD:
-    /* case LISA_LDL_W: */
-    /* case LISA_LDR_W: */
-    /* case LISA_LDL_D: */
-    /* case LISA_LDR_D: */
-    /* case LISA_STL_W: */
-    /* case LISA_STR_W: */
-    /* case LISA_STL_D: */
-    /* case LISA_STR_D: */
-    default:
-        print_ins(ins->origin_ins);
-        lsassertm(0, "unhandled ins op\n");
+        case LISA_LDL_W:
+        case LISA_LDR_W:
+        case LISA_LDL_D:
+        case LISA_LDR_D:
+        case LISA_STL_W:
+        case LISA_STR_W:
+        case LISA_STL_D:
+        case LISA_STR_D:
+            fprintf(stderr, "[warn] LDL/LDR/STL/STR 会根据地址对齐情况，访问不同大小的数据，但是该函数返回固定值\n");
+            break;
+        default:
+            break;
+    }
+
+    switch (op) {
+        case LISA_LD_B:
+        case LISA_ST_B:
+        case LISA_LD_BU:
+        case LISA_VLDREPL_B:
+        case LISA_VSTELM_B:
+        case LISA_XVLDREPL_B:
+        case LISA_XVSTELM_B:
+        case LISA_LDX_B:
+        case LISA_STX_B:
+        case LISA_LDX_BU:
+        case LISA_LDGT_B:
+        case LISA_LDLE_B:
+        case LISA_STGT_B:
+        case LISA_STLE_B:
+            return 1;
+        case LISA_LD_H:
+        case LISA_ST_H:
+        case LISA_LD_HU:
+        case LISA_VLDREPL_H:
+        case LISA_VSTELM_H:
+        case LISA_XVLDREPL_H:
+        case LISA_XVSTELM_H:
+        case LISA_LDX_H:
+        case LISA_STX_H:
+        case LISA_LDX_HU:
+        case LISA_LDGT_H:
+        case LISA_LDLE_H:
+        case LISA_STGT_H:
+        case LISA_STLE_H:
+            return 2;
+        case LISA_LD_W:
+        case LISA_ST_W:
+        case LISA_LL_W:
+        case LISA_SC_W:
+        case LISA_LDPTR_W:
+        case LISA_STPTR_W:
+        case LISA_LD_WU:
+        case LISA_FLD_S:
+        case LISA_FST_S:
+        case LISA_LDL_W:
+        case LISA_LDR_W:
+        case LISA_STL_W:
+        case LISA_STR_W:
+        case LISA_VLDREPL_W:
+        case LISA_VSTELM_W:
+        case LISA_XVLDREPL_W:
+        case LISA_XVSTELM_W:
+        case LISA_LDX_W:
+        case LISA_STX_W:
+        case LISA_LDX_WU:
+        case LISA_FLDX_S:
+        case LISA_FSTX_S:
+        case LISA_FLDGT_S:
+        case LISA_FLDLE_S:
+        case LISA_FSTGT_S:
+        case LISA_FSTLE_S:
+        case LISA_LDGT_W:
+        case LISA_LDLE_W:
+        case LISA_STGT_W:
+        case LISA_STLE_W:
+            return 4;
+        case LISA_LD_D:
+        case LISA_ST_D:
+        case LISA_LL_D:
+        case LISA_SC_D:
+        case LISA_LDPTR_D:
+        case LISA_STPTR_D:
+        case LISA_FLD_D:
+        case LISA_FST_D:
+        case LISA_LDL_D:
+        case LISA_LDR_D:
+        case LISA_STL_D:
+        case LISA_STR_D:
+        case LISA_VLDREPL_D:
+        case LISA_VSTELM_D:
+        case LISA_XVLDREPL_D:
+        case LISA_XVSTELM_D:
+        case LISA_LDX_D:
+        case LISA_STX_D:
+        case LISA_FLDX_D:
+        case LISA_FSTX_D:
+        case LISA_FLDGT_D:
+        case LISA_FLDLE_D:
+        case LISA_FSTGT_D:
+        case LISA_FSTLE_D:
+        case LISA_LDGT_D:
+        case LISA_LDLE_D:
+        case LISA_STGT_D:
+        case LISA_STLE_D:
+            return 8;
+        case LISA_VLD:
+        case LISA_VST:
+        case LISA_VLDX:
+        case LISA_VSTX:
+            return 16;
+        case LISA_XVLD:
+        case LISA_XVST:
+        case LISA_XVLDX:
+        case LISA_XVSTX:
+            return 32;
+        case LISA_PRELD:
+        case LISA_PRELDX:
+            lsassertm(0, "I don't know the size of cache line\n");
+            break;
+        default:
+            print_ins(ins->origin_ins);
+            lsassertm(0, "unhandled ins op\n");
     }
     return -1;
 }
@@ -102,11 +158,25 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
 
 BOOL INS_HasFallThrough(INS ins)
 {
-    /* TODO: does syscall & break have fallthrough? */
     IR2_OPCODE op = ins->origin_ins->op;
     if (op_is_branch(op) && !op_is_condition_branch(op))
         return false;
     return true;
+}
+
+BOOL INS_IsControlFlow(INS ins)
+{
+    /* NOTE: syscall is not control flow */
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_branch(op);
+}
+
+BOOL INS_IsRet(INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (op == LISA_JIRL &&
+            ins->origin_ins->opnd[0].val == reg_zero &&
+            ins->origin_ins->opnd[1].val == reg_ra);
 }
 
 /* TRACE */

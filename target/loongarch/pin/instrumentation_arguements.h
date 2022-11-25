@@ -108,13 +108,13 @@ typedef enum {
 
 typedef struct analysis_call_arg {
     IARG_TYPE type;
-    uint64_t val;
+    uint64_t value;
 } IARG_T;
 
 typedef struct analysis_call {
     AFUNPTR func;
     IOBJECT object;
-    IPOINT action;
+    IPOINT ipoint;
     int arg_cnt;
     IARG_T arg[8];
 } ANALYSIS_CALL;

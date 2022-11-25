@@ -12,6 +12,8 @@ BOOL INS_IsMemoryRead(INS ins);
 BOOL INS_IsMemoryWrite(INS ins);
 USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp);
 BOOL INS_HasFallThrough(INS ins);
+BOOL INS_IsControlFlow(INS ins);
+BOOL INS_IsRet(INS ins);
 
 BBL TRACE_BblHead(TRACE trace);
 BBL TRACE_BblTail(TRACE trace);

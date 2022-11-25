@@ -206,7 +206,7 @@ bool gpr_is_mapped(int gpr) {
     return (reg_gpr_map[gpr] != reg_invalid);
 }
 
- /* 返回直接映射的寄存器，返回映射的寄存器 */
+ /* 返回直接映射到的寄存器 */
 int mapped_gpr(int gpr) {
     lsassert(gpr_is_mapped(gpr));
     return reg_gpr_map[gpr];

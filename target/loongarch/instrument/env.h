@@ -6,6 +6,8 @@
 /* FIXME: include above 后可以 include cpu.h */
 #include "target/loongarch/cpu.h"
 /* #include "qemu/typedefs.h" // seems no need */
+#include "qemu.h"
+#include "stddef.h"
 
 
 static inline int env_offset_of_cpu_state(CPUState *cs)
@@ -57,6 +59,18 @@ static inline int env_offset_of_exception_index(CPUState *cs)
 {
     CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
     return (int)((uint64_t)(&cs->exception_index) - (uint64_t)cpu);
+}
+
+static inline int env_offset_of_opaque(CPUState *cs)
+{
+    /* ((TaskState *)cs->opaque)->ts_tid is thread id  */
+    CPULoongArchState *cpu = (CPULoongArchState *)cs->env_ptr;
+    return (int)((uint64_t)(&cs->opaque) - (uint64_t)cpu);
+}
+
+static inline int opaque_offset_of_ts_tid(void)
+{
+    return offsetof(TaskState, ts_tid);
 }
 
 /* static inline int env_offset_exception_next_eip(CPUState *cs) */

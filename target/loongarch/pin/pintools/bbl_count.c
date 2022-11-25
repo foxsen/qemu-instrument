@@ -2,7 +2,7 @@
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
-
+#include <assert.h>
 
 /* BBL */
 static uint64_t bbl_exec_nr = 0;
@@ -25,6 +25,7 @@ static VOID Trace(TRACE trace, VOID* v)
 
 static VOID Fini(INT32 code, VOID* v)
 {
+    assert(ins_exec_nr == icount);
     fprintf(stderr, "BBL: %ld, INS: %ld, Avg: %f INSs/BBL\n", bbl_exec_nr, ins_exec_nr, (double)ins_exec_nr / bbl_exec_nr);
 }
  

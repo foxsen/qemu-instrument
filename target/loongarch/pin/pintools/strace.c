@@ -7,7 +7,7 @@ static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctx, SYSCALL_STANDARD s
 {
     /* QEMU API: print_syscall(env, num, env->gpr[4], env->gpr[5], env->gpr[6], env->gpr[7], env->gpr[8], env->gpr[9]); */
     int syscall_nr = PIN_GetSyscallNumber(ctx, std);
-    fprintf(stderr, "Thread %u: SYSCALL: %s (a0-a6: %lx, %lx, %lx, %lx, %lx, %lx, %lx)\n",
+    fprintf(stderr, "[tid %u] %s (a0-a6: 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)\n",
             threadIndex,
             syscall_name(syscall_nr), 
             PIN_GetSyscallArgument(ctx, std, 0),
@@ -21,7 +21,7 @@ static VOID syscall_enter(THREADID threadIndex, CONTEXT *ctx, SYSCALL_STANDARD s
 
 static VOID syscall_exit(THREADID threadIndex, CONTEXT *ctx, SYSCALL_STANDARD std, VOID *v)
 {
-    fprintf(stderr, "Thread %u: SYSCALL_RET: %ld\n",
+    fprintf(stderr, "[tid %u] = %ld\n",
             threadIndex, PIN_GetSyscallReturn(ctx, std));
 }
 

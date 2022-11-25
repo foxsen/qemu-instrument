@@ -6702,6 +6702,10 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
             if (flags & CLONE_PARENT_SETTID)
                 put_user_u32(sys_gettid(), parent_tidptr);
             ts = (TaskState *)cpu->opaque;
+#ifdef CONFIG_LMJ
+            /* update ((TaskState *)cpu->opaque)->ts_tid for getting thread_id at instrument */
+            ts->ts_tid = (pid_t)sys_gettid();
+#endif
             if (flags & CLONE_SETTLS)
                 cpu_set_tls (env, newtls);
             if (flags & CLONE_CHILD_CLEARTID)

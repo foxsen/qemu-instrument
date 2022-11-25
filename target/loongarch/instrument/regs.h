@@ -40,6 +40,16 @@
 #define reg_s8      31
 #define reg_end     32
 
+#define reg_syscall_nr      reg_a7
+#define reg_syscall_arg0    reg_a0 
+#define reg_syscall_arg1    reg_a1 
+#define reg_syscall_arg2    reg_a2 
+#define reg_syscall_arg3    reg_a3 
+#define reg_syscall_arg4    reg_a4 
+#define reg_syscall_arg5    reg_a5 
+#define reg_syscall_arg6    reg_a6 
+#define reg_syscall_ret     reg_a0 
+
 /* save native info in bt context */
 #define reg_env reg_x
 /* TODO maybe reg_target can also be used as a temp reg */

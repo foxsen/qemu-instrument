@@ -1,4 +1,6 @@
 #include "thread.h"
+#include "qemu/osdep.h"
+#include "qemu.h"
 
 uint32_t pin_thread_id_count = 0;
 __thread uint32_t pin_thread_id = 0;
@@ -10,5 +12,5 @@ void PIN_thread_create(void)
 
 THREADID PIN_ThreadId(void)
 {
-    return pin_thread_id;
+    return ((TaskState *)current_cpu->opaque)->ts_tid;
 }
