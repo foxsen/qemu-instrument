@@ -19,7 +19,7 @@ static int load_pintool(const char *optarg, Error **errp)
         goto err_dlopen;
     }
 
-    if (!g_module_symbol(handle, "pintool_install", &sym)) {
+    if (!g_module_symbol(handle, "main", &sym)) {
         error_setg(errp, "Could not load pintool %s: %s", path, g_module_error());
         goto err_symbol;
     }

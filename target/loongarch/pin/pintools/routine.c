@@ -57,7 +57,7 @@ static INT32 Usage(void)
 }
  
 
-int pintool_install(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     // Initialize pin & symbol manager
     PIN_InitSymbols();

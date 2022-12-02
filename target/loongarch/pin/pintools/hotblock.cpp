@@ -48,7 +48,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int pintool_install(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     PIN_InitSymbols();
 

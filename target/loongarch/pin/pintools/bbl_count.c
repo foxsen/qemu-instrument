@@ -34,7 +34,7 @@ static INT32 Usage(void)
     return -1;
 }
  
-int pintool_install(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
     if (PIN_Init(argc, argv)) return Usage();
 
