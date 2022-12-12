@@ -4,6 +4,7 @@ loongarch_tcg_ss.add(files(
   'pin_state.c',
   'thread.c',
   'symbol.cpp',
+  'reg.c',
   'loader.c',
 ))
 

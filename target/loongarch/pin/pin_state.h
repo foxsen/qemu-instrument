@@ -4,7 +4,7 @@
 #include "ins_instrumentation.h"
 #include <stdlib.h>
 
-typedef struct PIN_STATE {
+struct PIN_STATE {
     /* TODO: wrap them into struct, make a list, then we can registers many ins_callbacks */
     INS_INSTRUMENT_CALLBACK ins_cb;
     VOID* ins_cb_val;
@@ -25,9 +25,18 @@ typedef struct PIN_STATE {
     BOOL read_symbol;
     IMAGECALLBACK img_cb;
     VOID* img_cb_val;
-} PIN_STATE;
+};
 
-extern PIN_STATE PIN_state;
+struct PIN_INSTRU_CONTEXT {
+    ANALYSIS_CALL ins_if_call_cb;
+    bool ins_if_call_valid;
+    ANALYSIS_CALL bbl_if_call_cb;
+    bool bbl_if_call_valid;
+};
+
+/* FIXME 线程安全吗？ */
+extern struct PIN_STATE PIN_state;
+extern struct PIN_INSTRU_CONTEXT PIN_instru_ctx;
 
 /* === 以下接口只在 QEMU 内部调用 === */
 void INS_instrument(INS ins);

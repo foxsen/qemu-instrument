@@ -1,6 +1,6 @@
 #include "pin_state.h"
 
-PIN_STATE PIN_state = {
+struct PIN_STATE PIN_state = {
     .read_symbol = false,
     .ins_cb = NULL,
     .ins_cb_val = NULL,
@@ -18,6 +18,10 @@ PIN_STATE PIN_state = {
     .cpu_exec_exit_cb_val = NULL,
     .img_cb = NULL,
     .img_cb_val = NULL,
+};
+
+struct PIN_INSTRU_CONTEXT PIN_instru_ctx = {
+    .ins_if_call_valid = false,
 };
 
 void INS_instrument(INS ins)

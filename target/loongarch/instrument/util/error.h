@@ -43,12 +43,13 @@ extern int lmj_debug_log;
         }                                   \
     } while (0)
 
-#define lswarn(...)                                 \
-    do {                                            \
-        if (lmj_debug_log) {                        \
-            fprintf(stderr, "[LS debug] [warn] ");  \
-            fprintf(stderr, __VA_ARGS__);           \
-        }                                           \
+#define lswarn(...)                                     \
+    do {                                                \
+        if (lmj_debug_log) {                            \
+            fprintf(stderr, "[LS warn] <%s> %s:%d ",    \
+                    __FUNCTION__, __FILE__, __LINE__);  \
+            fprintf(stderr, __VA_ARGS__);               \
+        }                                               \
     } while (0)
 
 #else

@@ -50,4 +50,7 @@ typedef enum
     REG_INST_PTR = REG_IP,
 } REG;
 
+int REG_to_gpr(REG REG);
+REG gpr_to_REG(int gpr);
+
 #endif

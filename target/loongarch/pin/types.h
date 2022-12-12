@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h> // for NULL
 #include "../instrument/pin_types.h"
+#include "reg.h"
 
 typedef unsigned char BOOL;
 
@@ -27,6 +28,8 @@ typedef int64_t INT64;
 
 typedef UINT64 ADDRINT;
 typedef INT64 ADDRDELTA;
+
+typedef UINT16 OPCODE;
 
 typedef VOID (*AFUNPTR)(void);
 
