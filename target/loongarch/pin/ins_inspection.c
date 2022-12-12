@@ -4,9 +4,112 @@
 #include "../instrument/util/error.h"
 #include "../instrument/decoder/la_print.h"
 
+/* TRACE */
+BBL TRACE_BblHead(TRACE trace)
+{
+    return trace->bbl_head;
+}
+
+BBL TRACE_BblTail(TRACE trace)
+{
+    return trace->bbl_tail;
+}
+
+UINT32 TRACE_NumBbl(TRACE trace)
+{
+    return trace->nr_bbl;
+}
+
+UINT32 TRACE_NumIns(TRACE trace)
+{
+    return trace->nr_ins;
+}
+
+
+/* BBL */
+UINT32 BBL_NumIns(BBL bbl)
+{
+    return bbl->nr_ins;
+}
+
+INS BBL_InsHead(BBL x)
+{
+    return x->ins_head;
+}
+
+INS BBL_InsTail(BBL x)
+{
+    return x->ins_tail;
+}
+
+BBL BBL_Next(BBL x)
+{
+    return x->next;
+}
+
+BBL BBL_Prev(BBL x)
+{
+    return x->prev;
+}
+
+BOOL BBL_Valid(BBL x)
+{
+    return (x != NULL);
+}
+
+
+/* INS */
+INS INS_Next(INS x)
+{
+    return x->next;
+}
+
+INS INS_Prev(INS x)
+{
+    return x->prev;
+}
+
+BOOL INS_Valid(INS x)
+{
+    return (x != NULL);
+}
+
 ADDRINT INS_Address(INS ins)
 {
     return ins->pc;
+}
+
+USIZE INS_Size (INS ins)
+{
+    return 4;
+}
+
+enum PREDICATE INS_GetPredicate (INS ins)
+{
+    /* FIXME what about LISA_MASKEQZ and LISA_MASKNEZ */
+    IR2_OPCODE op = ins->origin_ins->op;
+    switch (op) {
+        case LISA_BEQ:
+            return PREDICATE_EQUAL;
+        case LISA_BNE:
+            return PREDICATE_NOT_EQUAL;
+        case LISA_BLT:
+            return PREDICATE_LESS;
+        case LISA_BGE:
+            return PREDICATE_GRATER_OR_EQUAL;
+        case LISA_BLTU:
+            return PREDICATE_LESS_UNSIGNED;
+        case LISA_BGEU:
+            return PREDICATE_GRATER_OR_EQUAL_UNSIGNED;
+        case LISA_BEQZ:
+        case LISA_BCEQZ:
+            return PREDICATE_ZERO;
+        case LISA_BNEZ:
+        case LISA_BCNEZ:
+            return PREDICATE_NOT_ZERO;
+        default:
+            return PREDICATE_ALWAYS_TRUE;
+    }
 }
 
 BOOL INS_IsMemoryRead(INS ins)
@@ -19,6 +122,125 @@ BOOL INS_IsMemoryWrite(INS ins)
 {
     /* FIXME AM*系列的原子指令算write吗？ */
     return op_is_store(ins->origin_ins->op);
+}
+
+BOOL INS_HasFallThrough(INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    if (op_is_branch(op) && !op_is_condition_branch(op))
+        return false;
+    return true;
+}
+
+const char *INS_Mnemonic (INS ins)
+{
+    return ins_name(ins->origin_ins);
+}
+
+BOOL INS_IsBranch (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_branch(op);
+}
+
+BOOL INS_IsDirectBranch (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_direct_branch(op);
+}
+
+BOOL INS_IsDirectCall (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (op == LISA_BL);
+}
+
+BOOL INS_IsDirectControlFlow (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_direct_branch(op);
+}
+
+BOOL INS_IsCall (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    int rd = ins->origin_ins->opnd[0].val;
+    return (op == LISA_BL || (op == LISA_JIRL && rd == reg_ra));
+}
+
+BOOL INS_IsControlFlow(INS ins)
+{
+    /* NOTE: syscall is not control flow */
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_branch(op);
+}
+
+BOOL INS_IsInterrupt (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (op == LISA_SYSCALL ||
+            op == LISA_BREAK);
+}
+
+BOOL INS_IsRet(INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (op == LISA_JIRL &&
+            ins->origin_ins->opnd[0].val == reg_zero &&
+            ins->origin_ins->opnd[1].val == reg_ra);
+}
+
+BOOL INS_IsPrefetch (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (op == LISA_PRELD || op == LISA_PRELDX);
+}
+
+BOOL INS_IsMov (const INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    int opnd2 = ins->origin_ins->opnd[1].val;
+    int opnd3 = ins->origin_ins->opnd[2].val;
+    return ((op == LISA_OR || op == LISA_ORI) && (opnd2 == 0 || opnd3 == 0));
+}
+
+BOOL INS_IsAtomicUpdate (const INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return (LISA_AMSWAP_W <= op && op <= LISA_AMMIN_DB_DU);
+}
+
+BOOL INS_IsIndirectControlFlow (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    return op_is_indirect_branch(op);
+}
+
+OPCODE INS_Opcode (INS ins)
+{
+    return ins->origin_ins->op;
+}
+
+const char *INS_Disassemble (INS ins)
+{
+    /* FIXME memory leak */
+    char *buf = malloc(64);
+    sprint_ins(ins->origin_ins, buf);
+    return buf;
+}
+
+UINT32 INS_OperandCount (INS ins)
+{
+    return ins->origin_ins->opnd_count;
+}
+
+UINT32 INS_MemoryOperandCount (INS ins)
+{
+    IR2_OPCODE op = ins->origin_ins->op;
+    if (op_is_ldst(op)) {
+        return 1;
+    }
+    return 0;
 }
 
 USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
@@ -152,91 +374,128 @@ USIZE INS_MemoryOperandSize(INS ins, UINT32 memoryOp)
             print_ins(ins->origin_ins);
             lsassertm(0, "unhandled ins op\n");
     }
-    return -1;
+    return 0;
 }
 
-
-BOOL INS_HasFallThrough(INS ins)
+BOOL INS_MemoryOperandIsRead (INS ins, UINT32 memopIdx)
 {
+    /* LoongArch has only one memoryOp */
+    lsassert(memopIdx == 0);
     IR2_OPCODE op = ins->origin_ins->op;
-    if (op_is_branch(op) && !op_is_condition_branch(op))
-        return false;
-    return true;
+    return (op_is_load(op));
 }
 
-BOOL INS_IsControlFlow(INS ins)
+BOOL INS_MemoryOperandIsWritten (INS ins, UINT32 memopIdx)
 {
-    /* NOTE: syscall is not control flow */
+    /* LoongArch has only one memoryOp */
+    lsassert(memopIdx == 0);
     IR2_OPCODE op = ins->origin_ins->op;
-    return op_is_branch(op);
+    return (op_is_store(op));
 }
 
-BOOL INS_IsRet(INS ins)
+BOOL INS_OperandIsReg (INS ins, UINT32 n)
 {
-    IR2_OPCODE op = ins->origin_ins->op;
-    return (op == LISA_JIRL &&
-            ins->origin_ins->opnd[0].val == reg_zero &&
-            ins->origin_ins->opnd[1].val == reg_ra);
+    lsassert(n < ins->origin_ins->opnd_count);
+    IR2_OPND_TYPE type = get_ir2_opnd_type(ins->origin_ins, n);
+    return (type == IR2_OPND_GPR ||
+            type == IR2_OPND_SCR ||
+            type == IR2_OPND_FPR ||
+            type == IR2_OPND_FCSR);
 }
 
-/* TRACE */
-BBL TRACE_BblHead(TRACE trace)
+REG INS_OperandReg (INS ins, UINT32 n)
 {
-    return trace->bbl_head;
+    /* only support GPR now */
+    lsassert(IR2_OPND_GPR == get_ir2_opnd_type(ins->origin_ins, n));
+    if (INS_OperandIsReg(ins, n)) {
+        return gpr_to_REG(ins->origin_ins->opnd[n].val);
+    }
+    return REG_INVALID_;
 }
 
-BBL TRACE_BblTail(TRACE trace)
+BOOL INS_OperandIsImmediate (INS ins, UINT32 n)
 {
-    return trace->bbl_tail;
+    lsassert(n < ins->origin_ins->opnd_count);
+    return (IR2_OPND_IMM == get_ir2_opnd_type(ins->origin_ins, n));
 }
 
-UINT32 TRACE_NumBbl(TRACE trace)
+UINT64 INS_OperandImmediate (INS ins, UINT32 n)
 {
-    return trace->nr_bbl;
+    lsassert(INS_OperandIsImmediate(ins, n));
+    return ins->origin_ins->opnd[n].val;
 }
 
-UINT32 TRACE_NumIns(TRACE trace)
+BOOL INS_OperandRead (INS ins, UINT32 n)
 {
-    return trace->nr_ins;
+    lsassert(n < ins->origin_ins->opnd_count);
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
+    return (type == GPR_READ ||
+            type == GPR_READWRITE ||
+            type == FPR_READ ||
+            type == FPR_READWRITE ||
+            type == FCSR_READ ||
+            type == FCC_READ);
 }
 
-
-/* BBL */
-UINT32 BBL_NumIns(BBL bbl)
+BOOL INS_OperandWritten (INS ins, UINT32 n)
 {
-    return bbl->nr_ins;
+    lsassert(n < ins->origin_ins->opnd_count);
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
+    return (type == GPR_WRITE ||
+            type == GPR_READWRITE ||
+            type == FPR_WRITE ||
+            type == FPR_READWRITE ||
+            type == FCSR_WRITE ||
+            type == FCC_WRITE);
 }
 
-INS BBL_InsHead(BBL x)
+BOOL INS_OperandReadOnly (INS ins, UINT32 n)
 {
-    return x->ins_head;
+    lsassert(n < ins->origin_ins->opnd_count);
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
+    return (type == GPR_READ ||
+            type == FPR_READ ||
+            type == FCSR_READ ||
+            type == FCC_READ);
 }
 
-INS BBL_InsTail(BBL x)
+BOOL INS_OperandWrittenOnly (INS ins, UINT32 n)
 {
-    return x->ins_tail;
+    lsassert(n < ins->origin_ins->opnd_count);
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
+    return (type == GPR_WRITE ||
+            type == FPR_WRITE ||
+            type == FCSR_WRITE ||
+            type == FCC_WRITE);
 }
 
-BBL BBL_Next(BBL x)
+BOOL INS_OperandReadAndWritten (INS ins, UINT32 n)
 {
-    return x->next;
+    lsassert(n < ins->origin_ins->opnd_count);
+    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
+    return (type == GPR_READWRITE ||
+            type == FPR_READWRITE);
 }
 
-BBL BBL_Prev(BBL x)
+INS INS_Invalid (void)
 {
-    return x->prev;
+    return NULL;
 }
 
-BOOL BBL_Valid(BBL x)
+BOOL INS_IsSyscall (INS ins)
 {
-    return (x != NULL);
+    return (ins->origin_ins->op == LISA_SYSCALL);
 }
 
-BOOL INS_Valid(INS x)
+ADDRINT INS_DirectControlFlowTargetAddress (INS ins)
 {
-    return (x != NULL);
+    return ins_target_addr(ins->origin_ins, ins->pc);
 }
 
+ADDRINT INS_NextAddress (INS ins)
+{
+    return ins->pc + 4;
+}
 
 
 static const char *syscall_nr_name[] = {
