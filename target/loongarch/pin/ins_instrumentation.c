@@ -244,13 +244,6 @@ static bool gpr_is_mapped_in_instru(int gpr) {
     return gpr_is_mapped(gpr) && !gpr_need_saved_in_instru(gpr);
 }
 
-/* transform PIN's REG to internal gpr */
-static int REG_to_gpr(REG REG)
-{
-    lsassert(REG_GR_BASE <= REG && REG <= REG_GR_LAST);
-    return REG - REG_GR_BASE;
-}
-
 static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 {
     IOBJECT object = cb->object;
@@ -573,7 +566,6 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
                 case LISA_BCEQZ:
                 case LISA_BCNEZ:
                     {
-
                         int fcc = INS->origin_ins->opnd[0].val;
                         if (save_fpr_regs) {
                             int itemp = reg_alloc_itemp();
@@ -711,7 +703,7 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 
 
 
-static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS)
+static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 {
     /* IOBJECT object = cb->object; */
     IPOINT ipoint = cb->ipoint;
@@ -719,7 +711,6 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS)
 
     lsassert(ipoint == IPOINT_BEFORE);
 
-    Ins *cur = INS->first_ins;
     /* IR2_OPCODE op = INS->origin_ins->op; */
 
     for (int i = cb->arg_cnt - 1; i >= 0; --i) {
@@ -806,7 +797,167 @@ static void restore_caller_saved_regs(INS INS, Ins *cur)
     }
 }
 
+static Ins *init_callback_block(INS INS, Ins *cur)
+{
+    /* 1. 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
+    save_caller_saved_regs(INS, cur);
+
+    /* 2. 切换为host的sp,tp */
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
+
+    /* 插入分析函数调用的位置 */
+    Ins *pos = cur->prev;
+
+    /* 3. 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
+    restore_caller_saved_regs(INS, cur);
+
+    return pos->next;
+}
+
+static Ins *get_next_cb_position(INS INS, IPOINT ipoint)
+{
+    /* TODO: support IPONT_AFTER */
+    lsassert(ipoint == IPOINT_BEFORE);
+    if (ipoint == IPOINT_BEFORE) {
+        if (INS->ibefore_next_cb == NULL) {
+            INS->ibefore_next_cb = init_callback_block(INS, INS->first_ins);
+        }
+        return INS->ibefore_next_cb;
+    }
+    return NULL;
+}
+
+static void insert_callback(INS INS, Ins *cur, ANALYSIS_CALL *cb)
+{
+    /* 设置分析函数的参数 */
+    set_iargs(cb, INS, cur);
+
+    /* 插入对分析函数的调用 */
+    int itemp_target = reg_alloc_itemp();
+    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)cb->func);
+    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
+    reg_free_itemp(itemp_target);
+
+    /* 调用分析函数后的触发的事情，如IARG_REG_REFERENCE修改的寄存器需要写回 */
+    iargs_delayed_action(cb, INS, cur);
+}
+
 VOID INS_InsertCall(INS INS, IPOINT ipoint, AFUNPTR funptr, ...)
+{
+    /* Parse Instrument Arguments to cb */
+    va_list valist;
+    va_start(valist, funptr);
+    ANALYSIS_CALL cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
+    va_end(valist);
+
+    Ins *cur = get_next_cb_position(INS, ipoint);
+
+    insert_callback(INS, cur, &cb);
+}
+
+VOID INS_InsertPredicatedCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
+{
+    /* Parse Instrument Arguments to cb */
+    va_list valist;
+    va_start(valist, funptr);
+    ANALYSIS_CALL cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
+    va_end(valist);
+
+    Ins *cur = get_next_cb_position(INS, ipoint);
+
+    /* 根据指令的predicate决定是否跳过分析函数 */
+    Ins *jmp = NULL;
+    int offset_opnd_index = -1;
+    IR2_OPCODE op = INS->origin_ins->op;
+    switch (op) {
+    case LISA_BEQZ:
+    case LISA_BNEZ:
+        {
+            int rj = INS->origin_ins->opnd[0].val;
+            if (gpr_is_mapped_in_instru(rj)) {
+                jmp = ins_create_2(op, mapped_gpr(rj), 0);
+                INS_insert_ins_before(INS, cur, jmp);
+            } else {
+                int itemp = reg_alloc_itemp();
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp, reg_env, env_offset_of_gpr(current_cpu, rj)));
+                jmp = ins_create_2(op, itemp, 0);
+                INS_insert_ins_before(INS, cur, jmp);
+                reg_free_itemp(itemp);
+            }
+            offset_opnd_index = 1;
+        }
+        break;
+    case LISA_BCEQZ:
+    case LISA_BCNEZ:
+        {
+            int fcc = INS->origin_ins->opnd[0].val;
+            if (save_fpr_regs) {
+                int itemp = reg_alloc_itemp();
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_B, itemp, reg_env, env_offset_of_fcc(current_cpu, fcc))); 
+                INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2CF, fcc, itemp));
+                reg_free_itemp(itemp);
+            }
+            jmp = ins_create_2(op, fcc, 0);
+            offset_opnd_index = 1;
+            INS_insert_ins_before(INS, cur, jmp);
+        }
+        break;
+    case LISA_BEQ:
+    case LISA_BNE:
+    case LISA_BLT:
+    case LISA_BGE:
+    case LISA_BLTU:
+    case LISA_BGEU:
+        {
+            int rj = INS->origin_ins->opnd[0].val;
+            int rd = INS->origin_ins->opnd[1].val;
+            int opnd1;
+            int opnd2;
+
+            if (gpr_is_mapped_in_instru(rj)) {
+                opnd1 = mapped_gpr(rj);
+            } else {
+                opnd1 = reg_alloc_itemp();
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, opnd1, reg_env, env_offset_of_gpr(current_cpu, rj)));
+            }
+            if (gpr_is_mapped_in_instru(rd)) {
+                opnd2 = mapped_gpr(rd);
+            } else {
+                opnd2 = reg_alloc_itemp();
+                INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, opnd2, reg_env, env_offset_of_gpr(current_cpu, rd)));
+            }
+            jmp = ins_create_3(op, opnd1, opnd2, 0);
+            offset_opnd_index = 2;
+            INS_insert_ins_before(INS, cur, jmp);
+
+            if (!gpr_is_mapped_in_instru(rj)) {
+                reg_free_itemp(opnd1);
+            }
+            if (!gpr_is_mapped_in_instru(rd)) {
+                reg_free_itemp(opnd2);
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    insert_callback(INS, cur, &cb);
+    
+    /* 修正jmp跳过的指令数 */
+    if (jmp != NULL ) {
+        int offset = 0;
+        Ins *i = jmp;
+        while (i != cur) {
+            ++offset;
+            i = i->next;
+        }
+        jmp->opnd[offset_opnd_index].val = offset;
+    }
+}
+
+VOID INS_InsertIfCall(INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 {
     /* TODO: support IPONT_AFTER */
     lsassert(ipoint == IPOINT_BEFORE);
@@ -814,39 +965,50 @@ VOID INS_InsertCall(INS INS, IPOINT ipoint, AFUNPTR funptr, ...)
     /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
-    ANALYSIS_CALL cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
+    PIN_instru_ctx.ins_if_call_cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
+    PIN_instru_ctx.ins_if_call_valid = true;
+    va_end(valist);
+}
+
+VOID INS_InsertThenCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
+{
+    /* FIXME more strict validation */
+    /* 目前的设计是ThenCall必须紧接着IfCall调用，因为IfCall的返回值放在$a0里 */
+    lsassertm(PIN_instru_ctx.ins_if_call_valid == true, "should call INS_InsertIfCall first\n");
+    ANALYSIS_CALL *if_cb = &PIN_instru_ctx.ins_if_call_cb;
+    PIN_instru_ctx.ins_if_call_valid = false;
+
+    /* Parse Instrument Arguments to cb */
+    va_list valist;
+    va_start(valist, funptr);
+    ANALYSIS_CALL then_cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
     va_end(valist);
 
-    Ins *cur = INS->first_ins;
+    Ins *cur = get_next_cb_position(INS, ipoint);
+    /* 1. If Call */
+    insert_callback(INS, cur, if_cb);
 
-    /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(INS, cur);
+    /* 2. 根据ifCall的返回值，决定是否执行thenCall */
+    Ins *beqz = ins_create_2(LISA_BEQZ, reg_a0, 0);     // 后面会修正beqz的offset
+    INS_insert_ins_before(INS, cur, beqz);
 
-    /* 设置分析函数的参数 */
-    set_iargs(&cb, INS, cur);
-
-    /* 切换为host的sp,tp */
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-
-    /* 插入对分析函数的调用 */
-    int itemp_target = reg_alloc_itemp();
-    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)funptr);
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    reg_free_itemp(itemp_target);
-
-    /* 调用分析函数后的触发的事情，如IARG_REG_REFERENCE修改的寄存器需要写回 */
-    iargs_delayed_action(&cb, INS);
-
-    /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(INS, cur);
+    /* 3. Then Call */
+    insert_callback(INS, cur, &then_cb);
+    
+    /* 修正beqz跳过的指令数 */
+    {
+        int offset = 0;
+        Ins *i = beqz;
+        while (i != cur) {
+            ++offset;
+            i = i->next;
+        }
+        beqz->opnd[1].val = offset;
+    }
 }
 
 VOID BBL_InsertCall(BBL bbl, IPOINT ipoint, AFUNPTR funptr, ...)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(ipoint == IPOINT_BEFORE);
-
     /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
@@ -854,31 +1016,60 @@ VOID BBL_InsertCall(BBL bbl, IPOINT ipoint, AFUNPTR funptr, ...)
     va_end(valist);
 
     INS INS = bbl->ins_head;
-    Ins *cur = INS->first_ins;
-
-    /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(INS, cur);
-
-    /* 设置分析函数的参数 */
-    set_iargs(&cb, INS, cur);
-
-    /* 切换为host的sp,tp */
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-
-    /* 插入对分析函数的调用 */
-    int itemp_target = reg_alloc_itemp();
-    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)funptr);
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    reg_free_itemp(itemp_target);
-
-    /* 调用分析函数后的触发的事情，如IARG_REG_REFERENCE修改的寄存器需要写回 */
-    iargs_delayed_action(&cb, INS);
-
-    /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(INS, cur);
+    Ins *cur = get_next_cb_position(INS, ipoint);
+    insert_callback(INS, cur, &cb);
 }
 
+VOID BBL_InsertIfCall (BBL bbl, IPOINT ipoint, AFUNPTR funptr,...)
+{
+    /* TODO: support IPONT_AFTER */
+    lsassert(ipoint == IPOINT_BEFORE);
+
+    /* Parse Instrument Arguments to cb */
+    va_list valist;
+    va_start(valist, funptr);
+    PIN_instru_ctx.bbl_if_call_cb = parse_iarg(IOBJECT_BBL, ipoint, funptr, valist);
+    PIN_instru_ctx.bbl_if_call_valid = true;
+    va_end(valist);
+}
+
+VOID BBL_InsertThenCall (BBL BBL, IPOINT ipoint, AFUNPTR funptr,...)
+{
+    /* FIXME more strict validation */
+    /* 目前的设计是ThenCall必须紧接着IfCall调用，因为IfCall的返回值放在$a0里 */
+    lsassertm(PIN_instru_ctx.bbl_if_call_valid == true, "should call BBL_InsertIfCall first\n");
+    ANALYSIS_CALL *if_cb = &PIN_instru_ctx.bbl_if_call_cb;
+    PIN_instru_ctx.bbl_if_call_valid = false;
+
+    /* Parse Instrument Arguments to cb */
+    va_list valist;
+    va_start(valist, funptr);
+    ANALYSIS_CALL then_cb = parse_iarg(IOBJECT_BBL, ipoint, funptr, valist);
+    va_end(valist);
+
+    INS INS = BBL->ins_head;
+    Ins *cur = get_next_cb_position(INS, ipoint);
+    /* 1. If Call */
+    insert_callback(INS, cur, if_cb);
+
+    /* 2. 根据ifCall的返回值，决定是否执行thenCall */
+    Ins *beqz = ins_create_2(LISA_BEQZ, reg_a0, 0);     // 后面会修正beqz的offset
+    INS_insert_ins_before(INS, cur, beqz);
+
+    /* 3. Then Call */
+    insert_callback(INS, cur, &then_cb);
+    
+    /* 修正beqz跳过的指令数 */
+    {
+        int offset = 0;
+        Ins *i = beqz;
+        while (i != cur) {
+            ++offset;
+            i = i->next;
+        }
+        beqz->opnd[1].val = offset;
+    }
+}
 
 VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
 {
@@ -887,27 +1078,8 @@ VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...)
 
 static void _RTN_InsertCall(INS INS, ANALYSIS_CALL *cb)
 {
-    Ins *cur = INS->first_ins;
-    /* IR2_OPCODE op = ins->origin_ins->op; */
-
-    /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    save_caller_saved_regs(INS, cur);
-
-    /* 设置分析函数的参数 */
-    set_iargs(cb, INS, cur);
-
-    /* 2. 切换为host的sp,tp */
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
-
-    /* 3. 插入对分析函数的调用 */
-    int itemp_target = reg_alloc_itemp();
-    INS_load_imm64_before(INS, cur, itemp_target, (uint64_t)cb->func);
-    INS_insert_ins_before(INS, cur, ins_create_3(LISA_JIRL, reg_ra, itemp_target, 0));
-    reg_free_itemp(itemp_target);
-
-    /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(INS, cur);
+    Ins *cur = get_next_cb_position(INS, IPOINT_BEFORE);
+    insert_callback(INS, cur, cb);
 }
 
 
@@ -937,9 +1109,7 @@ VOID RTN_InsertCall(RTN rtn, IPOINT ipoint, AFUNPTR funptr, ...)
 VOID RTN_instrument(TRACE trace)
 {
     BBL bbl = TRACE_BblHead(trace);
-    lsassert(BBL_Valid(bbl));
     INS ins = BBL_InsHead(bbl);
-    lsassert(INS_Valid(ins));
 
     /* 检查trace的第一条指令是否为要函数插桩的函数入口 */
     int cb_cnt;
@@ -954,9 +1124,7 @@ VOID RTN_instrument(TRACE trace)
 
     /* 检查trace的最后一条指令是否为要函数插桩的函数出口 */
     bbl = TRACE_BblTail(trace);
-    lsassert(BBL_Valid(bbl));
     ins = BBL_InsTail(bbl);
-    lsassert(INS_Valid(ins));
 
     Ins * origin_ins = ins->origin_ins;
     if (origin_ins->op == LISA_JIRL &&

@@ -6,17 +6,22 @@
 #include "decoder/ir2.h"
 
 typedef struct pin_ins {
+    struct pin_ins *next;
+    struct pin_ins *prev;
+
     uint64_t pc;
     uint32_t opcode;
     Ins *origin_ins;
 
-    /* origin_ins is translated to an ins linked list */
+    /* origin_ins is translated to an ins linked-list */
     Ins *first_ins;
     Ins *last_ins;
     int len;
-
-    struct pin_ins *next;
-    struct pin_ins *prev;
+    
+    /* instrument ins linked-list */
+    /* indicate the position where callbacks to insert */
+    Ins *ibefore_next_cb;
+    Ins *iafter_next_cb;
 } *INS;
 
 typedef struct pin_bbl {

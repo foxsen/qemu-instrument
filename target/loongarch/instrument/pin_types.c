@@ -6,14 +6,16 @@ INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *origin_ins)
 {
     /* FIXME: never free, memory leakage */
     INS ins = malloc(sizeof(struct pin_ins));
+    ins->next = NULL;
+    ins->prev = NULL;
     ins->pc = pc;
     ins->opcode = opcode;
     ins->origin_ins = origin_ins;
     ins->first_ins = NULL;
     ins->last_ins = NULL;
     ins->len = 0;
-    ins->next = NULL;
-    ins->prev = NULL;
+    ins->ibefore_next_cb = NULL;
+    ins->iafter_next_cb = NULL;
     return ins;
 }
 

@@ -34,7 +34,12 @@ void PIN_AddCpuExecExitFunction(CPU_EXEC_EXIT_CALLBACK fun, VOID *val);
 void IMG_AddInstrumentFunction(IMAGECALLBACK fun, VOID *val);
 
 VOID INS_InsertCall(INS INS, IPOINT action, AFUNPTR funptr, ...);
+VOID INS_InsertPredicatedCall (INS ins, IPOINT ipoint, AFUNPTR funptr,...);
+VOID INS_InsertIfCall (INS ins, IPOINT action, AFUNPTR funptr,...);
+VOID INS_InsertThenCall (INS ins, IPOINT action, AFUNPTR funptr,...);
 VOID BBL_InsertCall(BBL bbl, IPOINT action, AFUNPTR funptr, ...);
+VOID BBL_InsertIfCall (BBL bbl, IPOINT action, AFUNPTR funptr,...);
+VOID BBL_InsertThenCall (BBL bbl, IPOINT action, AFUNPTR funptr,...);
 VOID TRACE_InsertCall(TRACE trace, IPOINT action, AFUNPTR funptr, ...);
 VOID RTN_InsertCall(RTN rtn, IPOINT action, AFUNPTR funptr, ...);
 VOID RTN_instrument(TRACE trace);
