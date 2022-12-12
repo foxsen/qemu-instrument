@@ -2,6 +2,7 @@
 #define _LA_PRINT_H_
 
 #include "assemble.h"
+const char *ins_name(IR2 *ir2);
 const char *gpr_name(uint32_t gpr);
 
 void sprint_op(IR2_OPCODE op, char *msg);

@@ -5392,7 +5392,7 @@ IR2_OPND_TYPE get_ir2_opnd_type(Ins *ins, int i)
 LISA_REG_ACCESS_TYPE get_ir2_reg_access_type(Ins *ins, int i)
 {
     lisa_insn_reg_access_format format = lisa_reg_access_table[ins->op];
-    lsassert(format.valid);
+    lsassertm(format.valid, "ins need add format. opcode=%d\n", ins->op);
     return format.opnd[i];
 }
 

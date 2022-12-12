@@ -2631,10 +2631,19 @@ static const char *ir2_cc_name[] = {
 };
 
 
+const char *ins_name(IR2 *ir2)
+{
+    IR2_OPCODE op = ir2->op;
+    if (op == LISA_INVALID || op >= LISA_ENDING) {
+        return "invalid ins";
+    }
+    return ir2_ins_name[op];
+}
+
 const char *gpr_name(uint32_t gpr)
 {
     if (gpr >= 32)
-        return "invalid";
+        return "invalid gpr";
     return ir2_gpr_name[gpr];
 }
 
