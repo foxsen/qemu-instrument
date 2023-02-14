@@ -9,6 +9,7 @@
 #include "pin_types.h"
 #include "translate.h"
 #include "../pin/pin_state.h"
+#include "debug.h"
 
 
 static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
@@ -17,7 +18,7 @@ static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
     return cpu_ldl_code(env, pc);
 }
 
-/* binary -> ins_list
+/* parse binary -> ins_list
  * generate TRACE/BBL/INS
  */
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
@@ -232,25 +233,11 @@ int la_encode(TCGContext *tcg_ctx, void *code_buf)
     /* print translation result */
     if (showtrans == 1 && tr_data.trace != NULL) {
         fprintf(stderr, "\n==== TB_ENCODE ====\n");
-        char msg[128];
         uint32_t *pc = code_buf;
         for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
             for (INS INS = bbl->ins_head; INS != NULL; INS = INS->next) {
-                sprint_ins(INS->origin_ins, msg);
-                fprintf(stderr, "0x%-16lx: %08x\t%s\n", INS->pc, INS->opcode, msg);
-                fprintf(stderr, "..................\n");
-
-                Ins *ins = INS->first_ins;
-                while (ins) {
-                    uint32_t opcode = la_assemble(ins);
-                    sprint_ins(ins, msg);
-                    fprintf(stderr, "%-18p: %08x\t%s\n", pc, opcode, msg);
-                    ++pc;
-                    if (ins == INS->last_ins)
-                        break;
-                    ins = ins->next;
-                }
-                fprintf(stderr, "------------------\n");
+                INS_dump(INS);
+                pc += INS->len;
             }
         }
         lsassert(pc == code_ptr);

@@ -15,7 +15,7 @@ static VOID show_ins(UINT64 pc, UINT32 opcode)
     Ins ins;
     la_disasm(opcode, &ins);
     sprint_ins(&ins, msg);
-    fprintf(stderr, "thread %d: %lu\tpc: 0x%lx\t%s\n", PIN_ThreadId(), icount, pc, msg);
+    fprintf(stderr, "[thread %d] %lu\tpc: 0x%lx\t%s\n", PIN_ThreadId(), icount, pc, msg);
 }
 
 static VOID Instruction(INS ins, VOID* v)

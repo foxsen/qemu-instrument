@@ -259,53 +259,331 @@ int la_gen_epilogue(CPUState *cs, TCGContext *tcg_ctx)
     return ins_nr;
 }
 
-int INS_translate(CPUState *cs, INS INS)
+/* === translation function === */
+static void translate_rdtime_return_zero(CPUState *cs, INS INS, Ins *ins)
 {
-    /* 
-     * 做两件事:
-     * 1. 将指令对寄存器的读写替换为对内存的读写。
-     * 2. 部分指令特殊翻译：跳转指令、syscall
-     * */
+    /* debug: singlestep的时候为了和原生qemu对比，rdtime.d 总是返回 0 */
+    lsassert(ins->op == LISA_RDTIME_D);
+    int rd = ins->opnd[0].val;
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_OR, rd, reg_zero, reg_zero));
+    INS_remove_ins(INS, ins);
+}
 
-    /* TRANSLATION_DATA *t = &tr_data; */
-    /* TranslationBlock *tb = t->curr_tb; */
+static void translate_pcaddi(CPUState *cs, INS INS, Ins *ins)
+{
+    int rd = ins->opnd[0].val;
+    switch (ins->op) {
+        case LISA_PCADDI:
+            INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 2, 22));
+            break;
+        case LISA_PCADDU12I:
+            INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 12, 32));
+            break;
+        case LISA_PCADDU18I:
+            INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 18, 38));
+            break;
+        case LISA_PCALAU12I:
+            /* LISA_PCALAU12I低12位清零 */
+            INS_load_imm64_before(INS, ins, rd, (INS->pc + sign_extend(ins->opnd[1].val << 12, 32)) & ~0xfff);
+            break;
+        default:
+            break;
+    }
 
+    INS_remove_ins(INS, ins);
+}
+
+static void translate_branch(CPUState *cs, INS INS, Ins *ins)
+{
+    /* 直接跳转：
+     * 1. 保存目标地址到 reg_target
+     * 2. 跳转到上下文切换代码（推迟到重定位再做）
+     */
+
+    /*
+     * 将B/BL/BCC翻译为如下指令：
+     *   1. if (BEQ) BNE fallthrough
+     *   2. if (BL) $ra <- origin_ins->pc + 4
+     *   3. nop
+     *   4. $reg_traget <- target addr
+     *   5. $reg_ret <- (tb_link) ? (tb | slot_index) : 0
+     *   6. B context_switch_native_to_bt
+     * fallthrough: (also the second exit for BCC)
+     *   ...
+     */
     bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0);
+    tr_data.is_jmp = TRANS_NORETURN;
 
-    Ins *ins = ins_copy(INS->origin_ins);
-    INS_append_ins(INS, ins);
+    /* bcc 根据条件选择出口 */
+    Ins *bcc = NULL;
+    int bcc_offset_opnd_idx = -1;
+    if (op_is_condition_branch(ins->op)) {
+        switch (ins->op) {
+            case LISA_BEQZ:
+                /* fallthrough offset will be set at the end of translate */
+                bcc = ins_create_2(LISA_BNEZ, ins->opnd[0].val, 0);
+                bcc_offset_opnd_idx = 1;
+                break;
+            case LISA_BNEZ:
+                bcc = ins_create_2(LISA_BEQZ, ins->opnd[0].val, 0);
+                bcc_offset_opnd_idx = 1;
+                break;
+            case LISA_BCEQZ:
+                bcc = ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 0);
+                bcc_offset_opnd_idx = 1;
+                break;
+            case LISA_BCNEZ:
+                bcc = ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 0);
+                bcc_offset_opnd_idx = 1;
+                break;
+            case LISA_BEQ:
+                bcc = ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            case LISA_BNE:
+                bcc = ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            case LISA_BLT:
+                bcc = ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            case LISA_BGE:
+                bcc = ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            case LISA_BLTU:
+                bcc = ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            case LISA_BGEU:
+                bcc = ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, 0);
+                bcc_offset_opnd_idx = 2;
+                break;
+            default:
+                lsassert(0);
+                break;
+        }
+        INS_insert_ins_before(INS, ins, bcc);
 
+        if (enable_tb_link) {
+            tr_data.jmp_ins[1] = bcc;
+        }
+    }
+
+    if (ins->op == LISA_BL) {
+        /* save return address: $ra = PC + 4 */
+        uint64_t next_pc = INS->pc + 4;
+        if (gpr_is_mapped(reg_ra)) {
+            INS_load_imm64_before(INS, ins, mapped_gpr(reg_ra), next_pc);
+        } else {
+            int itemp_ra = reg_alloc_itemp();
+            INS_load_imm64_before(INS, ins, itemp_ra, next_pc);
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp_ra, reg_env, env_offset_of_gpr(cs, reg_ra)));
+            reg_free_itemp(itemp_ra);
+        }
+    }
+
+    /* tb_link: add a nop
+     * at first exec time it will fallthrough
+     * this nop ins will be patched when tb_link */
+    if (enable_tb_link) {
+        Ins *nop = ins_nop();
+        tr_data.jmp_ins[0] = nop;
+        INS_insert_ins_before(INS, ins, nop);
+    }
+
+    /* set reg_target = branch target */
+    INS_load_imm64_before(INS, ins, reg_target, ins_target_addr(ins, INS->pc));
+
+    /* set return value */
+    /* ret = tb_link ? (tb | slot_index) : 0; */
+    if (enable_tb_link) {
+        INS_load_imm64_before(INS, ins, reg_ret, ((uint64_t)tr_data.curr_tb | 0));
+    } else {
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ORI, reg_ret, reg_zero, reg_zero));
+    }
+
+    /* Branch to context_switch_native_to_bt, will be modify in relocation process */
+    Ins *b = ins_b(0);
+    INS_insert_ins_before(INS, ins, b);
+
+    if (op_is_condition_branch(ins->op)) {
+        /* set bcc fallthrough offset */
+        int offset = 1;
+        Ins *cur = bcc;
+        while (cur != b) {
+            ++offset;
+            cur = cur->next;
+        }
+        bcc->opnd[bcc_offset_opnd_idx].val = offset;
+    }
+
+    INS_remove_ins(INS, ins);
+}
+
+static void translate_jirl(CPUState *cs, INS INS, Ins *ins)
+{
+    /* 间接跳转：
+     * 1. 计算目标地址，保存到 reg_target
+     * 2. 跳转到上下文切换代码（推迟到重定位再做）
+     * TODO: 添加stub for jmp_glue
+     */
+    tr_data.is_jmp = TRANS_NORETURN;
+
+    int rd = ins->opnd[0].val;
+    int rj = ins->opnd[1].val;
+    int offset16 = ins->opnd[2].val;
+
+    /* reg_target(PC) = GR[rj] + SignExtend(off16 << 2) */
+    INS_load_imm64_before(INS, ins, reg_target, sign_extend(offset16 << 2, 18));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, reg_target, rj, reg_target));
+
+    /* GR[rd] = PC + 4 */
+    /* 提前保存$rd */
+    int origin_rd = INS->origin_ins->opnd[0].val;
+    if (origin_rd != reg_zero) {
+        uint64_t next_pc = INS->pc + 4;
+        INS_load_imm64_before(INS, ins, rd, next_pc);
+        if (!gpr_is_mapped(origin_rd)) {
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, origin_rd)));
+        }
+    }
+
+    /* IBTC: 检查 tb_jmp_cache 中是否缓存了目标 tb */
+    if (enable_jmp_cache) {
+        int itemp_tb = reg_alloc_itemp();
+        int itemp = reg_alloc_itemp();
+        /* 1. get cpu->tb_jmp_cache (here offset is larger than 12bits, so load the imm) */
+        INS_load_imm64_before(INS, ins, itemp, env_offset_of_tb_jmp_cache(cs));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, itemp_tb, reg_env, itemp));
+        /* 2. hash = ((pc >> 12) ^ pc) & 0xfff (same as tb_jmp_cache_hash_func())*/
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, TB_JMP_CACHE_BITS));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_XOR, itemp, itemp, reg_target));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
+        /* 3. tb = *(tb_jmp_cache + (hash << 3)) */
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 3));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));
+        /* 4. check tb valid */
+        /* if (tb == 0) goto miss */
+        INS_insert_ins_before(INS, ins, ins_create_2(LISA_BEQZ, itemp_tb, 10));         /* FIXME magic num: 10 */
+        /* if (tb->pc != target) goto miss */
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, pc)));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_BNE, itemp, reg_target, 8));  /* FIXME magic num: 8 */
+        /* jmp_cache race condition: check CF_INVALID, 9318 -> 9230(add following check) -> 8944(use LL.W) */
+        /* if (jmp_lock is set) goto miss */
+        lsassert(0 == (offsetof(TranslationBlock, jmp_lock) & 0b11));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LL_W, itemp, itemp_tb, offsetof(TranslationBlock, jmp_lock) >> 2));    /* FIXME why use ll_w? */
+        INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 6));             /* FIXME magic num: 6 */
+        /* if (CF_INVALID != 0) goto miss */
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, cflags)));
+        INS_insert_ins_before(INS, ins, ins_create_4(LISA_BSTRPICK_W, itemp, itemp, 18, 18));
+        INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 3));             /* FIXME magic num: 3 */
+        /* lable: jmp_cache hit */
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, tc) + offsetof(struct tb_tc, ptr)));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
+        reg_free_itemp(itemp_tb);
+        reg_free_itemp(itemp);
+    }
+
+    /* lable: jmp_cache miss */
+    /* set return value = 0, for not tb_link */
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_OR, reg_ret, reg_zero, reg_zero));
+
+    /* Branch to context_switch_native_to_bt, will be modify in redirection process */
+    INS_insert_ins_before(INS, ins, ins_b(0));
+
+    INS_remove_ins(INS, ins);
+}
+
+static void translate_syscall(CPUState *cs, INS INS, Ins *ins)
+{
+    tr_data.is_jmp = TRANS_NORETURN;
+
+    int itemp = reg_alloc_itemp();
+
+    /* 1. save exception pc */
+    INS_load_imm64_before(INS, ins, itemp, INS->pc);
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_pc(cs)));
+
+    /* 2. set exception index */
+    if (ins->op == LISA_SYSCALL) {
+        INS_load_imm64_before(INS, ins, itemp, EXCCODE_SYS);
+    } else if (ins->op == LISA_BREAK){
+        INS_load_imm64_before(INS, ins, itemp, EXCCODE_BRK);
+    }
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_exception_index(cs)));
+
+
+    /* 3. store guest registers to env */
+    /* 3.1 store mapped gpr */
+    for (int gpr = 0; gpr < 32; ++gpr) {
+        if (gpr != reg_zero && gpr_is_mapped(gpr)) {
+            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr)));
+        }
+    }
+    /* 3.2 store fpr[32], fcc[8], fcsr0 */
+    int reg_tmp = reg_s0;
+    for (int fpr = 0; fpr < 32; ++fpr) {
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(cs, fpr)));
+    }
+    for (int fcc = 0; fcc < 8; ++fcc) {
+        INS_insert_ins_before(INS, ins, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(cs, fcc)));
+    }
+    INS_insert_ins_before(INS, ins, ins_create_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs))); 
+
+    /* 4. restore host sp, tp */ 
+    /* FIXME: just for absolutely correct, maybe no need */
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(cs)));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(cs)));
+
+    /* 5. call cpu_loop_exit(CPUState *cpu) */
+    /* note: arg cpu is thread local, so pass it by reg_env */
+    INS_load_imm64_before(INS, ins, itemp, (uint64_t)cpu_loop_exit);
+    INS_load_imm64_before(INS, ins, reg_a0, env_offset_of_cpu_state(cs));
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, reg_a0, reg_env, reg_a0));
+    /* syscall will never return */
+    INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
+
+    reg_free_itemp(itemp);
+
+    INS_remove_ins(INS, ins);
+}
+
+static void INS_reg_remapping(CPUState *cs, INS INS, Ins *ins)
+{
     /*
      * Guest 的寄存器保存在 env->gpr[32] 中
      * 检查指令中用到的寄存器：
-     * - 映射的寄存器：（上下文切换时ld/st）直接用映射的寄存器替换对应的操作数寄存器
+     * - 映射的寄存器：（上下文切换时已经ld/st）直接替换为映射到的物理寄存器
      * - 未映射的寄存器：分配一个临时寄存器
      *   - 若指令读该寄存器：在该指令前插入一条指令，从内存load到临时寄存器
      *   - 若指令写该寄存器：在该指令后插入一条指令，将临时寄存器store到内存
-     *   - 指令对寄存器的读写信息记录在 lisa_reg_access_table，若不存在，则默认
+     *   - 指令对寄存器的读写信息记录在 lisa_reg_access_table，若不存在，则默认又读又写
      */
-    /* 1. record regs used, maping to itemp */
-    /* gpr[4] 保存四个操作数用到的原寄存器(除了$zero) */
-    int origin_gpr[4] = {-1, -1, -1, -1};
+
+    /* 1. remapping regs and itemps */
+    Ins *origin_ins = INS->origin_ins;
     for (int i = 0; i < ins->opnd_count; i++) {
-        int reg = ins->opnd[i].val;
         if (opnd_is_gpr(ins, i)) {
-            origin_gpr[i] = reg;
+            int gpr = origin_ins->opnd[i].val;
             /* 用映射的寄存器替换指令中原始的寄存器 */
-            if (gpr_is_mapped(reg)) {
-                ins->opnd[i].val = mapped_gpr(reg);
+            if (gpr_is_mapped(gpr)) {
+                ins->opnd[i].val = mapped_gpr(gpr);
             } else {
-                ins->opnd[i].val = reg_map_gpr_to_itemp(reg);
+                ins->opnd[i].val = reg_map_gpr_to_itemp(gpr);
             }
         }
     }
 
-    /* 2. add LD/ST ins around origin ins */
-    /* BUG: 如果两个操作数都是同一个reg，如果都被READ,岂不是LOAD两次？ */
+    /* 2. if itemp used, add LD/ST ins around origin ins */
+    /* FIXME 如果两个操作数的是同一个reg，如果都被READ，会是LOAD两次 */
     if (!fullregs && is_ir2_reg_access_type_valid(ins)) {
-        for (int i = 0; i < 4; ++i) {
-            int gpr = origin_gpr[i];
-            if (gpr != -1 && !gpr_is_mapped(gpr)) {
+        for (int i = 0; i < ins->opnd_count; ++i) {
+            int gpr = origin_ins->opnd[i].val;
+            if (opnd_is_gpr(ins, i) && !gpr_is_mapped(gpr)) {
                 int temp_gpr = ins->opnd[i].val;
                 if (opnd_is_gpr_read(ins, i) || opnd_is_gpr_readwrite(ins, i)) {
                     INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, temp_gpr, reg_env, env_offset_of_gpr(cs, gpr)));
@@ -316,18 +594,20 @@ int INS_translate(CPUState *cs, INS INS)
             }
         }
     } else {
+
 #ifdef CONFIG_LMJ_DEBUG
         char msg[32];
         sprint_op(ins->op, msg);
         fprintf(stderr, "Reg access type undefined: %s\n", msg);
 #endif
-        for (int i = 0; i < 4; ++i) {
-            int gpr = origin_gpr[i];
-            if (gpr != -1 && !gpr_is_mapped(gpr)) {
+
+        for (int i = 0; i < ins->opnd_count; ++i) {
+            int gpr = origin_ins->opnd[i].val;
+            if (opnd_is_gpr(ins, i) && !gpr_is_mapped(gpr)) {
                 /* skip duplicated regs */
                 bool skip = false;
                 for (int j = i - 1; j >= 0; --j) {
-                    if (origin_gpr[i] == origin_gpr[j]) {
+                    if (origin_ins->opnd[i].val == origin_ins->opnd[j].val) {
                         skip = true;
                         break;
                     }
@@ -342,303 +622,58 @@ int INS_translate(CPUState *cs, INS INS)
             }
         }
     }
+}
 
-
-
-    /* debug: singlestep的时候为了和原生qemu对比，rdtime.d 总是返回 0 */
-    if (lmj_debug && (ins->op == LISA_RDTIME_D || ins->op == LISA_RDTIMEL_W || ins->op == LISA_RDTIMEH_W)) {
-        lsassert(ins->op == LISA_RDTIME_D);
-
-        int rd = ins->opnd[0].val;
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_OR, rd, reg_zero, reg_zero));
-        INS_remove_ins(INS, ins);
-    }
-
-    /* 特殊处理的指令：
-     * pcaddi，直接跳转，间接跳转，syscall
-     */
-    /* Note: origin ins will be removed */
-    if (ins->op == LISA_PCADDI || ins->op == LISA_PCADDU12I || ins->op == LISA_PCADDU18I || ins->op == LISA_PCALAU12I) {
-        /* PCADD 系列指令 */
-        int rd = ins->opnd[0].val;
-        switch (ins->op) {
-            case LISA_PCADDI:
-                INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 2, 22));
-                break;
-            case LISA_PCADDU12I:
-                INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 12, 32));
-                break;
-            case LISA_PCADDU18I:
-                INS_load_imm64_before(INS, ins, rd, INS->pc + sign_extend(ins->opnd[1].val << 18, 38));
-                break;
-            case LISA_PCALAU12I:
-                /* LISA_PCALAU12I低12位清零 */
-                INS_load_imm64_before(INS, ins, rd, (INS->pc + sign_extend(ins->opnd[1].val << 12, 32)) & ~0xfff);
-                break;
-            default:
-                break;
-        }
-
-        INS_remove_ins(INS, ins);
-    } else if (op_is_direct_branch(ins->op)) {
-        /* 直接跳转：
-         * 1. 保存目标地址到 reg_target
-         * 2. 跳转到上下文切换代码（推迟到重定位再做）
-         */
-
-        /*
-         * 将B/BL/BCC翻译为如下指令：
-         *   1. if (BEQ) BNE fallthrough
-         *   2. if (BL) $ra <- origin_ins->pc + 4
-         *   3. nop
-         *   4. $reg_traget <- target addr
-         *   5. $reg_ret <- (tb_link) ? (tb | slot_index) : 0
-         *   6. B context_switch_native_to_bt
-         * fallthrough: (also the second exit for BCC)
-         *   ...
-         */
-        tr_data.is_jmp = TRANS_NORETURN;
-
-        /* bcc 根据条件选择出口 */
-        Ins *bcc = NULL;
-        int bcc_offset_opnd_idx = -1;
-        if (op_is_condition_branch(ins->op)) {
-            switch (ins->op) {
-                case LISA_BEQZ:
-                    /* fallthrough offset will be set at the end of translate */
-                    bcc = ins_create_2(LISA_BNEZ, ins->opnd[0].val, 0);
-                    bcc_offset_opnd_idx = 1;
-                    break;
-                case LISA_BNEZ:
-                    bcc = ins_create_2(LISA_BEQZ, ins->opnd[0].val, 0);
-                    bcc_offset_opnd_idx = 1;
-                    break;
-                case LISA_BCEQZ:
-                    bcc = ins_create_2(LISA_BCNEZ, ins->opnd[0].val, 0);
-                    bcc_offset_opnd_idx = 1;
-                    break;
-                case LISA_BCNEZ:
-                    bcc = ins_create_2(LISA_BCEQZ, ins->opnd[0].val, 0);
-                    bcc_offset_opnd_idx = 1;
-                    break;
-                case LISA_BEQ:
-                    bcc = ins_create_3(LISA_BNE, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                case LISA_BNE:
-                    bcc = ins_create_3(LISA_BEQ, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                case LISA_BLT:
-                    bcc = ins_create_3(LISA_BGE, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                case LISA_BGE:
-                    bcc = ins_create_3(LISA_BLT, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                case LISA_BLTU:
-                    bcc = ins_create_3(LISA_BGEU, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                case LISA_BGEU:
-                    bcc = ins_create_3(LISA_BLTU, ins->opnd[0].val, ins->opnd[1].val, 0);
-                    bcc_offset_opnd_idx = 2;
-                    break;
-                default:
-                    lsassert(0);
-                    break;
-            }
-            INS_insert_ins_before(INS, ins, bcc);
-
-            if (enable_tb_link) {
-                tr_data.jmp_ins[1] = bcc;
-            }
-        }
-
-        if (ins->op == LISA_BL) {
-            /* save return address: $ra = PC + 4 */
-            uint64_t next_pc = INS->pc + 4;
-            if (gpr_is_mapped(reg_ra)) {
-                INS_load_imm64_before(INS, ins, mapped_gpr(reg_ra), next_pc);
-            } else {
-                int itemp_ra = reg_alloc_itemp();
-                INS_load_imm64_before(INS, ins, itemp_ra, next_pc);
-                INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp_ra, reg_env, env_offset_of_gpr(cs, reg_ra)));
-                reg_free_itemp(itemp_ra);
-            }
-        }
-
-        /* tb_link: add a nop
-         * at first exec time it will fallthrough
-         * this nop ins will be patched when tb_link */
-        if (enable_tb_link) {
-            Ins *nop = ins_nop();
-            tr_data.jmp_ins[0] = nop;
-            INS_insert_ins_before(INS, ins, nop);
-        }
-
-        /* set reg_target = branch target */
-        INS_load_imm64_before(INS, ins, reg_target, ins_target_addr(ins, INS->pc));
-
-        /* set return value */
-        /* ret = tb_link ? (tb | slot_index) : 0; */
-        if (enable_tb_link) {
-            INS_load_imm64_before(INS, ins, reg_ret, ((uint64_t)tr_data.curr_tb | 0));
-        } else {
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ORI, reg_ret, reg_zero, reg_zero));
-        }
-
-        /* Branch to context_switch_native_to_bt, will be modify in relocation process */
-        Ins *b = ins_b(0);
-        INS_insert_ins_before(INS, ins, b);
-
-        if (op_is_condition_branch(ins->op)) {
-            /* set bcc fallthrough offset */
-            int offset = 1;
-            Ins *cur = bcc;
-            while (cur != b) {
-                ++offset;
-                cur = cur->next;
-            }
-            bcc->opnd[bcc_offset_opnd_idx].val = offset;
-        }
-
-        INS_remove_ins(INS, ins);
-    } else if (op_is_indirect_branch(ins->op)) {
-        /* 间接跳转：
-         * 1. 计算目标地址，保存到 reg_target
-         * 2. 跳转到上下文切换代码（推迟到重定位再做）
-         * TODO: 添加stub for jmp_glue
-         */
-        tr_data.is_jmp = TRANS_NORETURN;
-
-        int rd = ins->opnd[0].val;
-        int rj = ins->opnd[1].val;
-        int offset16 = ins->opnd[2].val;
-
-        /* reg_target(PC) = GR[rj] + SignExtend(off16 << 2) */
-        INS_load_imm64_before(INS, ins, reg_target, sign_extend(offset16 << 2, 18));
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, reg_target, rj, reg_target));
-
-        /* GR[rd] = PC + 4 */
-        /* JIRL 会写寄存器$rd，因此这里提前保存$rd */
-        if (origin_gpr[0] != -1 && origin_gpr[0] != reg_zero) {
-            uint64_t next_pc = INS->pc + 4;
-            INS_load_imm64_before(INS, ins, rd, next_pc);
-            if (!gpr_is_mapped(origin_gpr[0])) {
-                INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, rd, reg_env, env_offset_of_gpr(cs, origin_gpr[0])));
-            }
-        }
-
-        /* IBTC: 检查 tb_jmp_cache 中是否缓存了目标 tb */
-        if (enable_jmp_cache) {
-            int itemp_tb = reg_alloc_itemp();
-            int itemp = reg_alloc_itemp();
-            /* 1. get cpu->tb_jmp_cache (here offset is larger than 12bits, so load the imm) */
-            INS_load_imm64_before(INS, ins, itemp, env_offset_of_tb_jmp_cache(cs));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, itemp_tb, reg_env, itemp));
-            /* 2. hash = ((pc >> 12) ^ pc) & 0xfff (same as tb_jmp_cache_hash_func())*/
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, TB_JMP_CACHE_BITS));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_XOR, itemp, itemp, reg_target));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
-            /* 3. tb = *(tb_jmp_cache + (hash << 3)) */
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 3));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));
-            /* 4. check tb valid */
-            /* if (tb == 0) goto miss */
-            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BEQZ, itemp_tb, 10));         /* FIXME magic num: 10 */
-            /* if (tb->pc != target) goto miss */
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, pc)));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_BNE, itemp, reg_target, 8));  /* FIXME magic num: 8 */
-            /* jmp_cache race condition: check CF_INVALID, 9318 -> 9230(add following check) -> 8944(use LL.W) */
-            /* if (jmp_lock is set) goto miss */
-            lsassert(0 == (offsetof(TranslationBlock, jmp_lock) & 0b11));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LL_W, itemp, itemp_tb, offsetof(TranslationBlock, jmp_lock) >> 2));    /* FIXME why use ll_w? */
-            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 6));             /* FIXME magic num: 6 */
-            /* if (CF_INVALID != 0) goto miss */
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, cflags)));
-            INS_insert_ins_before(INS, ins, ins_create_4(LISA_BSTRPICK_W, itemp, itemp, 18, 18));
-            INS_insert_ins_before(INS, ins, ins_create_2(LISA_BNEZ, itemp, 3));             /* FIXME magic num: 3 */
-            /* lable: jmp_cache hit */
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, itemp, itemp_tb, offsetof(TranslationBlock, tc) + offsetof(struct tb_tc, ptr)));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
-            reg_free_itemp(itemp_tb);
-            reg_free_itemp(itemp);
-        }
-
-        /* lable: jmp_cache miss */
-        /* set return value = 0, for not tb_link */
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_OR, reg_ret, reg_zero, reg_zero));
-
-        /* Branch to context_switch_native_to_bt, will be modify in redirection process */
-        INS_insert_ins_before(INS, ins, ins_b(0));
-
-        INS_remove_ins(INS, ins);
-    } else if (ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
-        tr_data.is_jmp = TRANS_NORETURN;
-
-        int itemp = reg_alloc_itemp();
-
-        /* 1. save exception pc */
-        INS_load_imm64_before(INS, ins, itemp, INS->pc);
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_pc(cs)));
-
-        /* 2. set exception index */
-        if (ins->op == LISA_SYSCALL) {
-            INS_load_imm64_before(INS, ins, itemp, EXCCODE_SYS);
-        } else if (ins->op == LISA_BREAK){
-            INS_load_imm64_before(INS, ins, itemp, EXCCODE_BRK);
-        }
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, itemp, reg_env, env_offset_of_exception_index(cs)));
-
-
-        /* 3. store guest registers to env */
-        /* 3.1 store mapped gpr */
-        for (int gpr = 0; gpr < 32; ++gpr) {
-            if (gpr != reg_zero && gpr_is_mapped(gpr)) {
-                INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(cs, gpr)));
-            }
-        }
-        /* 3.2 store fpr[32], fcc[8], fcsr0 */
-        int reg_tmp = reg_s0;
-        for (int fpr = 0; fpr < 32; ++fpr) {
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(cs, fpr)));
-        }
-        for (int fcc = 0; fcc < 8; ++fcc) {
-            INS_insert_ins_before(INS, ins, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
-            INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(cs, fcc)));
-        }
-        INS_insert_ins_before(INS, ins, ins_create_2(LISA_MOVFCSR2GR, reg_tmp, reg_fcsr));
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ST_W, reg_tmp, reg_env, env_offset_of_fscr0(cs))); 
-
-        /* 4. restore host sp, tp */ 
-        /* FIXME: just for absolutely correct, maybe no need */
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(cs)));
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(cs)));
-
-        /* 5. call cpu_loop_exit(CPUState *cpu) */
-        /* note: arg cpu is thread local, so pass it by reg_env */
-        INS_load_imm64_before(INS, ins, itemp, (uint64_t)cpu_loop_exit);
-        INS_load_imm64_before(INS, ins, reg_a0, env_offset_of_cpu_state(cs));
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ADD_D, reg_a0, reg_env, reg_a0));
-        /* syscall will never return */
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_JIRL, reg_zero, itemp, 0));
-
-        reg_free_itemp(itemp);
-
-        INS_remove_ins(INS, ins);
-    }
-
-    /* free mapped itemps */
-    for (int i = 0; i < 4; ++i) {
-        int reg = origin_gpr[i];
-        if (reg != -1 && !gpr_is_mapped(reg)) {
+static void INS_free_all_itemp(CPUState *cs, INS INS)
+{
+    Ins *origin_ins = INS->origin_ins;
+    for (int i = 0; i < origin_ins->opnd_count; ++i) {
+        int reg = origin_ins->opnd[i].val;
+        if (opnd_is_gpr(origin_ins, i) && !gpr_is_mapped(reg)) {
             reg_unmap_gpr_to_itemp(reg);
         }
     }
-    /* debug info */
-    reg_debug_itemp_all_free();
+}
+
+int INS_translate(CPUState *cs, INS INS)
+{
+    /* 
+     * 做两件事:
+     * 1. 寄存器重映射，为没有映射的寄存器分配临时寄存器
+     * 2. 部分指令特殊翻译：跳转指令、syscall
+     * */
+
+    /* TRANSLATION_DATA *t = &tr_data; */
+    /* TranslationBlock *tb = t->curr_tb; */
+    /* bool enable_tb_link = ((tb_cflags(tr_data.curr_tb) & CF_NO_GOTO_TB) == 0); */
+
+    /* 1. 复制原始指令 */
+    Ins *ins = ins_copy(INS->origin_ins);
+    INS_append_ins(INS, ins);
+
+    /* 2. 寄存器重映射 */
+    INS_reg_remapping(cs, INS, ins);
+
+    /* 3. 需要特殊翻译的指令：
+     * pcaddi，直接跳转，间接跳转，syscall, rdtime
+     */
+    /* Note: origin ins may be removed */
+    if (ins->op == LISA_PCADDI || ins->op == LISA_PCADDU12I || ins->op == LISA_PCADDU18I || ins->op == LISA_PCALAU12I) {
+        translate_pcaddi(cs, INS, ins);
+    } else if (op_is_direct_branch(ins->op)) {
+        translate_branch(cs, INS, ins);
+    } else if (op_is_indirect_branch(ins->op)) {
+        translate_jirl(cs, INS, ins);
+    } else if (ins->op == LISA_SYSCALL || ins->op == LISA_BREAK) {
+        translate_syscall(cs, INS, ins);
+    } else if (lmj_debug && (ins->op == LISA_RDTIME_D || ins->op == LISA_RDTIMEL_W || ins->op == LISA_RDTIMEH_W)) {
+        /* debug: singlestep的时候为了和原生qemu对比，rdtime.d 总是返回 0 */
+        translate_rdtime_return_zero(cs, INS, ins);
+    }
+
+    /* 4. 释放分配的临时寄存器 */
+    INS_free_all_itemp(cs, INS);
+    reg_debug_check_itemp_all_free();
 
     return INS->len;
 }
@@ -666,8 +701,7 @@ void INS_append_exit(INS INS, uint32_t index)
     /* set reg_target = pc + 4 */
     INS_load_imm64_before(INS, end, reg_target, INS->pc + 4);
 
-    /* set return value */
-    /* ret = tb_link ? (tb | slot_index) : 0 */
+    /* set return_value = tb_link ? (tb | slot_index) : 0 */
     if (enable_tb_link) {
         INS_load_imm64_before(INS, end, reg_ret, ((uint64_t)tr_data.curr_tb | index));
     } else {

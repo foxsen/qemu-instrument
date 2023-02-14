@@ -722,7 +722,7 @@ TranslationBlock *tcg_tb_alloc(TCGContext *s)
 }
 
 #ifdef CONFIG_LMJ
-void pin_prologue_init(TCGContext *s, CPUState *cpu)
+void la_prologue_init(TCGContext *s, CPUState *cpu)
 {
     int ins_nr;
     s->code_ptr = s->code_gen_ptr;  // rw

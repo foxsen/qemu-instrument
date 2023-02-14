@@ -3,9 +3,10 @@
 ## 编译
 ```bash
 mkdir build
-# 插桩的版本
+cd build
+# 编译插桩的版本
 '../configure' '--target-list=loongarch64-linux-user' '--enable-debug' --extra-cflags='-DCONFIG_LMJ -DCONFIG_LMJ_DEBUG' --extra-ldflags='-export-dynamic'
-# tcg版本
+# 编译tcg版本
 #'../configure' '--target-list=loongarch64-linux-user' '--enable-debug'
 ninja
 ```

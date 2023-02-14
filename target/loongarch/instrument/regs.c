@@ -6,8 +6,8 @@
 /* 映射26个寄存器的方案 */
 /* === 寄存器映射 === */
 /* CoreMark: 9358, 1403(no instru, instru) */
-/* guest_reg : host_reg (physics_reg) */
-const int reg_gpr_map[] = {
+/* guest_reg -> host_reg */
+static const int reg_gpr_map[] = {
     /* [0 ... 31] = reg_invalid, */
     [reg_zero] = reg_zero,
     [reg_ra] = reg_ra,
@@ -42,6 +42,16 @@ const int reg_gpr_map[] = {
     [reg_s7] = reg_s7,
     [reg_s8] = reg_invalid,
 };
+
+#define ITEMP0          0
+#define ITEMP1          1
+#define ITEMP2          2
+#define ITEMP3          3
+#define ITEMP4          4
+#define ITEMP5          5
+#define ITEMP6          6
+#define ITEMP7          7
+#define ITEMP8          8
 
 /* === 临时寄存器映射 === */
 static const int itemp_map[] = {
@@ -221,7 +231,7 @@ static inline int get_itemp_index(int itemp)
 }
 
 #define ITEMP_NUM (sizeof(itemp_map) / sizeof(int))
-static uint16_t free_itemp_mask = (1 << ITEMP_NUM) - 1;
+static __thread uint16_t free_itemp_mask = (1 << ITEMP_NUM) - 1;
 
 int reg_alloc_itemp(void)
 {
@@ -237,14 +247,14 @@ int reg_alloc_itemp(void)
     return itemp_map[cur++];
 }
 
-void reg_free_itemp(int itemp)
+void reg_free_itemp(int itemp_gpr)
 {
-    int idx = get_itemp_index(itemp);
+    int idx = get_itemp_index(itemp_gpr);
     lsassert(!BitIsSet(free_itemp_mask, idx));
     free_itemp_mask = BitSet(free_itemp_mask, idx);
 }
 
-void reg_debug_itemp_all_free(void)
+void reg_debug_check_itemp_all_free(void)
 {
     lsassert(free_itemp_mask == ((1 << ITEMP_NUM) - 1));
 }
@@ -261,6 +271,7 @@ int reg_map_gpr_to_itemp(int gpr)
     if (gpr == reg_zero)
         return reg_zero;
 
+    /* 没有为gpr分配itemp则分配 */
     if (gpr_itemp_map[gpr] == reg_invalid) {
         gpr_itemp_map[gpr] = reg_alloc_itemp();
     }

@@ -113,25 +113,12 @@
 #define reg_scr2    2
 #define reg_scr3    3
 
-
-#define INVALID_TEMP    -1
-#define ITEMP0          0
-#define ITEMP1          1
-#define ITEMP2          2
-#define ITEMP3          3
-#define ITEMP4          4
-#define ITEMP5          5
-#define ITEMP6          6
-#define ITEMP7          7
-#define ITEMP8          8
-
-extern const int reg_gpr_map[];
 bool gpr_is_mapped(int gpr);
 int mapped_gpr(int gpr);
 
 int reg_alloc_itemp(void);
-void reg_free_itemp(int itemp);
-void reg_debug_itemp_all_free(void);
+void reg_free_itemp(int itemp_gpr);
+void reg_debug_check_itemp_all_free(void);
 int reg_map_gpr_to_itemp(int gpr);
 void reg_unmap_gpr_to_itemp(int gpr);
 

@@ -1002,7 +1002,7 @@ int main(int argc, char **argv, char **envp)
 #ifndef CONFIG_LMJ
     tcg_prologue_init(tcg_ctx);
 #else
-    pin_prologue_init(tcg_ctx, cpu);
+    la_prologue_init(tcg_ctx, cpu);
 #endif
 
     target_cpu_copy_regs(env, regs);

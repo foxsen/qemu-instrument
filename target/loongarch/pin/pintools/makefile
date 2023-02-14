@@ -22,6 +22,7 @@ NAMES += routine
 NAMES += bcc
 NAMES += reg_frequency
 NAMES += time_in_code_cache
+NAMES += isampling
 
 SONAMES := $(addsuffix .so,$(addprefix lib,$(NAMES)))
 
@@ -43,6 +44,9 @@ all: $(SONAMES)
 
 # FIXME write a rule for general .cpp file
 hotblock.o: hotblock.cpp
+	c++ $(CXXFLAGS) -c -o $@ $<
+
+isampling.o: isampling.cpp
 	c++ $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.c

@@ -706,12 +706,11 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 {
     /* IOBJECT object = cb->object; */
-    IPOINT ipoint = cb->ipoint;
+    /* IPOINT ipoint = cb->ipoint; */
     /* AFUNPTR funptr = cb->func; */
-
-    lsassert(ipoint == IPOINT_BEFORE);
-
     /* IR2_OPCODE op = INS->origin_ins->op; */
+
+    bool no_action = false;
 
     for (int i = cb->arg_cnt - 1; i >= 0; --i) {
         IARG_TYPE arg_type = cb->arg[i].type;
@@ -723,7 +722,7 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
             {
                 int gpr;
                 switch (arg_type) {
-                case IARG_REG_VALUE:
+                case IARG_REG_REFERENCE:
                     gpr = REG_to_gpr(arg_value);
                     break;
                 case IARG_SYSARG_REFERENCE:
@@ -741,9 +740,13 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
             }
             break;
         default:
+            no_action = true;
             break;
         }
     }
+
+    /* FIXME */
+    lsassert(cb->ipoint == IPOINT_BEFORE || no_action == true);
 }
 
 
