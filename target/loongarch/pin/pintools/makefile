@@ -22,6 +22,7 @@ NAMES += routine
 NAMES += bcc
 NAMES += reg_frequency
 NAMES += time_in_code_cache
+NAMES += branch_count
 NAMES += isampling
 
 SONAMES := $(addsuffix .so,$(addprefix lib,$(NAMES)))
