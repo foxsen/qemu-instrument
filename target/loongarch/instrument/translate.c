@@ -598,7 +598,7 @@ static void INS_reg_remapping(CPUState *cs, INS INS, Ins *ins)
 #ifdef CONFIG_LMJ_DEBUG
         char msg[32];
         sprint_op(ins->op, msg);
-        fprintf(stderr, "Reg access type undefined: %s\n", msg);
+        lsdebug("Reg access type undefined: %s\n", msg);
 #endif
 
         for (int i = 0; i < ins->opnd_count; ++i) {

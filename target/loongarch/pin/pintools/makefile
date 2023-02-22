@@ -24,6 +24,7 @@ NAMES += reg_frequency
 NAMES += time_in_code_cache
 NAMES += branch_count
 NAMES += isampling
+NAMES += branch_offset
 
 SONAMES := $(addsuffix .so,$(addprefix lib,$(NAMES)))
 
@@ -48,6 +49,9 @@ hotblock.o: hotblock.cpp
 	c++ $(CXXFLAGS) -c -o $@ $<
 
 isampling.o: isampling.cpp
+	c++ $(CXXFLAGS) -c -o $@ $<
+
+branch_offset.o: branch_offset.cpp
 	c++ $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.c
