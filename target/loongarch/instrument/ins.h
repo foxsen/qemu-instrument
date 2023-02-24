@@ -1,7 +1,7 @@
 #ifndef _INS_H_
 #define _INS_H_
 
-#include "decoder/assemble.h"
+#include "decoder/ins.h"
 #include "pin_types.h"
 
 /* FIXME: not used */
@@ -44,7 +44,8 @@ Ins *ins_copy(Ins *old);
 void ins_append(Ins *ins);
 void ins_append_load_imm64(int reg, uint64_t imm);
 
-/* INS系列API维护ins链表、INS、tr_data的正确性 */
+/* INS API: manipulate ins in INS
+ * 维护ins链表、INS、tr_data的正确性 */
 /* BUG prompt: 不能保证old是属于pin_ins内的 */
 void INS_append_ins(INS INS, Ins *ins);
 void INS_remove_ins(INS INS, Ins *ins);
@@ -58,7 +59,8 @@ Ins *ins_create_2(IR2_OPCODE op, int opnd0, int opnd1);
 Ins *ins_create_3(IR2_OPCODE op, int opnd0, int opnd1, int opnd2);
 Ins *ins_create_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
 
-/* ins_append 系列目前只给 gen_prologue/epilogue 使用 */
+/* ins_append API: append an ins at the end of ins_list in tr_data
+ * 目前只给 gen_prologue/gen_epilogue 使用 */
 Ins *ins_append_0(IR2_OPCODE op);
 Ins *ins_append_1(IR2_OPCODE op, int opnd0);
 Ins *ins_append_2(IR2_OPCODE op, int opnd0, int opnd1);
@@ -68,29 +70,5 @@ Ins *ins_append_4(IR2_OPCODE op, int opnd0, int opnd1, int opnd2, int opnd3);
 Ins *ins_nop(void);
 Ins *ins_b(long offs26);
 Ins *ins_pcaddi(int rd, long offs20);
-
-
-/* === ins inspection === */
-bool op_is_branch(IR2_OPCODE op);
-bool op_is_direct_branch(IR2_OPCODE op);
-bool op_is_indirect_branch(IR2_OPCODE op);
-bool op_is_condition_branch(IR2_OPCODE op);
-bool op_is_float_branch(IR2_OPCODE op);
-bool op_is_syscall(IR2_OPCODE op);
-bool op_is_ldst(IR2_OPCODE op);
-bool op_is_load(IR2_OPCODE op);
-bool op_is_store(IR2_OPCODE op);
-bool op_is_float_load(IR2_OPCODE op);
-bool op_is_float_store(IR2_OPCODE op);
-bool op_is_am(IR2_OPCODE op);
-bool op_is_ll(IR2_OPCODE op);
-bool op_is_sc(IR2_OPCODE op);
-
-bool opnd_is_gpr(Ins *ins, int i);
-bool opnd_is_gpr_read(Ins *ins, int i);
-bool opnd_is_gpr_write(Ins *ins, int i);
-bool opnd_is_gpr_readwrite(Ins *ins, int i);
-
-uint64_t ins_target_addr(Ins *ins, uint64_t pc);
 
 #endif

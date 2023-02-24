@@ -1,5 +1,5 @@
 #include "ins_inspection.h"
-#include "../instrument/ins.h"
+#include "../instrument/decoder/ins.h"
 #include "../instrument/regs.h"
 #include "../instrument/util/error.h"
 #include "../instrument/decoder/la_print.h"
@@ -396,17 +396,13 @@ BOOL INS_MemoryOperandIsWritten (INS ins, UINT32 memopIdx)
 BOOL INS_OperandIsReg (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    IR2_OPND_TYPE type = get_ir2_opnd_type(ins->origin_ins, n);
-    return (type == IR2_OPND_GPR ||
-            type == IR2_OPND_SCR ||
-            type == IR2_OPND_FPR ||
-            type == IR2_OPND_FCSR);
+    return opnd_is_reg(ins->origin_ins, n);
 }
 
 REG INS_OperandReg (INS ins, UINT32 n)
 {
     /* only support GPR now */
-    lsassert(IR2_OPND_GPR == get_ir2_opnd_type(ins->origin_ins, n));
+    lsassert(opnd_is_gpr(ins->origin_ins, n));
     if (INS_OperandIsReg(ins, n)) {
         return gpr_to_REG(ins->origin_ins->opnd[n].val);
     }
@@ -416,7 +412,7 @@ REG INS_OperandReg (INS ins, UINT32 n)
 BOOL INS_OperandIsImmediate (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    return (IR2_OPND_IMM == get_ir2_opnd_type(ins->origin_ins, n));
+    return opnd_is_imm(ins->origin_ins, n);
 }
 
 UINT64 INS_OperandImmediate (INS ins, UINT32 n)
@@ -428,53 +424,31 @@ UINT64 INS_OperandImmediate (INS ins, UINT32 n)
 BOOL INS_OperandRead (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
-    return (type == GPR_READ ||
-            type == GPR_READWRITE ||
-            type == FPR_READ ||
-            type == FPR_READWRITE ||
-            type == FCSR_READ ||
-            type == FCC_READ);
+    return opnd_is_read(ins->origin_ins, n);
 }
 
 BOOL INS_OperandWritten (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
-    return (type == GPR_WRITE ||
-            type == GPR_READWRITE ||
-            type == FPR_WRITE ||
-            type == FPR_READWRITE ||
-            type == FCSR_WRITE ||
-            type == FCC_WRITE);
+    return opnd_is_write(ins->origin_ins, n);
 }
 
 BOOL INS_OperandReadOnly (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
-    return (type == GPR_READ ||
-            type == FPR_READ ||
-            type == FCSR_READ ||
-            type == FCC_READ);
+    return opnd_is_readonly(ins->origin_ins, n);
 }
 
 BOOL INS_OperandWrittenOnly (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
-    return (type == GPR_WRITE ||
-            type == FPR_WRITE ||
-            type == FCSR_WRITE ||
-            type == FCC_WRITE);
+    return opnd_is_writeonly(ins->origin_ins, n);
 }
 
 BOOL INS_OperandReadAndWritten (INS ins, UINT32 n)
 {
     lsassert(n < ins->origin_ins->opnd_count);
-    LISA_REG_ACCESS_TYPE type = get_ir2_reg_access_type(ins->origin_ins, n);
-    return (type == GPR_READWRITE ||
-            type == FPR_READWRITE);
+    return opnd_is_readwrite(ins->origin_ins, n);
 }
 
 INS INS_Invalid (void)

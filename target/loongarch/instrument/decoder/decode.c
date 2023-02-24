@@ -1,6 +1,6 @@
 #include "disasm.h"
 
-IR2_OPCODE get_ins_op(uint32_t insn) {
+LA_OPCODE get_ins_op(uint32_t insn) {
     switch ((insn >> 26) & 0x3f) {
     case 0x0:
         /* 000000.. ........ ........ ........ */

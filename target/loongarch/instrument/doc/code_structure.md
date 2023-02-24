@@ -1,7 +1,14 @@
 # 代码结构
-主要代码在两个文件夹里
+主要分为三个部分：
+- LA指令集信息：target/loongarch/instrument/decoder
 - 翻译部分：target/loongarch/instrument
 - 插桩部分：target/loongarch/pin
+
+## LA指令集
+- ins.h: 定义了 `Ins` 结构体用于表示一条指令，并实现了检查获取指令信息的一些相关接口、
+- assemble.h: 将 `Ins` 生成为汇编代码
+- disasm.h: 从汇编代码解析生成 `Ins`
+- ir2.h: LA指令的相关信息
 
 ## 翻译部分
 核心代码在：

@@ -1,7 +1,10 @@
-#ifndef __LA_IR2_H_
-#define __LA_IR2_H_
+#ifndef _LA_IR2_H_
+#define _LA_IR2_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+
+/* Here are some old data from LAT (LoongArch Binary Translator) */
 
 /* IR2_OPCODE; */
 typedef enum {
@@ -2616,20 +2619,126 @@ typedef enum {
     IR2_OPND_MEM,       /* middle type. not used as backend */
 } IR2_OPND_TYPE;
 
-typedef struct IR2_OPND {
-    int val;
-} IR2_OPND;
+/* Operand Bit Field Type */
+typedef enum {
+    OPD_INVALID = 0,
+    FCC_CA,
+    FCC_CD,
+    FCC_CJ,
+    IMM_CODE,
+    IMM_CONDF,
+    IMM_CONDH,
+    IMM_CONDL,
+    OPD_CSR,
+    FPR_FA,
+    OPD_FCSRH,
+    OPD_FCSRL,
+    FPR_FD,
+    FPR_FJ,
+    FPR_FK,
+    IMM_HINTL,
+    IMM_HINTS,
+    IMM_I13,
+    IMM_IDXS,
+    IMM_IDXM,
+    IMM_IDXL,
+    IMM_IDXLL,
+    IMM_LEVEL,
+    IMM_LSBD,
+    IMM_LSBW,
+    IMM_MODE,
+    IMM_MSBD,
+    IMM_MSBW,
+    IMM_OFFS,
+    IMM_OFFL,
+    IMM_OFFLL,
+    OPD_OPCACHE,
+    IMM_OPX86,
+    IMM_PTR,
+    GPR_RD,
+    GPR_RJ,
+    GPR_RK,
+    IMM_SA2,
+    IMM_SA3,
+    SCR_SD,
+    IMM_SEQ,
+    IMM_SI10,
+    IMM_SI11,
+    IMM_SI12,
+    IMM_SI14,
+    IMM_SI16,
+    IMM_SI20,
+    IMM_SI5,
+    IMM_SI8,
+    IMM_SI9,
+    SCR_SJ,
+    IMM_UI1,
+    IMM_UI12,
+    IMM_UI2,
+    IMM_UI3,
+    IMM_UI4,
+    IMM_UI5H,
+    IMM_UI5L,
+    IMM_UI6,
+    IMM_UI7,
+    IMM_UI8,
+    FPR_VA,
+    FPR_VD,
+    FPR_VJ,
+    FPR_VK,
+    FPR_XA,
+    FPR_XD,
+    FPR_XJ,
+    FPR_XK,
+} GM_OPERAND_TYPE;
 
-typedef struct IR2 {
+extern const IR2_OPND_TYPE ir2_opnd_type_table[];
+
+/* Opcode Format */
+typedef struct pair {
+    int start;
+    int end;
+} pair;
+
+typedef struct {
+    GM_OPERAND_TYPE type;
+    pair bit_range_0;
+    pair bit_range_1; /* some branch offset is splited into 2 parts */
+} GM_OPERAND_PLACE_RELATION;
+
+typedef struct {
     IR2_OPCODE op;
-    IR2_OPND opnd[4];
-    int opnd_count;
+    uint32_t opcode;
+    GM_OPERAND_TYPE opnd[4];
+} GM_LA_OPCODE_FORMAT;
 
-    /* linked list */
-    struct IR2 *prev;
-    struct IR2 *next;
-} IR2;
+extern const GM_OPERAND_PLACE_RELATION bit_field_table[];
 
-typedef IR2 Ins;
+extern const GM_LA_OPCODE_FORMAT lisa_format_table[];
+
+/* Reg Access Type */
+typedef enum {
+    REG_ACCESS_INVALID,
+    GPR_READ,
+    GPR_WRITE,
+    GPR_READWRITE,
+    FPR_READ,
+    FPR_WRITE,
+    FPR_READWRITE,
+    FCSR_READ,
+    FCSR_WRITE,
+    FCC_READ,
+    FCC_WRITE,
+    REG_ACCESS_END,
+} LISA_REG_ACCESS_TYPE;
+
+typedef struct {
+    IR2_OPCODE op;
+    LISA_REG_ACCESS_TYPE opnd[4];
+    bool valid; /* FIXME：valid用于表示该entry是否有效，等到表格全部完成时，取消该字段 */
+} LISA_REG_ACCESS_FORMAT;
+
+/* 定义对指令中每个操作数，是否读写寄存器 */
+extern const LISA_REG_ACCESS_FORMAT lisa_reg_access_table[];
 
 #endif

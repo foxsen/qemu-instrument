@@ -1,8 +1,8 @@
 #include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
+#include "../../instrument/decoder/ins.h"
 #include "../ins_inspection.h"
-#include "../../instrument/ins.h"
 
 static UINT64 b_cnt = 0;
 static UINT64 b_exit_cnt = 0;   /* also count bcc exit */

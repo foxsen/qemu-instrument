@@ -3,8 +3,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "decoder/ir2.h"
+#include "decoder/ins.h"
 
+/* TODO rename to ins_block, and move to ins.h */
 typedef struct pin_ins {
     struct pin_ins *next;
     struct pin_ins *prev;

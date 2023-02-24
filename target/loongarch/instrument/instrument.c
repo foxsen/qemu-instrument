@@ -32,7 +32,6 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
     BBL bbl = BBL_alloc(pc);
     tr_data.trace = trace;
 
-    lsassert(tr_data.is_jmp == TRANS_NEXT);
     while (1) {
         /* disassemble */
         uint32_t opcode = read_opcode(cs, pc);

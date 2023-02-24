@@ -1,7 +1,6 @@
-#include "decoder/disasm.h"
+#include "debug.h"
 #include "decoder/assemble.h"
 #include "decoder/la_print.h"
-#include "debug.h"
 
 void Ins_dump(Ins *ins)
 {

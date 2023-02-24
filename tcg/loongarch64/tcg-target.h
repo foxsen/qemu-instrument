@@ -178,6 +178,7 @@ void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 #include "qemu/bitops.h"
 #include "target/loongarch/instrument/ins.h"
 #include "target/loongarch/instrument/decoder/disasm.h"
+#include "target/loongarch/instrument/decoder/assemble.h"
 #include "target/loongarch/instrument/util/error.h"
 /* Patch the branch destination */
 /* @jmp_rx(and jmp_rw): address of ins to be patched */

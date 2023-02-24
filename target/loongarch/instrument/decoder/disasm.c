@@ -74,7 +74,7 @@ static bool is_la_sign_opnd[] = {
     0,//OPD_XK
 };
 
-int get_opnd_val(GM_OPERAND_TYPE type, uint32_t insn)
+static int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type)
 {
     GM_OPERAND_PLACE_RELATION bit_field = bit_field_table[type];
     int bit_start = bit_field.bit_range_0.start;
@@ -100,7 +100,7 @@ int get_opnd_val(GM_OPERAND_TYPE type, uint32_t insn)
 
 void la_disasm(uint32_t opcode, Ins *ins)
 {
-    IR2_OPCODE op = get_ins_op(opcode);
+    LA_OPCODE op = get_ins_op(opcode);
     lsassertm(op != LISA_INVALID, "invalid opcode");
 
     ins->op = op; 
@@ -110,11 +110,11 @@ void la_disasm(uint32_t opcode, Ins *ins)
 
     for (int i = 0; i < 4; i++) {
         GM_OPERAND_TYPE opnd_type = format.opnd[i];
-        if (opnd_type == OPD_INVALID)
+        if (opnd_type == OPD_INVALID) {
             break;
+        }
 
-        int ir2_opnd_val = get_opnd_val(opnd_type, opcode);
-        ins->opnd[i].val = ir2_opnd_val;
+        ins->opnd[i].val = extract_opnd_val(opcode, opnd_type);
         ins->opnd_count++;
     }
 }

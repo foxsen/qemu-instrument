@@ -2631,9 +2631,9 @@ static const char *ir2_cc_name[] = {
 };
 
 
-const char *ins_name(IR2 *ir2)
+const char *ins_name(Ins *ins)
 {
-    IR2_OPCODE op = ir2->op;
+    LA_OPCODE op = ins->op;
     if (op == LISA_INVALID || op >= LISA_ENDING) {
         return "invalid ins";
     }
@@ -2647,38 +2647,38 @@ const char *gpr_name(uint32_t gpr)
     return ir2_gpr_name[gpr];
 }
 
-void sprint_op(IR2_OPCODE op, char *msg) {
+void sprint_op(LA_OPCODE op, char *msg) {
     sprintf(msg, "%-15s\t", ir2_ins_name[op]);
 }
 
-void sprint_ins(IR2 *ir2, char * msg) {
-    assert(ir2->op >= LISA_INVALID && ir2->op <= LISA_ENDING);
-    sprintf(msg, "%-15s\t", ir2_ins_name[ir2->op]);
-    for (int i = 0; i < ir2->opnd_count; i++) {
+void sprint_ins(Ins *ins, char * msg) {
+    assert(ins->op >= LISA_INVALID && ins->op <= LISA_ENDING);
+    sprintf(msg, "%-15s\t", ir2_ins_name[ins->op]);
+    for (int i = 0; i < ins->opnd_count; i++) {
         if (i != 0)
             sprintf(msg + strlen(msg),", ");
 
-        IR2_OPND_TYPE type = get_ir2_opnd_type(ir2, i);
+        IR2_OPND_TYPE type = get_opnd_type(ins, i);
         switch (type) {
             case IR2_OPND_GPR:
-                sprintf(msg + strlen(msg),"%s", ir2_gpr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_gpr_name[ins->opnd[i].val]);
                 break;
             case IR2_OPND_FPR:
-                sprintf(msg + strlen(msg),"%s", ir2_fpr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_fpr_name[ins->opnd[i].val]);
                 break;
             case IR2_OPND_FCSR:
-                sprintf(msg + strlen(msg),"%d", ir2->opnd[i].val); 
+                sprintf(msg + strlen(msg),"%d", ins->opnd[i].val); 
                 break;
             case IR2_OPND_SCR:
-                sprintf(msg + strlen(msg),"%s", ir2_scr_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_scr_name[ins->opnd[i].val]);
                 break;
             case IR2_OPND_CC:
-                sprintf(msg + strlen(msg),"%s", ir2_cc_name[ir2->opnd[i].val]);
+                sprintf(msg + strlen(msg),"%s", ir2_cc_name[ins->opnd[i].val]);
                 break;
             case IR2_OPND_LABEL:
                 break;
             case IR2_OPND_IMM:
-                sprintf(msg + strlen(msg),"0x%x", ir2->opnd[i].val);
+                sprintf(msg + strlen(msg),"0x%x", ins->opnd[i].val);
                 break;
             case IR2_OPND_NONE:
                 break;
@@ -2700,18 +2700,17 @@ void sprint_disasm(uint32_t opcode, char *msg)
 }
 
 
-void print_op(IR2_OPCODE op)
+void print_op(LA_OPCODE op)
 {
     char msg[32];
     sprint_op(op, msg);
     puts(msg);
 }
 
-void print_ins(IR2 *ir2)
+void print_ins(Ins *ins)
 {
-    /* FIXME does 64B enough? */
     char msg[64];
-    sprint_ins(ir2, msg);
+    sprint_ins(ins, msg);
     puts(msg);
 }
 
