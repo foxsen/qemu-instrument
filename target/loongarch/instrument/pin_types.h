@@ -10,11 +10,12 @@ typedef struct pin_ins {
     struct pin_ins *next;
     struct pin_ins *prev;
 
+    /* origin ins info */
     uint64_t pc;
     uint32_t opcode;
     Ins *origin_ins;
 
-    /* origin_ins is translated to an ins linked-list */
+    /* origin ins is translated to an ins linked-list */
     Ins *first_ins;
     Ins *last_ins;
     int len;
@@ -55,8 +56,8 @@ INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *origin_ins);
 BBL BBL_alloc(uint64_t pc);
 TRACE TRACE_alloc(uint64_t pc);
 
-void BBL_append_ins(BBL bbl, INS ins);
-void TRACE_append_bbl(TRACE trace, BBL bbl);
+void BBL_append_INS(BBL bbl, INS INS);
+void TRACE_append_BBL(TRACE trace, BBL bbl);
 
 #ifdef __cplusplus
 extern "C" {

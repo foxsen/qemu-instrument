@@ -33,57 +33,57 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
     tr_data.trace = trace;
 
     while (1) {
-        /* disassemble */
+        /* Disassemble */
         uint32_t opcode = read_opcode(cs, pc);
         origin_ins = ins_alloc();
         la_disasm(opcode, origin_ins);
 
-        /* translate */
-        INS ins = INS_alloc(pc, opcode, origin_ins);
-        INS_translate(cs, ins);
-        INS_instrument(ins);
+        /* Translate */
+        INS INS = INS_alloc(pc, opcode, origin_ins);
+        INS_translate(cs, INS);
+        INS_instrument(INS);
         ++ins_nr;
 
-        /* append exit */
+        /* Append exit */
         if (tr_data.is_jmp == TRANS_NEXT && ins_nr == max_insns) {
             tr_data.is_jmp = TRANS_TOO_MANY;
-            INS_append_exit(ins, 0);
+            INS_append_exit(INS, 0);
         } else if (op_is_condition_branch(origin_ins->op)) {
-            INS_append_exit(ins, 1); /* 条件跳转也作为tb结束, tb_link第二个跳转出口 */
+            INS_append_exit(INS, 1); /* 条件跳转也作为tb结束, tb_link第二个跳转出口 */
         }
 
 #ifdef CONFIG_LMJ_DEBUG
         {
             /* check length(ins_list in INS) == INS->len  */
             int l = 0;
-            for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
+            for (Ins *i = INS->first_ins; i != NULL; i = i->next) {
                 l++;
-                if (i->next == NULL && i != ins->last_ins) {
+                if (i->next == NULL && i != INS->last_ins) {
                     fprintf(stderr, "assert fail\n");
                     char msg[128];
-                    sprint_ins(ins->origin_ins, msg);
-                    fprintf(stderr, "origin: %p, %s\n", ins->origin_ins, msg);
+                    sprint_ins(INS->origin_ins, msg);
+                    fprintf(stderr, "origin: %p, %s\n", INS->origin_ins, msg);
                     sprint_ins(i, msg);
                     fprintf(stderr, "i: %p, %s\n", i, msg);
-                    sprint_ins(ins->last_ins, msg);
-                    fprintf(stderr, "ins->last_ins: %p, %s\n", ins->last_ins, msg);
-                    fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", ins->len, l);
+                    sprint_ins(INS->last_ins, msg);
+                    fprintf(stderr, "ins->last_ins: %p, %s\n", INS->last_ins, msg);
+                    fprintf(stderr, "ins_real_nr: %d,\tc1: %d\n", INS->len, l);
                     /* move this to INS_dump() */
-                    for (Ins *i = ins->first_ins; i != NULL; i = i->next) {
+                    for (Ins *i = INS->first_ins; i != NULL; i = i->next) {
                         sprint_ins(i, msg);
                         fprintf(stderr, "%p: %08x\t%s\n", i, opcode, msg);
                     }
                     lsassert(0);
                 }
             }
-            lsassertm(l == ins->len, "c1: %d, read: %d", l, ins->len);
+            lsassertm(l == INS->len, "c1: %d, read: %d", l, INS->len);
         }
 #endif
 
         pc += 4;
-        BBL_append_ins(bbl, ins);
+        BBL_append_INS(bbl, INS);
         if (tr_data.is_jmp != TRANS_NEXT) {
-            TRACE_append_bbl(trace, bbl);
+            TRACE_append_BBL(trace, bbl);
             break;
         }
     }
@@ -116,7 +116,6 @@ int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 /* 此时所有指令在code cache中位置已经确定，不会再添加新的指令 */
 void la_relocation(CPUState *cs, const void *code_buf_rx)
 {
-    int ins_nr = 0;
     TranslationBlock *tb = tr_data.curr_tb;
     bool enable_tb_link = false;
     if (tb) {
@@ -145,7 +144,7 @@ void la_relocation(CPUState *cs, const void *code_buf_rx)
                 tb->jmp_reset_offset[0] = cur - (uintptr_t)tb->tc.ptr + 4;
             }
             if (tr_data.jmp_ins[1] == ins) {
-                IR2_OPCODE op = ins->op;
+                LA_OPCODE op = ins->op;
                 if (op_is_condition_branch(op)) {
                     int bcc_jmp_over;
                     if (LISA_BEQZ <= op && op <= LISA_BCNEZ) {
@@ -165,7 +164,6 @@ void la_relocation(CPUState *cs, const void *code_buf_rx)
                 }
             }
         }
-        ins_nr++;
         cur += 4;
     }
 
@@ -202,30 +200,11 @@ int la_encode(TCGContext *tcg_ctx, void *code_buf)
 
     int ins_nr = 0;
     uint32_t *code_ptr = code_buf;
-    if (tr_data.trace == NULL) {
-        /* FIXME: gen_prologue 目前只能用这种方式来encode */
-        /* （其实普通的tb也能这样encode） */
-        for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
-            uint32_t opcode = la_assemble(ins);
-            *code_ptr = opcode;
-            ++code_ptr;
-            ++ins_nr;
-        }
-    } else {
-        for (BBL bbl = tr_data.trace->bbl_head; bbl != NULL; bbl = bbl->next) {
-            for (INS INS = bbl->ins_head; INS != NULL; INS = INS->next) {
-                Ins *ins = INS->first_ins;
-                while (ins) {
-                    uint32_t opcode = la_assemble(ins);
-                    *code_ptr = opcode;
-                    ++code_ptr;
-                    ++ins_nr;
-                    if (ins == INS->last_ins)
-                        break;
-                    ins = ins->next;
-                }
-            }
-        }
+    for (Ins *ins = tr_data.first_ins; ins != NULL; ins = ins->next) {
+        uint32_t opcode = la_assemble(ins);
+        *code_ptr = opcode;
+        ++code_ptr;
+        ++ins_nr;
     }
 
 #ifdef CONFIG_LMJ_DEBUG

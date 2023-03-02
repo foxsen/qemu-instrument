@@ -5,18 +5,18 @@
 INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *origin_ins)
 {
     /* FIXME: never free, memory leakage */
-    INS ins = malloc(sizeof(struct pin_ins));
-    ins->next = NULL;
-    ins->prev = NULL;
-    ins->pc = pc;
-    ins->opcode = opcode;
-    ins->origin_ins = origin_ins;
-    ins->first_ins = NULL;
-    ins->last_ins = NULL;
-    ins->len = 0;
-    ins->ibefore_next_cb = NULL;
-    ins->iafter_next_cb = NULL;
-    return ins;
+    INS INS = malloc(sizeof(struct pin_ins));
+    INS->next = NULL;
+    INS->prev = NULL;
+    INS->pc = pc;
+    INS->opcode = opcode;
+    INS->origin_ins = origin_ins;
+    INS->first_ins = NULL;
+    INS->last_ins = NULL;
+    INS->len = 0;
+    INS->ibefore_next_cb = NULL;
+    INS->iafter_next_cb = NULL;
+    return INS;
 }
 
 BBL BBL_alloc(uint64_t pc)
@@ -42,26 +42,26 @@ TRACE TRACE_alloc(uint64_t pc)
     return trace;
 }
 
-void BBL_append_ins(BBL bbl, INS ins)
+void BBL_append_INS(BBL bbl, INS INS)
 {
     bbl->nr_ins++;
     if (bbl->ins_head == NULL) {
         lsassert(bbl->ins_tail == NULL);
-        bbl->ins_head = ins;
-        bbl->ins_tail = ins;
+        bbl->ins_head = INS;
+        bbl->ins_tail = INS;
     } else {
         lsassert(bbl->ins_tail != NULL);
-        ins->prev = bbl->ins_tail;
-        bbl->ins_tail->next = ins;
-        bbl->ins_tail = ins;
+        INS->prev = bbl->ins_tail;
+        bbl->ins_tail->next = INS;
+        bbl->ins_tail = INS;
 
         /* 连接INS之间的la_ins链表 */
-        ins->first_ins->prev = ins->prev->last_ins;
-        ins->prev->last_ins->next = ins->first_ins;
+        INS->first_ins->prev = INS->prev->last_ins;
+        INS->prev->last_ins->next = INS->first_ins;
     }
 }
 
-void TRACE_append_bbl(TRACE trace, BBL bbl)
+void TRACE_append_BBL(TRACE trace, BBL bbl)
 {
     trace->nr_bbl++;
     trace->nr_ins += bbl->nr_ins;
