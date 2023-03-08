@@ -47,9 +47,9 @@ void IMG_instrument(IMG img);
 void qemu_pintool_opt_parse(const char *optarg, Error **errp);
 
 #include "../instrument/env.h"
-void pin_instrument_exit(CPUArchState *env, int code);
-void pin_instrument_syscall(CPUState *cpu);
-void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret);
-void pin_instrument_cpu_exec_enter(CPUState *cpu, TranslationBlock *tb);
-void pin_instrument_cpu_exec_exit(CPUState *cpu, TranslationBlock *last_tb, int tb_exit);
+void exit_instrument(CPUArchState *env, int code);
+void syscall_instrument(CPUState *cpu);
+void syscall_ret_instrument(CPUState *cpu, int num, abi_long ret);
+void cpu_exec_enter_instrument(CPUState *cpu, TranslationBlock *tb);
+void cpu_exec_exit_instrument(CPUState *cpu, TranslationBlock *last_tb, int tb_exit);
 #endif

@@ -358,7 +358,7 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
     log_cpu_exec(itb->pc, cpu, itb);
 
 #ifdef CONFIG_LMJ
-    pin_instrument_cpu_exec_enter(cpu, itb);
+    cpu_exec_enter_instrument(cpu, itb);
 #endif 
 
     qemu_thread_jit_execute();
@@ -376,7 +376,7 @@ cpu_tb_exec(CPUState *cpu, TranslationBlock *itb, int *tb_exit)
     *tb_exit = ret & TB_EXIT_MASK;
 
 #ifdef CONFIG_LMJ
-    pin_instrument_cpu_exec_exit(cpu, last_tb, *tb_exit);
+    cpu_exec_exit_instrument(cpu, last_tb, *tb_exit);
 #endif 
 
     trace_exec_tb_exit(last_tb, *tb_exit);

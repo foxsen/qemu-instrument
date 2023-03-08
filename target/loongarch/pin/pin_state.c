@@ -42,7 +42,7 @@ void TRACE_instrument(TRACE trace)
     }
 }
 
-void pin_instrument_exit(CPUArchState *env, int code)
+void exit_instrument(CPUArchState *env, int code)
 {
     if (PIN_state.fini_cb != NULL) {
         PIN_state.fini_cb(code, PIN_state.fini_cb_val);
@@ -79,7 +79,7 @@ static void pin_instrument_load_shared_object(CPULoongArchState * env)
     IMG_instrument(img);
 }
 
-void pin_instrument_syscall(CPUState *cpu)
+void syscall_instrument(CPUState *cpu)
 {
     if (PIN_state.read_symbol) {
         pin_instrument_load_shared_object_check(cpu->env_ptr);
@@ -93,7 +93,7 @@ void pin_instrument_syscall(CPUState *cpu)
     }
 }
 
-void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret)
+void syscall_ret_instrument(CPUState *cpu, int num, abi_long ret)
 {
     if (PIN_state.read_symbol) {
         pin_instrument_load_shared_object(cpu->env_ptr);
@@ -107,14 +107,14 @@ void pin_instrument_syscall_ret(CPUState *cpu, int num, abi_long ret)
     }
 }
 
-void pin_instrument_cpu_exec_enter(CPUState *cpu, TranslationBlock *tb)
+void cpu_exec_enter_instrument(CPUState *cpu, TranslationBlock *tb)
 {
     if (PIN_state.cpu_exec_enter_cb) {
         PIN_state.cpu_exec_enter_cb(cpu, tb);
     }
 }
 
-void pin_instrument_cpu_exec_exit(CPUState *cpu, TranslationBlock *last_tb, int tb_exit)
+void cpu_exec_exit_instrument(CPUState *cpu, TranslationBlock *last_tb, int tb_exit)
 {
     /* FIEXME: when exec_tb exit for syscall/break, this cb will not be called */
     if (PIN_state.cpu_exec_exit_cb) {

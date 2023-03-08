@@ -52,7 +52,7 @@ void cpu_loop(CPULoongArchState *env)
             env->gpr[4] = ret;
 #ifdef CONFIG_LMJ
             /* fixme: sencod arg is syscall num */
-            pin_instrument_syscall_ret(cs, 0, ret);
+            syscall_ret_instrument(cs, 0, ret);
 #endif
             break;
         case EXCCODE_INE:

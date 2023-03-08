@@ -34,7 +34,7 @@ static inline void record_syscall_start(void *cpu, int num,
                              arg1, arg2, arg3, arg4,
                              arg5, arg6, arg7, arg8);
 #ifdef CONFIG_LMJ
-    pin_instrument_syscall(cpu);
+    syscall_instrument(cpu);
 #endif
 }
 
@@ -43,7 +43,7 @@ static inline void record_syscall_return(void *cpu, int num, abi_long ret)
     trace_guest_user_syscall_ret(cpu, num, ret);
     qemu_plugin_vcpu_syscall_ret(cpu, num, ret);
 /* #ifdef CONFIG_LMJ */
-/*     pin_instrument_syscall_ret(cpu, num, ret); */
+/*     syscall_ret_instrument(cpu, num, ret); */
 /* #endif */
 }
 

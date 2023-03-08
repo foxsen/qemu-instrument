@@ -8,6 +8,7 @@
 #include "symbol.h"
 #include "../util/error.h"
 
+/* ELF format */
 /* typedef struct */
 /* { */
 /*   unsigned char e_ident[EI_NIDENT];     /1* Magic number and other info *1/ */
@@ -39,31 +40,6 @@
 /*   Elf64_Xword	sh_addralign;		/1* Section alignment *1/ */
 /*   Elf64_Xword	sh_entsize;		/1* Entry size if section holds table *1/ */
 /* } Elf64_Shdr; */
-
-/* TODO 一些检查elf格式的函数 */
-/* /1* Verify the portions of EHDR within E_IDENT for the target. */
-/*    This can be performed before bswapping the entire header.  *1/ */
-/* static int elf_check_ident(Elf64_Ehdr *ehdr) */
-/* { */
-/*     return (ehdr->e_ident[EI_MAG0] == ELFMAG0 */
-/*             && ehdr->e_ident[EI_MAG1] == ELFMAG1 */
-/*             && ehdr->e_ident[EI_MAG2] == ELFMAG2 */
-/*             && ehdr->e_ident[EI_MAG3] == ELFMAG3 */
-/*             && ehdr->e_ident[EI_CLASS] == ELF_CLASS */
-/*             && ehdr->e_ident[EI_DATA] == ELF_DATA */
-/*             && ehdr->e_ident[EI_VERSION] == EV_CURRENT); */
-/* } */
-
-/* /1* Verify the portions of EHDR outside of E_IDENT for the target. */
-/*    This has to wait until after bswapping the header.  *1/ */
-/* static int elf_check_ehdr(Elf64_Ehdr *ehdr) */
-/* { */
-/*     return (elf_check_arch(ehdr->e_machine) */
-/*             && elf_check_abi(ehdr->e_flags) */
-/*             && ehdr->e_ehsize == sizeof(struct elfhdr) */
-/*             && ehdr->e_phentsize == sizeof(struct elf_phdr) */
-/*             && (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN)); */
-/* } */
 
 
 #include <fcntl.h>
@@ -184,11 +160,10 @@ void parse_elf_symbol(const char* pathname, uint64_t map_base, void **pp_img)
     *pp_img = image_alloc(pathname, map_base);
     nsyms = secsz / sizeof(Elf64_Sym);
     for (int i = 0; i < nsyms; ++i) {
+        /* Throw away entries which we do not need.  */
         if (syms[i].st_shndx == SHN_UNDEF
             || syms[i].st_shndx >= SHN_LORESERVE
             || ELF64_ST_TYPE(syms[i].st_info) != STT_FUNC) {
-            /* Throw away entries which we do not need.  */
-            /* FIXME we ignore IFUNC, which seems merely used by glibc */
             continue;
         }
         /* printf("find symbol: %p: %s\n", (void *)(map_base + syms[i].st_value), strs + syms[i].st_name); */
