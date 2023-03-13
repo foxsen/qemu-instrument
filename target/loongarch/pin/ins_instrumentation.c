@@ -363,7 +363,7 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
                 lsassertm(arg_value == 0, "LoongArch ins only has one memOp\n");
             }
 
-            /* TODO 原子操作AM*、向量VLDREPL/VSTELM未实现 */
+            /* TODO 原子操作AM*未实现 */
             switch (op) {
             case LISA_LD_B:
             case LISA_LD_H:
@@ -502,22 +502,81 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
                 }
                 break;
             case LISA_PRELDX:
-            case LISA_VLDREPL_D:
-            case LISA_VLDREPL_W:
-            case LISA_VLDREPL_H:
+                /* addr = rj + sign_extend(rk[15:0]) */
+                {
+                    int rj = INS->origin_ins->opnd[1].val;
+                    int rk = INS->origin_ins->opnd[2].val;
+                    if (gpr_is_mapped_in_instru(rk)) {
+                        INS_insert_ins_before(INS, cur, ins_create_2(LISA_EXT_W_H, arg_reg, mapped_gpr(rk)));
+                    } else {
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_H, arg_reg, reg_env, env_offset_of_gpr(current_cpu, rk)));
+                    }
+                    if (gpr_is_mapped_in_instru(rj)) {
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, arg_reg, arg_reg, mapped_gpr(rj)));
+                    } else {
+                        int itemp = reg_alloc_itemp();
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, itemp, reg_env, env_offset_of_gpr(current_cpu, rj)));
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, arg_reg, arg_reg, itemp));
+                        reg_free_itemp(itemp);
+                    }
+                }
+                break;
             case LISA_VLDREPL_B:
-            case LISA_XVLDREPL_D:
-            case LISA_XVLDREPL_W:
-            case LISA_XVLDREPL_H:
             case LISA_XVLDREPL_B:
-            case LISA_VSTELM_D:
-            case LISA_VSTELM_W:
-            case LISA_VSTELM_H:
+            case LISA_VLDREPL_H:
+            case LISA_XVLDREPL_H:
+            case LISA_VLDREPL_W:
+            case LISA_XVLDREPL_W:
+            case LISA_VLDREPL_D:
+            case LISA_XVLDREPL_D:
             case LISA_VSTELM_B:
-            case LISA_XVSTELM_D:
-            case LISA_XVSTELM_W:
-            case LISA_XVSTELM_H:
             case LISA_XVSTELM_B:
+            case LISA_VSTELM_H:
+            case LISA_XVSTELM_H:
+            case LISA_VSTELM_W:
+            case LISA_XVSTELM_W:
+            case LISA_VSTELM_D:
+            case LISA_XVSTELM_D:
+                /* addr = rj + offset, offset <= 12bits */
+                {
+                    int rj = INS->origin_ins->opnd[1].val;
+                    int offset = INS->origin_ins->opnd[2].val;
+                    switch (op) {
+                    case LISA_VLDREPL_B:
+                    case LISA_XVLDREPL_B:
+                    case LISA_VSTELM_B:
+                    case LISA_XVSTELM_B:
+                        break;
+                    case LISA_VLDREPL_H:
+                    case LISA_XVLDREPL_H:
+                    case LISA_VSTELM_H:
+                    case LISA_XVSTELM_H:
+                        offset <<= 1;
+                        break;
+                    case LISA_VLDREPL_W:
+                    case LISA_XVLDREPL_W:
+                    case LISA_VSTELM_W:
+                    case LISA_XVSTELM_W:
+                        offset <<= 2;
+                        break;
+                    case LISA_VLDREPL_D:
+                    case LISA_XVLDREPL_D:
+                    case LISA_VSTELM_D:
+                    case LISA_XVSTELM_D:
+                        offset <<= 3;
+                        break;
+                    default:
+                        lsassertm(0, "op is not VLDREPL/VSTELM series\n");
+                    }
+
+                    if (gpr_is_mapped_in_instru(rj)) {
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, arg_reg, mapped_gpr(rj), 0));
+                    } else {
+                        INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, arg_reg, reg_env, env_offset_of_gpr(current_cpu, rj)));
+                    }
+                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, arg_reg, arg_reg, offset));
+                }
+                break;
             default:
                 print_ins(INS->origin_ins);
                 lsassertm(0, "unhandled op\n");
