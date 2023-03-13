@@ -25,6 +25,7 @@ NAMES += time_in_code_cache
 NAMES += branch_count
 NAMES += isampling
 NAMES += branch_offset
+NAMES += mem_trace
 
 SONAMES := $(addsuffix .so,$(addprefix lib,$(NAMES)))
 
@@ -44,14 +45,7 @@ CXXFLAGS += -std=gnu++11
 
 all: $(SONAMES)
 
-# FIXME write a rule for general .cpp file
-hotblock.o: hotblock.cpp
-	c++ $(CXXFLAGS) -c -o $@ $<
-
-isampling.o: isampling.cpp
-	c++ $(CXXFLAGS) -c -o $@ $<
-
-branch_offset.o: branch_offset.cpp
+%.o: %cpp
 	c++ $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.c
