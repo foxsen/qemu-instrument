@@ -18,11 +18,22 @@ static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
     return cpu_ldl_code(env, pc);
 }
 
-/* parse binary -> ins_list
- * generate TRACE/BBL/INS
+
+/* Translate and instrument
+ *   parse binary -> ins_list
+ *   generate TRACE/BBL/INS
  */
+#include "include/exec/translate-all.h"
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 {
+
+    /* 1. Make TB page non-writable */
+    /* 2. Bound the number of insns to execute to those left on the page.  */
+    /* See translator_loop(), loongarch_tr_init_disas_context */
+    page_protect(tb->pc);
+    int64_t bound = -(tb->pc | TARGET_PAGE_MASK) / 4;
+    max_insns = MIN(max_insns, bound);
+
     uint64_t start_pc = tb->pc;
     uint64_t pc = start_pc;
     Ins *origin_ins = NULL;
