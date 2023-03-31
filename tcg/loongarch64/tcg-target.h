@@ -180,16 +180,19 @@ void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 #include "target/loongarch/instrument/decoder/disasm.h"
 #include "target/loongarch/instrument/decoder/assemble.h"
 #include "target/loongarch/instrument/util/error.h"
-/* Patch the branch destination */
-/* @jmp_rx(and jmp_rw): address of ins to be patched */
-/* rx and rw are two virtual address with different prot, but mapped to the same physical address */
-/* @addr: target address */
+/**
+ * Patch the branch destination
+ * @jmp_rx(and jmp_rw): address of ins to be patched
+ * rx and rw are two virtual address with different prot, but mapped to the same physical address
+ * @addr: target address
+ */
 static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
                                             uintptr_t jmp_rw, uintptr_t addr)
 {
-    /* debug: bcc out of range counter*/
+    /* debug: bcc Out Of Range counter*/
     static uint64_t bcc16_oor = 0;
     static uint64_t bcc21_oor = 0;
+    static uint64_t bcc_cnt = 0;
 
     /* offset is in 4 Bytes */
     int offset = (addr - jmp_rx) >> 2;
@@ -199,9 +202,12 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
     la_disasm(opcode, &ins);
     IR2_OPCODE op = ins.op;
 
+    tr_init(NULL);  // tr_data is thread local, so init ins_array for multi-thread situation
+
     if (op_is_condition_branch(op)) {
-        /* 对于条件跳转，如果patch的是nop，tb_link后bcc的每个出口都要通过两条跳转指令到达目标TB：bcc->b(patched nop)->target_tb
-         * 为了提高性能，对bcc的其中一个跳转出口(第二个出口)，直接patch bcc指令本身（另一个出口还是patch nop），从而该出口可以减少一条跳转指令
+        /* 条件跳转 （比较复杂）
+         * tb_link后bcc的每个出口都要通过两条跳转指令到达目标TB：bcc->b(patched nop)->target_tb
+         * 为了提高性能，对bcc的其中一个跳转出口(第二个出口)，直接修改bcc指令本身（另一个出口还是patch nop），从而该出口可以减少一条跳转指令
          * （虽然这样变得很复杂，但是实测会有10%的性能提升）
          * 注意：当跳转目标超出bcc的跳转范围时，退化为patch nop */
         int offset_opnd_idx;
@@ -221,17 +227,12 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
             /* tb_reset_jump
              * we get here means BCC is not changed, so NOP ins need to be reset */
             uintptr_t nop_addr_rw = jmp_rw + (offset << 2);
-#ifdef CONFIG_LMJ_DEBUG
-            uint32_t nop_opcode = qatomic_read((int32_t *)nop_addr_rw);
-            IR2_OPCODE op = get_ins_op(nop_opcode);
-            /* TB 刚翻译完的时候会为了初始化调用一次tb_reset_jump，所以op可能是nop(LISA_ORI $0,$0,0) */
-            lsassert(op == LISA_B || op == LISA_ORI);
-#endif
             Ins *nop = ins_nop();
             opcode = la_assemble(nop);
             qatomic_set((int32_t *)nop_addr_rw, opcode);
         } else {
             /* tb_add_jump */
+            ++bcc_cnt;
             if (offset == sextract64(offset, 0, offset_bits)) {
                 /* patch BCC (tb_jump_unlink may also get here) */
                 ins.opnd[offset_opnd_idx].val = offset;
@@ -239,7 +240,7 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
                 qatomic_set((int32_t *)jmp_rw, opcode);
             } else {
                 /* offset is out of bcc branch range, patch the NOP ins */
-                lsdebug("bcc%d_out_of_range: %lu, degrade to patch NOP to B\n", offset_bits, (offset_bits == 21 ? ++bcc21_oor : ++bcc16_oor));
+                lsdebug("bcc%d_out_of_range: %lu/%lu, degrade to patch NOP to B\n", offset_bits, (offset_bits == 21 ? ++bcc21_oor : ++bcc16_oor), bcc_cnt);
                 uintptr_t nop_addr_rx = jmp_rx + (ins.opnd[offset_opnd_idx].val << 2);
                 uintptr_t nop_addr_rw = jmp_rw + (ins.opnd[offset_opnd_idx].val << 2);
                 offset = (addr - nop_addr_rx) >> 2;
@@ -262,6 +263,7 @@ static inline void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_rx,
             qatomic_set((int32_t *)jmp_rw, opcode);
         }
     }
+    tr_fini();
 }
 #endif
 
