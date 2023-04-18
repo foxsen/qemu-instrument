@@ -450,7 +450,7 @@ struct target_dirent64 {
 #define TARGET_SIG_IGN	((abi_long)1)	/* ignore signal */
 #define TARGET_SIG_ERR	((abi_long)-1)	/* error return from signal */
 
-#ifdef TARGET_MIPS
+#if defined(TARGET_MIPS) || defined (TARGET_LOONGARCH64)
 #define TARGET_NSIG	   128
 #else
 #define TARGET_NSIG	   64
