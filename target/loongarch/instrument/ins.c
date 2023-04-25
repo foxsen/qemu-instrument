@@ -83,13 +83,143 @@ void ins_append(Ins *ins)
 
 void ins_append_load_imm64(int reg, uint64_t imm)
 {
-    /* TODO reduce ins number */
     uint32_t lo32 = imm & 0xffffffff;
     uint32_t hi32 = imm >> 32;
-    ins_append_2(LISA_LU12I_W, reg, lo32 >> 12);
-    ins_append_3(LISA_ORI, reg, reg, lo32 & 0xfff);
-    ins_append_2(LISA_LU32I_D, reg, hi32 & 0xfffff);
-    ins_append_3(LISA_LU52I_D, reg, reg, hi32 >> 20);
+    /* ins_append_2(LISA_LU12I_W, reg, lo32 >> 12); */
+    /* ins_append_3(LISA_ORI, reg, reg, lo32 & 0xfff); */
+    /* ins_append_2(LISA_LU32I_D, reg, hi32 & 0xfffff); */
+    /* ins_append_3(LISA_LU52I_D, reg, reg, hi32 >> 20); */
+
+    /* Reduce generated ins number */
+    /* The following code is copied from LAT */
+
+    char sign_bitmap, all0_bitmap, allf_bitmap;
+    char sign_extension_by_previous;
+    char extension_by_previous_hi, extension_by_previous_lo;
+
+    /*
+     * We divided the imm64 into the following four parts and used
+     * bitmap to represent the status of each part.
+     *
+     * | imm64      | bitmap |       |
+     * | ---------- | ------ | ----- |
+     * | imm[11:0]  | bit0   | part0 |
+     * | imm[31:12] | bit1   | part1 |
+     * | imm[51:32] | bit2   | part2 |
+     * | imm[63:52] | bit3   | part3 |
+     *
+     */
+    sign_bitmap = (((hi32 & 0x80000000) != 0) << 3) |
+                  (((hi32 & 0x00080000) != 0) << 2) |
+                  (((lo32 & 0x80000000) != 0) << 1) |
+                  ((lo32 & 0x00000800) != 0);
+    /* 1 means that this part equals 0 */
+    all0_bitmap = (((hi32 & 0xfff00000) == 0) << 3) |
+                  (((hi32 & 0x000fffff) == 0) << 2) |
+                  (((lo32 & 0xfffff000) == 0) << 1) |
+                  ((lo32 & 0x00000fff) == 0);
+    /* 1 means that this part equals -1 */
+    allf_bitmap = (((hi32 & 0xfff00000) == 0xfff00000) << 3) |
+                  (((hi32 & 0x000fffff) == 0x000fffff) << 2) |
+                  (((lo32 & 0xfffff000) == 0xfffff000) << 1) |
+                  ((lo32 & 0x00000fff) == 0x00000fff);
+
+    /*
+     * Except part0, if the part is equal to 0 or -1, it may be a
+     * sign extension of the previous part.
+     *
+     * bit0 equals 1 means part0 equals 0.
+     */
+    sign_extension_by_previous = (all0_bitmap ^ allf_bitmap) &
+                                 (all0_bitmap ^ (sign_bitmap << 1));
+    extension_by_previous_lo = sign_extension_by_previous & 0x3;
+    extension_by_previous_hi = sign_extension_by_previous >> 2;
+
+    /* the fast path */
+    if (sign_extension_by_previous == 0x7) {
+        /*
+         * xxx 00000 00000 000
+         * part0, part1 and part2 = 0, we just load part3
+         */
+        ins_append_3(LISA_LU52I_D, reg, reg_zero, hi32 >> 20);
+        return;
+    }
+
+    /*
+     * load lo32
+     */
+    switch (extension_by_previous_lo) {
+    case 0x0:
+        /*
+         * lo32: 00000/xxxxx xxx
+         */
+        if ((all0_bitmap & 0x3) == 0x2) {
+            /*
+             * lo32: 00000 xxx
+             * part1 = 0, we just load part0
+             */
+            ins_append_3(LISA_ORI, reg, reg_zero, lo32 & 0xfff);
+        } else {
+            /*
+             * lo32: xxxxx xxx
+             */
+            ins_append_2(LISA_LU12I_W, reg, lo32 >> 12);
+            ins_append_3(LISA_ORI, reg, reg, lo32 & 0xfff);
+        }
+        break;
+    case 0x1:
+        /*
+         * lo32: xxxxx 000
+         */
+        ins_append_2(LISA_LU12I_W, reg, lo32 >> 12);
+        break;
+    case 0x2:
+        /*
+         * lo32: 00000/fffff xxx
+         * part0 != 0, part1 is sign extension of the part0
+         */
+        ins_append_3(LISA_ADDI_W, reg, reg_zero, lo32 & 0xfff);
+        break;
+    case 0x3:
+        /*
+         * lo32: 00000 000
+         */
+        ins_append_3(LISA_OR, reg, reg_zero, reg_zero);
+        break;
+    }
+
+    /*
+     * load hi32:
+     * now, the lower 32 bits of the imm64 are loaded, and the
+     * higher 32 bits of the opnd2 are signed extensions of the
+     * lower.
+     */
+    switch (extension_by_previous_hi) {
+    case 0x0:
+        /*
+         * hi32: xxx xxxxx
+         */
+        ins_append_2(LISA_LU32I_D, reg, hi32 & 0xfffff);
+        ins_append_3(LISA_LU52I_D, reg, reg, hi32 >> 20);
+        break;
+    case 0x1:
+        /*
+         * hi32: xxx 00000/fffff
+         */
+        ins_append_3(LISA_LU52I_D, reg, reg, hi32 >> 20);
+        break;
+    case 0x2:
+        /*
+         * hi32: 000/fff xxxxx
+         */
+        ins_append_2(LISA_LU32I_D, reg, hi32 & 0xfffff);
+        break;
+    case 0x3:
+        /*
+         * hi32: 00000000/ffffffff
+         */
+        break;
+    }
 }
 
 void INS_append_ins(INS INS, Ins *ins)
