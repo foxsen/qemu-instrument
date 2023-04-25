@@ -460,7 +460,10 @@ static void translate_jirl(CPUState *cs, INS INS, Ins *ins)
         /* 2. hash = ((pc >> 12) ^ pc) & 0xfff (same as tb_jmp_cache_hash_func())*/
         INS_insert_ins_before(INS, ins, ins_create_3(LISA_SRLI_D, itemp, reg_target, TB_JMP_CACHE_BITS));
         INS_insert_ins_before(INS, ins, ins_create_3(LISA_XOR, itemp, itemp, reg_target));
-        INS_insert_ins_before(INS, ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
+        // tb_jmp_cache is larger than 12 bit now
+        //INS_insert_ins_before(INS, ins, ins_create_3(LISA_ANDI, itemp, itemp, TB_JMP_CACHE_SIZE - 1));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 64 - TB_JMP_CACHE_BITS));
+        INS_insert_ins_before(INS, ins, ins_create_3(LISA_SRLI_D, itemp, itemp, 64 - TB_JMP_CACHE_BITS));
         /* 3. tb = *(tb_jmp_cache + (hash << 3)) */
         INS_insert_ins_before(INS, ins, ins_create_3(LISA_SLLI_D, itemp, itemp, 3));
         INS_insert_ins_before(INS, ins, ins_create_3(LISA_LDX_D, itemp_tb, itemp_tb, itemp));

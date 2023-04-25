@@ -230,7 +230,7 @@ struct kvm_run;
 struct hax_vcpu_state;
 struct hvf_vcpu_state;
 
-#define TB_JMP_CACHE_BITS 12
+#define TB_JMP_CACHE_BITS 16
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
 
 /* work queue */
