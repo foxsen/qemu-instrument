@@ -26,10 +26,10 @@ static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
 #include "include/exec/translate-all.h"
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 {
-
-    /* 1. Make TB page non-writable */
-    /* 2. Bound the number of insns to execute to those left on the page.  */
-    /* See translator_loop(), loongarch_tr_init_disas_context */
+    /* 1. Make TB page non-writable
+     * 2. Bound the number of insns to avoid cross page
+     * See translator_loop(), loongarch_tr_init_disas_context
+     */
     page_protect(tb->pc);
     int64_t bound = -(tb->pc | TARGET_PAGE_MASK) / 4;
     max_insns = MIN(max_insns, bound);
@@ -237,40 +237,3 @@ int la_encode(TCGContext *tcg_ctx, void *code_buf)
     lsassertm(tr_data.list_ins_nr == ins_nr, "tr_data.list_ins_nr(%d) != ins_nr(%d)\n", tr_data.list_ins_nr, ins_nr);
     return ins_nr;
 }
-
-
-/* int tr_translate_tb(CPUState *cs, struct TranslationBlock *tb, int max_ins) */
-/* { */
-/*     tr_init(tb); */
-/*     /1* 1. gen_ins_list *1/ */
-/*     // todo */
-/*     la_decode(cs, tb, max_ins); */
-
-/*     /1* 2. process *1/ */
-/*     la_redirection(cs, tb); */
-
-/*     /1* 3. assemble *1/ */
-/*     void *code_buf = tb->tc.ptr; */
-/*     int code_size = tr_data.list_ins_nr * 4; */
-/*     lsassert(code_size > 0); */
-
-/*     /1* check code_cache overflow. *1/ */
-/*     if (code_buf + code_size > */
-/*         tcg_ctx->code_gen_buffer + tcg_ctx->code_gen_buffer_size) { */
-/*         tr_data.curr_tb = NULL; */
-/*         return -1; */
-/*     } */
-
-/*     int ins_nr = 0; */
-/*     ins_nr = la_encode(code_cache); */
-
-/*     tr_fini(); */
-
-/*     return ins_nr; */
-/* } */
-
-/* int la_init() */
-/* { */
-/*     la_gen_prologue(code_cache); */
-/*     la_gen_epilogue(code_cache); */
-/* } */

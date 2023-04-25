@@ -2,6 +2,7 @@
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
 #include "../ins_inspection.h"
+#include <assert.h>
 
 #include <unordered_map>
 #include <vector>
@@ -33,7 +34,7 @@ static UINT64 calc_offset(Ins * ins)
             offset = sign_extend(ins->opnd[1].val << 2, 23);
             break;
         default:
-            lsassert(0);
+            assert(0);
             offset = 0;
             break;
     }

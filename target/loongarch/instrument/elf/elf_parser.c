@@ -66,8 +66,8 @@ static bool find_sym_table(Elf64_Shdr *shdr, int shnum, Elf64_Word type, int *sy
 
 void parse_elf_symbol_with_fd(int fd, uint64_t map_base, void **pp_img)
 {
-    static char filepath[1024];
-    static char link[64];
+    char filepath[1024];
+    char link[64];
 
     sprintf(link, "/proc/self/fd/%d", fd);
     int n = readlink(link, filepath, 1024);
@@ -75,7 +75,7 @@ void parse_elf_symbol_with_fd(int fd, uint64_t map_base, void **pp_img)
         fprintf(stderr, "get file path failed\n");
         return;
     }
-    filepath[n] = 0;    /* readlink不会给结尾加NULL */
+    filepath[n] = 0;    /* readlink不会给字符串结尾加\0 */
 
     lsdebug("read symbol in %s\n", filepath);
     parse_elf_symbol(filepath, map_base, pp_img);

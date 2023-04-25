@@ -19,7 +19,7 @@ static UINT64 cpu_enter_cnt = 0;
 static UINT64 cpu_exit_cnt = 0;
 static UINT64 syscall_exit_cnt = 0;
 
-static VOID count_bcc(IR2_OPCODE op, BOOL branch_taken, BOOL branch_backward) {
+static VOID count_bcc(LA_OPCODE op, BOOL branch_taken, BOOL branch_backward) {
     if (branch_taken) {
         if (branch_backward) {
             ++bcc_backward_cnt;

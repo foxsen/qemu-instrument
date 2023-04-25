@@ -1,6 +1,5 @@
 /* Unit Test for la_disasm & la_assemble 
  * Build: gcc *.c -o unitest
- * Requirement: need `decoder` and `common` two folders
  */
 #include "disasm.h"
 #include "assemble.h"
@@ -61,7 +60,6 @@ int main() {
         la_disasm(opcode, &ins);
         uint32_t asm_insn = la_assemble(&ins);
         printf("disasm: %08x\t", asm_insn);
-
         print_ins(&ins);
     }
 }

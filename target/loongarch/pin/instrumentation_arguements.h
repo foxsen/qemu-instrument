@@ -106,12 +106,12 @@ typedef enum {
     IOBJECT_RTN,
 } IOBJECT;
 
-typedef struct analysis_call_arg {
+typedef struct {
     IARG_TYPE type;
     uint64_t value;
 } IARG_T;
 
-typedef struct analysis_call {
+typedef struct {
     AFUNPTR func;
     IOBJECT object;
     IPOINT ipoint;

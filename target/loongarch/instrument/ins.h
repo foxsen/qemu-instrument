@@ -4,19 +4,22 @@
 #include "decoder/ins.h"
 #include "pin_types.h"
 
-/* FIXME: not used */
-typedef enum TransType {
+/**
+ * DisasType
+ * DISAS_NEXT: Next instruction in program order.
+ * DISAS_TOO_MANY: Too many instructions translated.
+ * DISAS_NORETURN: Following code is dead.
+ */
+typedef enum DisasType {
     TRANS_NEXT,
     TRANS_TOO_MANY,
     TRANS_NORETURN,
-    TRANS_TARGET_0,
-    TRANS_TARGET_1,
-} TransType;
+} DisasType;
 
 /* context in translation process */
 typedef struct TRANSLATION_DATA {
     void *curr_tb;
-    TransType is_jmp;
+    DisasType is_jmp;
     Ins *jmp_ins[2];    // tb两个出口的B跳转指令，用于tb_link
 
     /* ins array: 提前分配好的ins对象池，管理ins对象的分配 */

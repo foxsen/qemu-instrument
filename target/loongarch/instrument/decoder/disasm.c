@@ -84,14 +84,15 @@ static int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type)
 
     bit_start = bit_field.bit_range_1.start;
     bit_end = bit_field.bit_range_1.end;
-    if (bit_start >= 0 &&  bit_end >= 0) {
+    if (bit_start >= 0 && bit_end >= 0) {
         int field1_val = insn << (31 - bit_end) >> (31 - bit_end + bit_start);
         val |= field1_val << bit_len;
     }
 
     if (is_la_sign_opnd[type]) {
-        if (bit_end >= 0)
+        if (bit_end >= 0) {
             bit_len += bit_field.bit_range_1.end - bit_field.bit_range_1.start + 1;
+        }
         val = val << (32 - bit_len) >> (32 - bit_len);
     }
 
@@ -103,7 +104,7 @@ void la_disasm(uint32_t opcode, Ins *ins)
     LA_OPCODE op = get_ins_op(opcode);
     lsassertm(op != LISA_INVALID, "invalid opcode");
 
-    ins->op = op; 
+    ins->op = op;
     ins->opnd_count = 0;
 
     GM_LA_OPCODE_FORMAT format = lisa_format_table[op];
@@ -118,4 +119,3 @@ void la_disasm(uint32_t opcode, Ins *ins)
         ins->opnd_count++;
     }
 }
-
