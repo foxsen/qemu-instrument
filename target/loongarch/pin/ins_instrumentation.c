@@ -234,7 +234,7 @@ static const int arg_reg_map[] = {
 
 /* 调用分析函数前，需要保存的寄存器。
  * 包括：直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp
- * TODO: reg_tp 要保存，要恢复成host的吗 */
+ * TODO: reg_tp 要保存，要恢复成host的吗？我觉得要 */
 static bool gpr_need_saved_in_instru(int gpr) {
     return gpr_is_mapped(gpr) && (reg_ra <= mapped_gpr(gpr) && mapped_gpr(gpr) <= reg_t8);
 }
@@ -246,11 +246,9 @@ static bool gpr_is_mapped_in_instru(int gpr) {
 
 static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 {
-    IOBJECT object = cb->object;
+    /* IOBJECT object = cb->object; */
     IPOINT ipoint = cb->ipoint;
     /* AFUNPTR funptr = cb->func; */
-
-    lsassert(ipoint == IPOINT_BEFORE || object == IOBJECT_RTN);
 
     IR2_OPCODE op = INS->origin_ins->op;
 
@@ -769,7 +767,7 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
     /* AFUNPTR funptr = cb->func; */
     /* IR2_OPCODE op = INS->origin_ins->op; */
 
-    bool no_action = false;
+    bool no_delay_action = false;
 
     for (int i = cb->arg_cnt - 1; i >= 0; --i) {
         IARG_TYPE arg_type = cb->arg[i].type;
@@ -799,13 +797,13 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
             }
             break;
         default:
-            no_action = true;
+            no_delay_action = true;
             break;
         }
     }
 
-    /* FIXME */
-    lsassert(cb->ipoint == IPOINT_BEFORE || no_action == true);
+    /* TODO 对于IPOINT_AFTER，需要检查指令是否为跳转指令，若是则插桩会失败 */
+    lsassert(cb->ipoint == IPOINT_BEFORE || no_delay_action);
 }
 
 
@@ -868,7 +866,7 @@ static Ins *init_callback_block(INS INS, Ins *cur)
     INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_sp, reg_env, env_offset_of_host_sp(current_cpu)));
     INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg_tp, reg_env, env_offset_of_host_tp(current_cpu)));
 
-    /* 插入分析函数调用的位置 */
+    /* 插入分析函数调用的位置，此处可插入多个分析函数调用 */
     Ins *pos = cur->prev;
 
     /* 3. 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
@@ -879,13 +877,21 @@ static Ins *init_callback_block(INS INS, Ins *cur)
 
 static Ins *get_next_cb_position(INS INS, IPOINT ipoint)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(ipoint == IPOINT_BEFORE);
+    /* 若对同一指令插入多个分析函数调用，我们只需在这些调用前后保存和恢复一次caller-saved寄存器 */
     if (ipoint == IPOINT_BEFORE) {
         if (INS->ibefore_next_cb == NULL) {
             INS->ibefore_next_cb = init_callback_block(INS, INS->first_ins);
         }
         return INS->ibefore_next_cb;
+    }
+    if (ipoint == IPOINT_AFTER) {
+        if (INS->iafter_next_cb == NULL) {
+            // 在INS末尾暂时插一条nop，方便在nop之前插入指令
+            INS_insert_ins_after(INS, INS->last_ins, ins_nop());
+            INS->iafter_next_cb = init_callback_block(INS, INS->last_ins);
+            INS_remove_ins(INS, INS->last_ins);
+        }
+        return INS->iafter_next_cb;
     }
     return NULL;
 }
