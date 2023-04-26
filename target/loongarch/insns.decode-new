@@ -1,0 +1,2559 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# LoongArch instruction decode definitions.
+#
+# Copyright (c) 2021 Loongson Technology Corporation Limited
+#
+
+# Fields
+%sd      0:2
+%rj      5:5
+%rd      0:5
+%sj      5:2
+%ptr     5:3
+%rk      10:5
+%sa2     15:2
+%sa3     15:3
+%si5     10:s5
+%code    0:15
+%cond    10:4
+%cond2   0:4
+%ui5     10:5
+%ui6     10:6
+%ui3     10:3
+%ui4     10:4
+%op      5:5
+%ui8     10:8
+%msbw    16:5
+%lsbw    10:5
+%msbd    16:6
+%lsbd    10:6
+%fd      0:5
+%fj      5:5
+%fk      10:5
+%fcsrd   0:5
+%fcsrs   5:5
+%cd      0:3
+%cj      5:3
+%si12    10:s12
+%ui12    10:12
+%csr     10:14
+%cop     0:5
+%level   10:8
+%seq     10:8
+%whint   0:15
+%addr    10:5
+%info    5:5
+%invop   0:5
+%fa      15:5
+%vd      0:5
+%vj      5:5
+%vk      10:5
+%va      15:5
+%xd      0:5
+%xj      5:5
+%xk      10:5
+%xa      15:5
+%fcond   15:5
+%ca      15:3
+%vui5    15:5
+%si16    10:s16
+%si20    5:s20
+%si14    10:s14
+%hint    0:5
+%si9     10:s9
+%si10    10:s10
+%si11    10:s11
+%si8     10:s8
+%idx1    18:1
+%idx2    18:2
+%idx3    18:3
+%idx4    18:4
+%idx     18:5
+%offs21  0:s5 10:16
+%offs16  10:s16
+%offs    0:s10 10:16
+%mode    5:5
+%ui2     10:2
+%ui1     10:1
+%ui7     10:7
+%i13     5:13
+
+# Argument sets
+&fmt_sdrj           sd rj
+&fmt_rdsj           rd sj
+&fmt_rdrj           rd rj
+&fmt_empty
+&fmt_rjrk           rj rk
+&fmt_rdrjrksa2      rd rj rk sa2
+&fmt_rdrjrksa3      rd rj rk sa3
+&fmt_rdrjrk         rd rj rk
+&fmt_code           code
+&fmt_rdrjui5        rd rj ui5
+&fmt_rdrjui6        rd rj ui6
+&fmt_rdrjui3        rd rj ui3
+&fmt_rdrjui4        rd rj ui4
+&fmt_rdrjmsbwlsbw   rd rj msbw lsbw
+&fmt_rdrjmsbdlsbd   rd rj msbd lsbd
+&fmt_fdfjfk         fd fj fk
+&fmt_fdfj           fd fj
+&fmt_fdrj           fd rj
+&fmt_rdfj           rd fj
+&fmt_fcsrdrj        fcsrd rj
+&fmt_rdfcsrs        rd fcsrs
+&fmt_cdfj           cd fj
+&fmt_fdcj           fd cj
+&fmt_cdrj           cd rj
+&fmt_rdcj           rd cj
+&fmt_rdrjsi12       rd rj si12
+&fmt_rdrjui12       rd rj ui12
+&fmt_rdrjcsr        rd rj csr
+&fmt_coprjsi12      cop rj si12
+&fmt_rdrjlevel      rd rj level
+&fmt_rjseq          rj seq
+&fmt_whint          whint
+&fmt_invtlb         addr info invop
+&fmt_fdfjfkfa       fd fj fk fa
+&fmt_cdfjfkfcond    cd fj fk fcond
+&fmt_fdfjfkca       fd fj fk ca
+&fmt_rdrjsi16       rd rj si16
+&fmt_rdsi20         rd si20
+&fmt_rdrjsi14       rd rj si14
+&fmt_hintrjsi12     hint rj si12
+&fmt_hintrjrk       hint rj rk
+&fmt_fdrjsi12       fd rj si12
+&fmt_fdrjrk         fd rj rk
+&fmt_rjoffs21       rj offs21
+&fmt_cjoffs21       cj offs21
+&fmt_rdrjoffs16     rd rj offs16
+&fmt_offs           offs
+&fmt_rjrdoffs16     rj rd offs16
+#add vector fmt
+&fmt_vdrjsi12       vd rj si12
+&fmt_xdrjsi12       xd rj si12
+&fmt_vdrjsi9        vd rj si9
+&fmt_vdrjsi10       vd rj si10
+&fmt_vdrjsi11       vd rj si11
+&fmt_vdrjsi8idx1    vd rj si8 idx1
+&fmt_vdrjsi8idx2    vd rj si8 idx2
+&fmt_vdrjsi8idx3    vd rj si8 idx3
+&fmt_vdrjsi8idx4    vd rj si8 idx4
+&fmt_xdrjsi9        xd rj si9
+&fmt_xdrjsi10       xd rj si10
+&fmt_xdrjsi11       xd rj si11
+&fmt_xdrjsi8idx2    xd rj si8 idx2
+&fmt_xdrjsi8idx3    xd rj si8 idx3
+&fmt_xdrjsi8idx4    xd rj si8 idx4
+&fmt_xdrjsi8idx     xd rj si8 idx
+&fmt_vdrjrk         vd rj rk
+&fmt_xdrjrk         xd rj rk
+&fmt_vdvjvk         vd vj vk
+&fmt_vdvjrk         vd vj rk
+&fmt_vdvj           vd vj
+&fmt_vdvjsi5        vd vj si5
+&fmt_vdvjui5        vd vj ui5
+&fmt_vdmodeui5      vd mode ui5
+&fmt_cdvj           cd vj
+&fmt_vdrj           vd rj
+&fmt_vdvjui3        vd vj ui3
+&fmt_vdvjui4        vd vj ui4
+&fmt_vdvjui6        vd vj ui6
+&fmt_vdrjui4        vd rj ui4
+&fmt_vdrjui3        vd rj ui3
+&fmt_vdrjui2        vd rj ui2
+&fmt_vdrjui1        vd rj ui1
+&fmt_rdvjui4        rd vj ui4
+&fmt_rdvjui3        rd vj ui3
+&fmt_rdvjui2        rd vj ui2
+&fmt_rdvjui1        rd vj ui1
+&fmt_vdvjui2        vd vj ui2
+&fmt_vdvjui1        vd vj ui1
+&fmt_vdvjui7        vd vj ui7
+&fmt_vdvjui8        vd vj ui8
+&fmt_vdi13          vd i13
+&fmt_xdxjxk         xd xj xk
+&fmt_xdxjrk         xd xj rk
+&fmt_xdxjsi5        xd xj si5
+&fmt_xdxjui5        xd xj ui5
+&fmt_xdmodeui5      xd mode ui5
+&fmt_xdxj           xd xj
+&fmt_cdxj           cd xj
+&fmt_xdrj           xd rj
+&fmt_xdxjui3        xd xj ui3
+&fmt_xdxjui4        xd xj ui4
+&fmt_xdxjui6        xd xj ui6
+&fmt_xdrjui3        xd rj ui3
+&fmt_xdrjui2        xd rj ui2
+&fmt_rdxjui3        rd xj ui3
+&fmt_rdxjui2        rd xj ui2
+&fmt_xdxjui2        xd xj ui2
+&fmt_xdxjui1        xd xj ui1
+&fmt_xdxjui7        xd xj ui7
+&fmt_xdxjui8        xd xj ui8
+&fmt_xdi13          xd i13
+&fmt_vdvjvkva       vd vj vk va
+&fmt_xdxjxkxa       xd xj xk xa
+&fmt_vdvjvkfcond    vd vj vk fcond
+&fmt_xdxjxkfcond    xd xj xk fcond
+&fmt_vdvjvkvui5     vd vj vk vui5
+&fmt_xdxjxkvui5     xd xj xk vui5
+&fmt_rj             rj
+&fmt_rd             rd
+&fmt_rdui4          rd ui4
+&fmt_rdui8          rd ui8
+&fmt_rjui5          rj ui5
+&fmt_rjui6          rj ui6
+&fmt_rjui3          rj ui3
+&fmt_rjui4          rj ui4
+&fmt_rdrjsi5        rd rj si5
+&fmt_offs21         offs21
+&fmt_ptr            ptr
+&fmt_rdcond         rd cond
+&fmt_rdrk           rd rk
+
+# Formats
+@fmt_sdrj            .... ........ ..... ..... ..... ... ..   &fmt_sdrj           %sd %rj
+@fmt_rdsj            .... ........ ..... ..... ... .. .....   &fmt_rdsj           %rd %sj
+@fmt_rdrj            .... ........ ..... ..... ..... .....    &fmt_rdrj           %rd %rj
+@fmt_empty           .... ........ ..... ..... ..... .....    &fmt_empty
+@fmt_rjrk            .... ........ ..... ..... ..... .....    &fmt_rjrk           %rj %rk
+@fmt_rdrjrksa2       .... ........ ... .. ..... ..... .....   &fmt_rdrjrksa2      %rd %rj %rk %sa2
+@fmt_rdrjrksa3       .... ........ .. ... ..... ..... .....   &fmt_rdrjrksa3      %rd %rj %rk %sa3
+@fmt_rdrjrk          .... ........ ..... ..... ..... .....    &fmt_rdrjrk         %rd %rj %rk
+@fmt_code            .... ........ ..... ...............      &fmt_code           %code
+@fmt_rdrjui3         .... ........ ..... .. ... ..... .....   &fmt_rdrjui3        %rd %rj %ui3
+@fmt_rdrjui4         .... ........ ..... . .... ..... .....   &fmt_rdrjui4        %rd %rj %ui4
+@fmt_rdrjui5         .... ........ ..... ..... ..... .....    &fmt_rdrjui5        %rd %rj %ui5
+@fmt_rdrjui6         .... ........ .... ...... ..... .....    &fmt_rdrjui6        %rd %rj %ui6
+@fmt_rdrjmsbwlsbw    .... ....... ..... . ..... ..... .....   &fmt_rdrjmsbwlsbw   %rd %rj %msbw %lsbw
+@fmt_rdrjmsbdlsbd    .... ...... ...... ...... ..... .....    &fmt_rdrjmsbdlsbd   %rd %rj %msbd %lsbd
+@fmt_fdfjfk          .... ........ ..... ..... ..... .....    &fmt_fdfjfk         %fd %fj %fk
+@fmt_fdfj            .... ........ ..... ..... ..... .....    &fmt_fdfj           %fd %fj
+@fmt_fdrj            .... ........ ..... ..... ..... .....    &fmt_fdrj           %fd %rj
+@fmt_rdfj            .... ........ ..... ..... ..... .....    &fmt_rdfj           %rd %fj
+@fmt_fcsrdrj         .... ........ ..... ..... ..... .....    &fmt_fcsrdrj        %fcsrd %rj
+@fmt_rdfcsrs         .... ........ ..... ..... ..... .....    &fmt_rdfcsrs        %rd %fcsrs
+@fmt_cdfj            .... ........ ..... ..... ..... .. ...   &fmt_cdfj           %cd %fj
+@fmt_fdcj            .... ........ ..... ..... .. ... .....   &fmt_fdcj           %fd %cj
+@fmt_cdrj            .... ........ ..... ..... ..... .. ...   &fmt_cdrj           %cd %rj
+@fmt_rdcj            .... ........ ..... ..... .. ... .....   &fmt_rdcj           %rd %cj
+@fmt_rdrjsi12        .... ...... ............ ..... .....     &fmt_rdrjsi12       %rd %rj %si12
+@fmt_rdrjui12        .... ...... ............ ..... .....     &fmt_rdrjui12       %rd %rj %ui12
+@fmt_rdrjcsr         .... .... .............. ..... .....     &fmt_rdrjcsr        %rd %rj %csr
+@fmt_coprjsi12       .... ...... ............ ..... .....     &fmt_coprjsi12      %cop %rj %si12
+@fmt_rdrjlevel       .... ........ .. ........ ..... .....    &fmt_rdrjlevel      %rd %rj %level
+@fmt_rjseq           .... ........ .. ........ ..... .....    &fmt_rjseq          %rj %seq
+@fmt_whint           .... ........ ..... ...............      &fmt_whint          %whint
+@fmt_invtlb          ...... ...... ..... ..... ..... .....    &fmt_invtlb         %addr %info %invop
+@fmt_fdfjfkfa        .... ........ ..... ..... ..... .....    &fmt_fdfjfkfa       %fd %fj %fk %fa
+@fmt_cdfjfkfcond     .... ........ ..... ..... ..... .. ...   &fmt_cdfjfkfcond    %cd %fj %fk %fcond
+@fmt_fdfjfkca        .... ........ .. ... ..... ..... .....   &fmt_fdfjfkca       %fd %fj %fk %ca
+@fmt_rdrjsi16        .... .. ................ ..... .....     &fmt_rdrjsi16       %rd %rj %si16
+@fmt_rdsi20          .... ... .................... .....      &fmt_rdsi20         %rd %si20
+@fmt_rdrjsi14        .... .... .............. ..... .....     &fmt_rdrjsi14       %rd %rj %si14
+@fmt_hintrjsi12      .... ...... ............ ..... .....     &fmt_hintrjsi12     %hint %rj %si12
+@fmt_hintrjrk        .... ...... ............ ..... .....     &fmt_hintrjrk       %hint %rj %rk
+@fmt_fdrjsi12        .... ...... ............ ..... .....     &fmt_fdrjsi12       %fd %rj %si12
+@fmt_fdrjrk          .... ........ ..... ..... ..... .....    &fmt_fdrjrk         %fd %rj %rk
+@fmt_rjoffs21        .... .. ................ ..... .....     &fmt_rjoffs21       %rj %offs21
+@fmt_cjoffs21        .... .. ................ .. ... .....    &fmt_cjoffs21       %cj %offs21
+@fmt_rdrjoffs16      .... .. ................ ..... .....     &fmt_rdrjoffs16     %rd %rj %offs16
+@fmt_offs            .... .. ..........................       &fmt_offs           %offs
+@fmt_rjrdoffs16      .... .. ................ ..... .....     &fmt_rjrdoffs16     %rj %rd %offs16
+#vector format
+@fmt_vdrjrk          .... ........ ..... ..... ..... .....    &fmt_vdrjrk         %vd %rj %rk
+@fmt_xdrjrk          .... ........ ..... ..... ..... .....    &fmt_xdrjrk         %xd %rj %rk
+
+@fmt_vdvjvk          .... ........ ..... ..... ..... .....    &fmt_vdvjvk         %vd %vj %vk
+@fmt_vdvjrk          .... ........ ..... ..... ..... .....    &fmt_vdvjrk         %vd %vj %rk
+@fmt_vdvj            .... ........ ..... ..... ..... .....    &fmt_vdvj           %vd %vj
+@fmt_vdvjsi5         .... ........ ..... ..... ..... .....    &fmt_vdvjsi5        %vd %vj %si5
+@fmt_vdvjui5         .... ........ ..... ..... ..... .....    &fmt_vdvjui5        %vd %vj %ui5
+@fmt_vdmodeui5       .... ........ ..... ..... ..... .....    &fmt_vdmodeui5      %vd %mode %ui5
+@fmt_cdvj            .... ........ ..... ..... ..... .. ...   &fmt_cdvj           %cd %vj
+@fmt_vdrj            .... ........ ..... ..... ..... .....    &fmt_vdrj           %vd %rj
+@fmt_vdvjui3         .... ........ ..... .. ... ..... .....   &fmt_vdvjui3        %vd %vj %ui3
+@fmt_vdvjui4         .... ........ ..... . .... ..... .....   &fmt_vdvjui4        %vd %vj %ui4
+@fmt_vdvjui6         .... ........ .... ...... ..... .....    &fmt_vdvjui6        %vd %vj %ui6
+@fmt_vdrjui4         .... ........ ..... . .... ..... .....   &fmt_vdrjui4        %vd %rj %ui4
+@fmt_vdrjui3         .... ........ ..... .. ... ..... .....   &fmt_vdrjui3        %vd %rj %ui3
+@fmt_vdrjui2         .... ........ ..... ... .. ..... .....   &fmt_vdrjui2        %vd %rj %ui2
+@fmt_vdrjui1         .... ........ ..... .... . ..... .....   &fmt_vdrjui1        %vd %rj %ui1
+@fmt_rdvjui4         .... ........ ..... . .... ..... .....   &fmt_rdvjui4        %rd %vj %ui4
+@fmt_rdvjui3         .... ........ ..... .. ... ..... .....   &fmt_rdvjui3        %rd %vj %ui3
+@fmt_rdvjui2         .... ........ ..... ... .. ..... .....   &fmt_rdvjui2        %rd %vj %ui2
+@fmt_rdvjui1         .... ........ ..... .... . ..... .....   &fmt_rdvjui1        %rd %vj %ui1
+@fmt_vdvjui2         .... ........ ..... ... .. ..... .....   &fmt_vdvjui2        %vd %vj %ui2
+@fmt_vdvjui1         .... ........ ..... .... . ..... .....   &fmt_vdvjui1        %vd %vj %ui1
+@fmt_vdvjui7         .... ........ ... ....... ..... .....    &fmt_vdvjui7        %vd %vj %ui7
+@fmt_vdvjui8         .... ........ .. ........ ..... .....    &fmt_vdvjui8        %vd %vj %ui8
+@fmt_vdi13           .... ........ .. ............. .....     &fmt_vdi13          %vd %i13
+@fmt_xdxjxk          .... ........ ..... ..... ..... .....    &fmt_xdxjxk         %xd %xj %xk
+@fmt_xdxjrk          .... ........ ..... ..... ..... .....    &fmt_xdxjrk         %xd %xj %rk
+@fmt_xdxjsi5         .... ........ ..... ..... ..... .....    &fmt_xdxjsi5        %xd %xj %si5
+@fmt_xdxjui5         .... ........ ..... ..... ..... .....    &fmt_xdxjui5        %xd %xj %ui5
+@fmt_xdmodeui5       .... ........ ..... ..... ..... .....    &fmt_xdmodeui5      %xd %mode %ui5
+@fmt_xdxj            .... ........ ..... ..... ..... .....    &fmt_xdxj           %xd %xj
+@fmt_cdxj            .... ........ ..... ..... ..... .. ...   &fmt_cdxj           %cd %xj
+@fmt_xdrj            .... ........ ..... ..... ..... .....    &fmt_xdrj           %xd %rj
+@fmt_xdxjui3         .... ........ ..... .. ... ..... .....   &fmt_xdxjui3        %xd %xj %ui3
+@fmt_xdxjui4         .... ........ ..... . .... ..... .....   &fmt_xdxjui4        %xd %xj %ui4
+@fmt_xdxjui6         .... ........ .... ...... ..... .....    &fmt_xdxjui6        %xd %xj %ui6
+@fmt_xdrjui3         .... ........ ..... .. ... ..... .....   &fmt_xdrjui3        %xd %rj %ui3
+@fmt_xdrjui2         .... ........ ..... ... .. ..... .....   &fmt_xdrjui2        %xd %rj %ui2
+@fmt_rdxjui3         .... ........ ..... .. ... ..... .....   &fmt_rdxjui3        %rd %xj %ui3
+@fmt_rdxjui2         .... ........ ..... ... .. ..... .....   &fmt_rdxjui2        %rd %xj %ui2
+@fmt_xdxjui2         .... ........ ..... ... .. ..... .....   &fmt_xdxjui2        %xd %xj %ui2
+@fmt_xdxjui1         .... ........ ..... .... . ..... .....   &fmt_xdxjui1        %xd %xj %ui1
+@fmt_xdxjui7         .... ........ ... ....... ..... .....    &fmt_xdxjui7        %xd %xj %ui7
+@fmt_xdxjui8         .... ........ .. ........ ..... .....    &fmt_xdxjui8        %xd %xj %ui8
+@fmt_xdi13           .... ........ .. ............. .....     &fmt_xdi13          %xd %i13
+@fmt_vdrjsi12        .... ...... ............ ..... .....     &fmt_vdrjsi12       %vd %rj %si12
+@fmt_xdrjsi12        .... ...... ............ ..... .....     &fmt_xdrjsi12       %xd %rj %si12
+@fmt_vdrjsi9         .... ........ . ......... ..... .....    &fmt_vdrjsi9        %vd %rj %si9
+@fmt_vdrjsi10        .... ........ .......... ..... .....     &fmt_vdrjsi10       %vd %rj %si10
+@fmt_vdrjsi11        .... ....... ........... ..... .....     &fmt_vdrjsi11       %vd %rj %si11
+@fmt_vdrjsi8idx1     .... ........ . . ........ ..... .....   &fmt_vdrjsi8idx1    %vd %rj %si8 %idx1
+@fmt_vdrjsi8idx2     .... ........ .. ........ ..... .....    &fmt_vdrjsi8idx2    %vd %rj %si8 %idx2
+@fmt_vdrjsi8idx3     .... ....... ... ........ ..... .....    &fmt_vdrjsi8idx3    %vd %rj %si8 %idx3
+@fmt_vdrjsi8idx4     .... ...... .... ........ ..... .....    &fmt_vdrjsi8idx4    %vd %rj %si8 %idx4
+@fmt_xdrjsi9         .... ........ . ......... ..... .....    &fmt_xdrjsi9        %xd %rj %si9
+@fmt_xdrjsi10        .... ........ .......... ..... .....     &fmt_xdrjsi10       %xd %rj %si10
+@fmt_xdrjsi11        .... ....... ........... ..... .....     &fmt_xdrjsi11       %xd %rj %si11
+@fmt_xdrjsi8idx2     .... ........ .. ........ ..... .....    &fmt_xdrjsi8idx2    %xd %rj %si8 %idx2
+@fmt_xdrjsi8idx3     .... ....... ... ........ ..... .....    &fmt_xdrjsi8idx3    %xd %rj %si8 %idx3
+@fmt_xdrjsi8idx4     .... ...... .... ........ ..... .....    &fmt_xdrjsi8idx4    %xd %rj %si8 %idx4
+@fmt_xdrjsi8idx      .... ..... ..... ........ ..... .....    &fmt_xdrjsi8idx     %xd %rj %si8 %idx
+@fmt_vdvjvkva        .... ........ ..... ..... ..... .....    &fmt_vdvjvkva       %vd %vj %vk %va
+@fmt_xdxjxkxa        .... ........ ..... ..... ..... .....    &fmt_xdxjxkxa       %xd %xj %xk %xa
+@fmt_vdvjvkfcond     .... ........ ..... ..... ..... .....    &fmt_vdvjvkfcond    %vd %vj %vk %fcond
+@fmt_xdxjxkfcond     .... ........ ..... ..... ..... .....    &fmt_xdxjxkfcond    %xd %xj %xk %fcond
+@fmt_vdvjvkvui5      .... ........ ..... ..... ..... .....    &fmt_vdvjvkvui5     %vd %vj %vk %vui5
+@fmt_xdxjxkvui5      .... ........ ..... ..... ..... .....    &fmt_xdxjxkvui5     %xd %xj %xk %vui5
+@fmt_rj              ................. ..... ..... .....      &fmt_rj             %rj
+@fmt_rd              ................. ..... ..... .....      &fmt_rd             %rd
+@fmt_rdui4           ................. ..... ..... .....      &fmt_rdui4          %rd %ui4
+@fmt_rdui8           ................. ..... ..... .....      &fmt_rdui8          %rd %ui8
+@fmt_rjui3           ................. ..... ..... .....      &fmt_rjui3          %rj %ui3
+@fmt_rjui4           ................. ..... ..... .....      &fmt_rjui4          %rj %ui4
+@fmt_rjui5           ................. ..... ..... .....      &fmt_rjui5          %rj %ui5
+@fmt_rjui6           ................. ..... ..... .....      &fmt_rjui6          %rj %ui6
+@fmt_rdrjsi5         ................. ..... ..... .....      &fmt_rdrjsi5        %rd %rj %si5
+@fmt_offs21          ................. ..... ..... .....      &fmt_offs21         %offs21
+@fmt_ptr             ................. ..... ..... .....      &fmt_ptr            %ptr
+@fmt_rdcond          .... ........ ..... . .... ..... .....   &fmt_rdcond         %rd %cond
+@fmt_rdrk            .... ........ ..... ..... ..... .....    &fmt_rdrk           %rd %rk
+
+
+# Instructions
+
+# Fiexd point arithmetic Instructions
+gr2scr           0000 00000000 00000 00010 ..... 000 ..   @fmt_sdrj
+scr2gr           0000 00000000 00000 00011 000 .. .....   @fmt_rdsj
+clo_w            0000 00000000 00000 00100 ..... .....    @fmt_rdrj
+clz_w            0000 00000000 00000 00101 ..... .....    @fmt_rdrj
+cto_w            0000 00000000 00000 00110 ..... .....    @fmt_rdrj
+ctz_w            0000 00000000 00000 00111 ..... .....    @fmt_rdrj
+clo_d            0000 00000000 00000 01000 ..... .....    @fmt_rdrj
+clz_d            0000 00000000 00000 01001 ..... .....    @fmt_rdrj
+cto_d            0000 00000000 00000 01010 ..... .....    @fmt_rdrj
+ctz_d            0000 00000000 00000 01011 ..... .....    @fmt_rdrj
+revb_2h          0000 00000000 00000 01100 ..... .....    @fmt_rdrj
+revb_4h          0000 00000000 00000 01101 ..... .....    @fmt_rdrj
+revb_2w          0000 00000000 00000 01110 ..... .....    @fmt_rdrj
+revb_d           0000 00000000 00000 01111 ..... .....    @fmt_rdrj
+revh_2w          0000 00000000 00000 10000 ..... .....    @fmt_rdrj
+revh_d           0000 00000000 00000 10001 ..... .....    @fmt_rdrj
+bitrev_4b        0000 00000000 00000 10010 ..... .....    @fmt_rdrj
+bitrev_8b        0000 00000000 00000 10011 ..... .....    @fmt_rdrj
+bitrev_w         0000 00000000 00000 10100 ..... .....    @fmt_rdrj
+bitrev_d         0000 00000000 00000 10101 ..... .....    @fmt_rdrj
+ext_w_h          0000 00000000 00000 10110 ..... .....    @fmt_rdrj
+ext_w_b          0000 00000000 00000 10111 ..... .....    @fmt_rdrj
+rdtimel_w        0000 00000000 00000 11000 ..... .....    @fmt_rdrj
+rdtimeh_w        0000 00000000 00000 11001 ..... .....    @fmt_rdrj
+rdtime_d         0000 00000000 00000 11010 ..... .....    @fmt_rdrj
+cpucfg           0000 00000000 00000 11011 ..... .....    @fmt_rdrj
+asrtle_d         0000 00000000 00010 ..... ..... 00000    @fmt_rjrk
+asrtgt_d         0000 00000000 00011 ..... ..... 00000    @fmt_rjrk
+alsl_w           0000 00000000 010 .. ..... ..... .....   @fmt_rdrjrksa2
+alsl_wu          0000 00000000 011 .. ..... ..... .....   @fmt_rdrjrksa2
+bytepick_w       0000 00000000 100 .. ..... ..... .....   @fmt_rdrjrksa2
+bytepick_d       0000 00000000 11 ... ..... ..... .....   @fmt_rdrjrksa3
+add_w            0000 00000001 00000 ..... ..... .....    @fmt_rdrjrk
+add_d            0000 00000001 00001 ..... ..... .....    @fmt_rdrjrk
+sub_w            0000 00000001 00010 ..... ..... .....    @fmt_rdrjrk
+sub_d            0000 00000001 00011 ..... ..... .....    @fmt_rdrjrk
+slt              0000 00000001 00100 ..... ..... .....    @fmt_rdrjrk
+sltu             0000 00000001 00101 ..... ..... .....    @fmt_rdrjrk
+maskeqz          0000 00000001 00110 ..... ..... .....    @fmt_rdrjrk
+masknez          0000 00000001 00111 ..... ..... .....    @fmt_rdrjrk
+nor              0000 00000001 01000 ..... ..... .....    @fmt_rdrjrk
+and              0000 00000001 01001 ..... ..... .....    @fmt_rdrjrk
+or               0000 00000001 01010 ..... ..... .....    @fmt_rdrjrk
+xor              0000 00000001 01011 ..... ..... .....    @fmt_rdrjrk
+orn              0000 00000001 01100 ..... ..... .....    @fmt_rdrjrk
+andn             0000 00000001 01101 ..... ..... .....    @fmt_rdrjrk
+sll_w            0000 00000001 01110 ..... ..... .....    @fmt_rdrjrk
+srl_w            0000 00000001 01111 ..... ..... .....    @fmt_rdrjrk
+sra_w            0000 00000001 10000 ..... ..... .....    @fmt_rdrjrk
+sll_d            0000 00000001 10001 ..... ..... .....    @fmt_rdrjrk
+srl_d            0000 00000001 10010 ..... ..... .....    @fmt_rdrjrk
+sra_d            0000 00000001 10011 ..... ..... .....    @fmt_rdrjrk
+rotr_w           0000 00000001 10110 ..... ..... .....    @fmt_rdrjrk
+rotr_d           0000 00000001 10111 ..... ..... .....    @fmt_rdrjrk
+mul_w            0000 00000001 11000 ..... ..... .....    @fmt_rdrjrk
+mulh_w           0000 00000001 11001 ..... ..... .....    @fmt_rdrjrk
+mulh_wu          0000 00000001 11010 ..... ..... .....    @fmt_rdrjrk
+mul_d            0000 00000001 11011 ..... ..... .....    @fmt_rdrjrk
+mulh_d           0000 00000001 11100 ..... ..... .....    @fmt_rdrjrk
+mulh_du          0000 00000001 11101 ..... ..... .....    @fmt_rdrjrk
+mulw_d_w         0000 00000001 11110 ..... ..... .....    @fmt_rdrjrk
+mulw_d_wu        0000 00000001 11111 ..... ..... .....    @fmt_rdrjrk
+div_w            0000 00000010 00000 ..... ..... .....    @fmt_rdrjrk
+mod_w            0000 00000010 00001 ..... ..... .....    @fmt_rdrjrk
+div_wu           0000 00000010 00010 ..... ..... .....    @fmt_rdrjrk
+mod_wu           0000 00000010 00011 ..... ..... .....    @fmt_rdrjrk
+div_d            0000 00000010 00100 ..... ..... .....    @fmt_rdrjrk
+mod_d            0000 00000010 00101 ..... ..... .....    @fmt_rdrjrk
+div_du           0000 00000010 00110 ..... ..... .....    @fmt_rdrjrk
+mod_du           0000 00000010 00111 ..... ..... .....    @fmt_rdrjrk
+crc_w_b_w        0000 00000010 01000 ..... ..... .....    @fmt_rdrjrk
+crc_w_h_w        0000 00000010 01001 ..... ..... .....    @fmt_rdrjrk
+crc_w_w_w        0000 00000010 01010 ..... ..... .....    @fmt_rdrjrk
+crc_w_d_w        0000 00000010 01011 ..... ..... .....    @fmt_rdrjrk
+crcc_w_b_w       0000 00000010 01100 ..... ..... .....    @fmt_rdrjrk
+crcc_w_h_w       0000 00000010 01101 ..... ..... .....    @fmt_rdrjrk
+crcc_w_w_w       0000 00000010 01110 ..... ..... .....    @fmt_rdrjrk
+crcc_w_d_w       0000 00000010 01111 ..... ..... .....    @fmt_rdrjrk
+break            0000 00000010 10100 ...............      @fmt_code
+#dbcl             0000 00000010 10101 ...............      @fmt_code
+syscall          0000 00000010 10110 ...............      @fmt_code
+alsl_d           0000 00000010 110 .. ..... ..... .....   @fmt_rdrjrksa2
+slli_w           0000 00000100 00001 ..... ..... .....    @fmt_rdrjui5
+slli_d           0000 00000100 0001 ...... ..... .....    @fmt_rdrjui6
+srli_w           0000 00000100 01001 ..... ..... .....    @fmt_rdrjui5
+srli_d           0000 00000100 0101 ...... ..... .....    @fmt_rdrjui6
+srai_w           0000 00000100 10001 ..... ..... .....    @fmt_rdrjui5
+srai_d           0000 00000100 1001 ...... ..... .....    @fmt_rdrjui6
+rotri_b          0000 00000100 11000 01 ... ..... .....   @fmt_rdrjui3
+rotri_h          0000 00000100 11000 1 .... ..... .....   @fmt_rdrjui4
+rotri_w          0000 00000100 11001 ..... ..... .....    @fmt_rdrjui5
+rotri_d          0000 00000100 1101 ...... ..... .....    @fmt_rdrjui6
+bstrins_w        0000 0000011 ..... 0 ..... ..... .....   @fmt_rdrjmsbwlsbw
+bstrpick_w       0000 0000011 ..... 1 ..... ..... .....   @fmt_rdrjmsbwlsbw
+bstrins_d        0000 000010 ...... ...... ..... .....    @fmt_rdrjmsbdlsbd
+bstrpick_d       0000 000011 ...... ...... ..... .....    @fmt_rdrjmsbdlsbd
+
+# float Instructions
+fadd_s           0000 00010000 00001 ..... ..... .....    @fmt_fdfjfk
+fadd_d           0000 00010000 00010 ..... ..... .....    @fmt_fdfjfk
+fsub_s           0000 00010000 00101 ..... ..... .....    @fmt_fdfjfk
+fsub_d           0000 00010000 00110 ..... ..... .....    @fmt_fdfjfk
+fmul_s           0000 00010000 01001 ..... ..... .....    @fmt_fdfjfk
+fmul_d           0000 00010000 01010 ..... ..... .....    @fmt_fdfjfk
+fdiv_s           0000 00010000 01101 ..... ..... .....    @fmt_fdfjfk
+fdiv_d           0000 00010000 01110 ..... ..... .....    @fmt_fdfjfk
+fmax_s           0000 00010000 10001 ..... ..... .....    @fmt_fdfjfk
+fmax_d           0000 00010000 10010 ..... ..... .....    @fmt_fdfjfk
+fmin_s           0000 00010000 10101 ..... ..... .....    @fmt_fdfjfk
+fmin_d           0000 00010000 10110 ..... ..... .....    @fmt_fdfjfk
+fmaxa_s          0000 00010000 11001 ..... ..... .....    @fmt_fdfjfk
+fmaxa_d          0000 00010000 11010 ..... ..... .....    @fmt_fdfjfk
+fmina_s          0000 00010000 11101 ..... ..... .....    @fmt_fdfjfk
+fmina_d          0000 00010000 11110 ..... ..... .....    @fmt_fdfjfk
+fscaleb_s        0000 00010001 00001 ..... ..... .....    @fmt_fdfjfk
+fscaleb_d        0000 00010001 00010 ..... ..... .....    @fmt_fdfjfk
+fcopysign_s      0000 00010001 00101 ..... ..... .....    @fmt_fdfjfk
+fcopysign_d      0000 00010001 00110 ..... ..... .....    @fmt_fdfjfk
+fabs_s           0000 00010001 01000 00001 ..... .....    @fmt_fdfj
+fabs_d           0000 00010001 01000 00010 ..... .....    @fmt_fdfj
+fneg_s           0000 00010001 01000 00101 ..... .....    @fmt_fdfj
+fneg_d           0000 00010001 01000 00110 ..... .....    @fmt_fdfj
+flogb_s          0000 00010001 01000 01001 ..... .....    @fmt_fdfj
+flogb_d          0000 00010001 01000 01010 ..... .....    @fmt_fdfj
+fclass_s         0000 00010001 01000 01101 ..... .....    @fmt_fdfj
+fclass_d         0000 00010001 01000 01110 ..... .....    @fmt_fdfj
+fsqrt_s          0000 00010001 01000 10001 ..... .....    @fmt_fdfj
+fsqrt_d          0000 00010001 01000 10010 ..... .....    @fmt_fdfj
+frecip_s         0000 00010001 01000 10101 ..... .....    @fmt_fdfj
+frecip_d         0000 00010001 01000 10110 ..... .....    @fmt_fdfj
+frsqrt_s         0000 00010001 01000 11001 ..... .....    @fmt_fdfj
+frsqrt_d         0000 00010001 01000 11010 ..... .....    @fmt_fdfj
+fmov_s           0000 00010001 01001 00101 ..... .....    @fmt_fdfj
+fmov_d           0000 00010001 01001 00110 ..... .....    @fmt_fdfj
+movgr2fr_w       0000 00010001 01001 01001 ..... .....    @fmt_fdrj
+movgr2fr_d       0000 00010001 01001 01010 ..... .....    @fmt_fdrj
+movgr2frh_w      0000 00010001 01001 01011 ..... .....    @fmt_fdrj
+movfr2gr_s       0000 00010001 01001 01101 ..... .....    @fmt_rdfj
+movfr2gr_d       0000 00010001 01001 01110 ..... .....    @fmt_rdfj
+movfrh2gr_s      0000 00010001 01001 01111 ..... .....    @fmt_rdfj
+movgr2fcsr       0000 00010001 01001 10000 ..... .....    @fmt_fcsrdrj
+movfcsr2gr       0000 00010001 01001 10010 ..... .....    @fmt_rdfcsrs
+movfr2cf         0000 00010001 01001 10100 ..... 00 ...   @fmt_cdfj
+movcf2fr         0000 00010001 01001 10101 00 ... .....   @fmt_fdcj
+movgr2cf         0000 00010001 01001 10110 ..... 00 ...   @fmt_cdrj
+movcf2gr         0000 00010001 01001 10111 00 ... .....   @fmt_rdcj
+fcvt_ld_d        0000 00010001 01001 11000 ..... .....    @fmt_fdfj
+fcvt_ud_d        0000 00010001 01001 11001 ..... .....    @fmt_fdfj
+fcvt_d_ld        0000 00010001 01010 ..... ..... .....    @fmt_fdfjfk
+fcvt_s_d         0000 00010001 10010 00110 ..... .....    @fmt_fdfj
+fcvt_d_s         0000 00010001 10010 01001 ..... .....    @fmt_fdfj
+ftintrm_w_s      0000 00010001 10100 00001 ..... .....    @fmt_fdfj
+ftintrm_w_d      0000 00010001 10100 00010 ..... .....    @fmt_fdfj
+ftintrm_l_s      0000 00010001 10100 01001 ..... .....    @fmt_fdfj
+ftintrm_l_d      0000 00010001 10100 01010 ..... .....    @fmt_fdfj
+ftintrp_w_s      0000 00010001 10100 10001 ..... .....    @fmt_fdfj
+ftintrp_w_d      0000 00010001 10100 10010 ..... .....    @fmt_fdfj
+ftintrp_l_s      0000 00010001 10100 11001 ..... .....    @fmt_fdfj
+ftintrp_l_d      0000 00010001 10100 11010 ..... .....    @fmt_fdfj
+ftintrz_w_s      0000 00010001 10101 00001 ..... .....    @fmt_fdfj
+ftintrz_w_d      0000 00010001 10101 00010 ..... .....    @fmt_fdfj
+ftintrz_l_s      0000 00010001 10101 01001 ..... .....    @fmt_fdfj
+ftintrz_l_d      0000 00010001 10101 01010 ..... .....    @fmt_fdfj
+ftintrne_w_s     0000 00010001 10101 10001 ..... .....    @fmt_fdfj
+ftintrne_w_d     0000 00010001 10101 10010 ..... .....    @fmt_fdfj
+ftintrne_l_s     0000 00010001 10101 11001 ..... .....    @fmt_fdfj
+ftintrne_l_d     0000 00010001 10101 11010 ..... .....    @fmt_fdfj
+ftint_w_s        0000 00010001 10110 00001 ..... .....    @fmt_fdfj
+ftint_w_d        0000 00010001 10110 00010 ..... .....    @fmt_fdfj
+ftint_l_s        0000 00010001 10110 01001 ..... .....    @fmt_fdfj
+ftint_l_d        0000 00010001 10110 01010 ..... .....    @fmt_fdfj
+ffint_s_w        0000 00010001 11010 00100 ..... .....    @fmt_fdfj
+ffint_s_l        0000 00010001 11010 00110 ..... .....    @fmt_fdfj
+ffint_d_w        0000 00010001 11010 01000 ..... .....    @fmt_fdfj
+ffint_d_l        0000 00010001 11010 01010 ..... .....    @fmt_fdfj
+frint_s          0000 00010001 11100 10001 ..... .....    @fmt_fdfj
+frint_d          0000 00010001 11100 10010 ..... .....    @fmt_fdfj
+
+# 12 bit immediate Instructions
+slti             0000 001000 ............ ..... .....     @fmt_rdrjsi12
+sltui            0000 001001 ............ ..... .....     @fmt_rdrjsi12
+addi_w           0000 001010 ............ ..... .....     @fmt_rdrjsi12
+addi_d           0000 001011 ............ ..... .....     @fmt_rdrjsi12
+lu52i_d          0000 001100 ............ ..... .....     @fmt_rdrjsi12
+andi             0000 001101 ............ ..... .....     @fmt_rdrjui12
+ori              0000 001110 ............ ..... .....     @fmt_rdrjui12
+xori             0000 001111 ............ ..... .....     @fmt_rdrjui12
+
+# core Instructions
+#csrxchg          0000 0100 .............. ..... .....     @fmt_rdrjcsr
+#cacop            0000 011000 ............ ..... .....     @fmt_coprjsi12
+#lddir            0000 01100100 00 ........ ..... .....    @fmt_rdrjlevel
+#ldpte            0000 01100100 01 ........ ..... 00000    @fmt_rjseq
+#iocsrrd_b        0000 01100100 10000 00000 ..... .....    @fmt_rdrj
+#iocsrrd_h        0000 01100100 10000 00001 ..... .....    @fmt_rdrj
+#iocsrrd_w        0000 01100100 10000 00010 ..... .....    @fmt_rdrj
+#iocsrrd_d        0000 01100100 10000 00011 ..... .....    @fmt_rdrj
+#iocsrwr_b        0000 01100100 10000 00100 ..... .....    @fmt_rdrj
+#iocsrwr_h        0000 01100100 10000 00101 ..... .....    @fmt_rdrj
+#iocsrwr_w        0000 01100100 10000 00110 ..... .....    @fmt_rdrj
+#iocsrwr_d        0000 01100100 10000 00111 ..... .....    @fmt_rdrj
+#tlbclr           0000 01100100 10000 01000 00000 00000    @fmt_empty
+#tlbflush         0000 01100100 10000 01001 00000 00000    @fmt_empty
+#tlbsrch          0000 01100100 10000 01010 00000 00000    @fmt_empty
+#tlbrd            0000 01100100 10000 01011 00000 00000    @fmt_empty
+#tlbwr            0000 01100100 10000 01100 00000 00000    @fmt_empty
+#tlbfill          0000 01100100 10000 01101 00000 00000    @fmt_empty
+#ertn             0000 01100100 10000 01110 00000 00000    @fmt_empty
+#idle             0000 01100100 10001 ...............      @fmt_whint
+#invtlb           0000 01100100 10011 ..... ..... .....    @fmt_invtlb
+#hvcl             0000 00000010 10111 ...............      @fmt_code
+
+# foure Op Instructions
+fmadd_s          0000 10000001 ..... ..... ..... .....    @fmt_fdfjfkfa
+fmadd_d          0000 10000010 ..... ..... ..... .....    @fmt_fdfjfkfa
+fmsub_s          0000 10000101 ..... ..... ..... .....    @fmt_fdfjfkfa
+fmsub_d          0000 10000110 ..... ..... ..... .....    @fmt_fdfjfkfa
+fnmadd_s         0000 10001001 ..... ..... ..... .....    @fmt_fdfjfkfa
+fnmadd_d         0000 10001010 ..... ..... ..... .....    @fmt_fdfjfkfa
+fnmsub_s         0000 10001101 ..... ..... ..... .....    @fmt_fdfjfkfa
+fnmsub_d         0000 10001110 ..... ..... ..... .....    @fmt_fdfjfkfa
+fcmp_cond_s      0000 11000001 ..... ..... ..... 00 ...   @fmt_cdfjfkfcond
+fcmp_cond_d      0000 11000010 ..... ..... ..... 00 ...   @fmt_cdfjfkfcond
+fsel             0000 11010000 00 ... ..... ..... .....   @fmt_fdfjfkca
+
+# loog immediate Instructions
+addu16i_d        0001 00 ................ ..... .....     @fmt_rdrjsi16
+lu12i_w          0001 010 .................... .....      @fmt_rdsi20
+lu32i_d          0001 011 .................... .....      @fmt_rdsi20
+pcaddi           0001 100 .................... .....      @fmt_rdsi20
+pcalau12i        0001 101 .................... .....      @fmt_rdsi20
+pcaddu12i        0001 110 .................... .....      @fmt_rdsi20
+pcaddu18i        0001 111 .................... .....      @fmt_rdsi20
+
+# load/store Instructions
+ll_w             0010 0000 .............. ..... .....     @fmt_rdrjsi14
+sc_w             0010 0001 .............. ..... .....     @fmt_rdrjsi14
+ll_d             0010 0010 .............. ..... .....     @fmt_rdrjsi14
+sc_d             0010 0011 .............. ..... .....     @fmt_rdrjsi14
+ldptr_w          0010 0100 .............. ..... .....     @fmt_rdrjsi14
+stptr_w          0010 0101 .............. ..... .....     @fmt_rdrjsi14
+ldptr_d          0010 0110 .............. ..... .....     @fmt_rdrjsi14
+stptr_d          0010 0111 .............. ..... .....     @fmt_rdrjsi14
+ld_b             0010 100000 ............ ..... .....     @fmt_rdrjsi12
+ld_h             0010 100001 ............ ..... .....     @fmt_rdrjsi12
+ld_w             0010 100010 ............ ..... .....     @fmt_rdrjsi12
+ld_d             0010 100011 ............ ..... .....     @fmt_rdrjsi12
+st_b             0010 100100 ............ ..... .....     @fmt_rdrjsi12
+st_h             0010 100101 ............ ..... .....     @fmt_rdrjsi12
+st_w             0010 100110 ............ ..... .....     @fmt_rdrjsi12
+st_d             0010 100111 ............ ..... .....     @fmt_rdrjsi12
+ld_bu            0010 101000 ............ ..... .....     @fmt_rdrjsi12
+ld_hu            0010 101001 ............ ..... .....     @fmt_rdrjsi12
+ld_wu            0010 101010 ............ ..... .....     @fmt_rdrjsi12
+preld            0010 101011 ............ ..... .....     @fmt_hintrjsi12
+fld_s            0010 101100 ............ ..... .....     @fmt_fdrjsi12
+fst_s            0010 101101 ............ ..... .....     @fmt_fdrjsi12
+fld_d            0010 101110 ............ ..... .....     @fmt_fdrjsi12
+fst_d            0010 101111 ............ ..... .....     @fmt_fdrjsi12
+ldx_b            0011 10000000 00000 ..... ..... .....    @fmt_rdrjrk
+ldx_h            0011 10000000 01000 ..... ..... .....    @fmt_rdrjrk
+ldx_w            0011 10000000 10000 ..... ..... .....    @fmt_rdrjrk
+ldx_d            0011 10000000 11000 ..... ..... .....    @fmt_rdrjrk
+stx_b            0011 10000001 00000 ..... ..... .....    @fmt_rdrjrk
+stx_h            0011 10000001 01000 ..... ..... .....    @fmt_rdrjrk
+stx_w            0011 10000001 10000 ..... ..... .....    @fmt_rdrjrk
+stx_d            0011 10000001 11000 ..... ..... .....    @fmt_rdrjrk
+ldx_bu           0011 10000010 00000 ..... ..... .....    @fmt_rdrjrk
+ldx_hu           0011 10000010 01000 ..... ..... .....    @fmt_rdrjrk
+ldx_wu           0011 10000010 10000 ..... ..... .....    @fmt_rdrjrk
+preldx           0011 10000010 11000 ..... ..... .....    @fmt_hintrjrk
+fldx_s           0011 10000011 00000 ..... ..... .....    @fmt_fdrjrk
+fldx_d           0011 10000011 01000 ..... ..... .....    @fmt_fdrjrk
+fstx_s           0011 10000011 10000 ..... ..... .....    @fmt_fdrjrk
+fstx_d           0011 10000011 11000 ..... ..... .....    @fmt_fdrjrk
+amswap_w         0011 10000110 00000 ..... ..... .....    @fmt_rdrjrk
+amswap_d         0011 10000110 00001 ..... ..... .....    @fmt_rdrjrk
+amadd_w          0011 10000110 00010 ..... ..... .....    @fmt_rdrjrk
+amadd_d          0011 10000110 00011 ..... ..... .....    @fmt_rdrjrk
+amand_w          0011 10000110 00100 ..... ..... .....    @fmt_rdrjrk
+amand_d          0011 10000110 00101 ..... ..... .....    @fmt_rdrjrk
+amor_w           0011 10000110 00110 ..... ..... .....    @fmt_rdrjrk
+amor_d           0011 10000110 00111 ..... ..... .....    @fmt_rdrjrk
+amxor_w          0011 10000110 01000 ..... ..... .....    @fmt_rdrjrk
+amxor_d          0011 10000110 01001 ..... ..... .....    @fmt_rdrjrk
+ammax_w          0011 10000110 01010 ..... ..... .....    @fmt_rdrjrk
+ammax_d          0011 10000110 01011 ..... ..... .....    @fmt_rdrjrk
+ammin_w          0011 10000110 01100 ..... ..... .....    @fmt_rdrjrk
+ammin_d          0011 10000110 01101 ..... ..... .....    @fmt_rdrjrk
+ammax_wu         0011 10000110 01110 ..... ..... .....    @fmt_rdrjrk
+ammax_du         0011 10000110 01111 ..... ..... .....    @fmt_rdrjrk
+ammin_wu         0011 10000110 10000 ..... ..... .....    @fmt_rdrjrk
+ammin_du         0011 10000110 10001 ..... ..... .....    @fmt_rdrjrk
+amswap_db_w      0011 10000110 10010 ..... ..... .....    @fmt_rdrjrk
+amswap_db_d      0011 10000110 10011 ..... ..... .....    @fmt_rdrjrk
+amadd_db_w       0011 10000110 10100 ..... ..... .....    @fmt_rdrjrk
+amadd_db_d       0011 10000110 10101 ..... ..... .....    @fmt_rdrjrk
+amand_db_w       0011 10000110 10110 ..... ..... .....    @fmt_rdrjrk
+amand_db_d       0011 10000110 10111 ..... ..... .....    @fmt_rdrjrk
+amor_db_w        0011 10000110 11000 ..... ..... .....    @fmt_rdrjrk
+amor_db_d        0011 10000110 11001 ..... ..... .....    @fmt_rdrjrk
+amxor_db_w       0011 10000110 11010 ..... ..... .....    @fmt_rdrjrk
+amxor_db_d       0011 10000110 11011 ..... ..... .....    @fmt_rdrjrk
+ammax_db_w       0011 10000110 11100 ..... ..... .....    @fmt_rdrjrk
+ammax_db_d       0011 10000110 11101 ..... ..... .....    @fmt_rdrjrk
+ammin_db_w       0011 10000110 11110 ..... ..... .....    @fmt_rdrjrk
+ammin_db_d       0011 10000110 11111 ..... ..... .....    @fmt_rdrjrk
+ammax_db_wu      0011 10000111 00000 ..... ..... .....    @fmt_rdrjrk
+ammax_db_du      0011 10000111 00001 ..... ..... .....    @fmt_rdrjrk
+ammin_db_wu      0011 10000111 00010 ..... ..... .....    @fmt_rdrjrk
+ammin_db_du      0011 10000111 00011 ..... ..... .....    @fmt_rdrjrk
+dbar             0011 10000111 00100 ...............      @fmt_whint
+ibar             0011 10000111 00101 ...............      @fmt_whint
+fldgt_s          0011 10000111 01000 ..... ..... .....    @fmt_fdrjrk
+fldgt_d          0011 10000111 01001 ..... ..... .....    @fmt_fdrjrk
+fldle_s          0011 10000111 01010 ..... ..... .....    @fmt_fdrjrk
+fldle_d          0011 10000111 01011 ..... ..... .....    @fmt_fdrjrk
+fstgt_s          0011 10000111 01100 ..... ..... .....    @fmt_fdrjrk
+fstgt_d          0011 10000111 01101 ..... ..... .....    @fmt_fdrjrk
+fstle_s          0011 10000111 01110 ..... ..... .....    @fmt_fdrjrk
+fstle_d          0011 10000111 01111 ..... ..... .....    @fmt_fdrjrk
+ldgt_b           0011 10000111 10000 ..... ..... .....    @fmt_rdrjrk
+ldgt_h           0011 10000111 10001 ..... ..... .....    @fmt_rdrjrk
+ldgt_w           0011 10000111 10010 ..... ..... .....    @fmt_rdrjrk
+ldgt_d           0011 10000111 10011 ..... ..... .....    @fmt_rdrjrk
+ldle_b           0011 10000111 10100 ..... ..... .....    @fmt_rdrjrk
+ldle_h           0011 10000111 10101 ..... ..... .....    @fmt_rdrjrk
+ldle_w           0011 10000111 10110 ..... ..... .....    @fmt_rdrjrk
+ldle_d           0011 10000111 10111 ..... ..... .....    @fmt_rdrjrk
+stgt_b           0011 10000111 11000 ..... ..... .....    @fmt_rdrjrk
+stgt_h           0011 10000111 11001 ..... ..... .....    @fmt_rdrjrk
+stgt_w           0011 10000111 11010 ..... ..... .....    @fmt_rdrjrk
+stgt_d           0011 10000111 11011 ..... ..... .....    @fmt_rdrjrk
+stle_b           0011 10000111 11100 ..... ..... .....    @fmt_rdrjrk
+stle_h           0011 10000111 11101 ..... ..... .....    @fmt_rdrjrk
+stle_w           0011 10000111 11110 ..... ..... .....    @fmt_rdrjrk
+stle_d           0011 10000111 11111 ..... ..... .....    @fmt_rdrjrk
+vldx             0011 10000100 00000 ..... ..... .....    @fmt_vdrjrk
+vstx             0011 10000100 01000 ..... ..... .....    @fmt_vdrjrk
+xvldx            0011 10000100 10000 ..... ..... .....    @fmt_xdrjrk
+xvstx            0011 10000100 11000 ..... ..... .....    @fmt_xdrjrk
+
+# jump Instructions
+beqz             0100 00 ................ ..... .....     @fmt_rjoffs21
+bnez             0100 01 ................ ..... .....     @fmt_rjoffs21
+bceqz            0100 10 ................ 00 ... .....    @fmt_cjoffs21
+bcnez            0100 10 ................ 01 ... .....    @fmt_cjoffs21
+jirl             0100 11 ................ ..... .....     @fmt_rdrjoffs16
+b                0101 00 ..........................       @fmt_offs
+bl               0101 01 ..........................       @fmt_offs
+beq              0101 10 ................ ..... .....     @fmt_rjrdoffs16
+bne              0101 11 ................ ..... .....     @fmt_rjrdoffs16
+blt              0110 00 ................ ..... .....     @fmt_rjrdoffs16
+bge              0110 01 ................ ..... .....     @fmt_rjrdoffs16
+bltu             0110 10 ................ ..... .....     @fmt_rjrdoffs16
+bgeu             0110 11 ................ ..... .....     @fmt_rjrdoffs16
+
+
+#btcam_srch          1111 00000000 00000 00000 ..... .....    @fmt_rdrj
+#btcam_fill          1111 00000000 00000 00001 ..... .....    @fmt_rdrj
+#btcam_inv           1111 00000000 00000 00010 ..... .....    @fmt_rdrj
+
+# vectore
+vld              0010 110000 ............ ..... .....     @fmt_vdrjsi12
+vst              0010 110001 ............ ..... .....     @fmt_vdrjsi12
+xvld             0010 110010 ............ ..... .....     @fmt_xdrjsi12
+xvst             0010 110011 ............ ..... .....     @fmt_xdrjsi12
+vldrepl_d        0011 00000001 0 ......... ..... .....    @fmt_vdrjsi9
+vldrepl_w        0011 00000010 .......... ..... .....     @fmt_vdrjsi10
+vldrepl_h        0011 0000010 ........... ..... .....     @fmt_vdrjsi11
+vldrepl_b        0011 000010 ............ ..... .....     @fmt_vdrjsi12
+vfmadd_s         0000 10010001 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmadd_d         0000 10010010 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmsub_s         0000 10010101 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmsub_d         0000 10010110 ..... ..... ..... .....    @fmt_vdvjvkva
+vfnmadd_s        0000 10011001 ..... ..... ..... .....    @fmt_vdvjvkva
+vfnmadd_d        0000 10011010 ..... ..... ..... .....    @fmt_vdvjvkva
+vfnmsub_s        0000 10011101 ..... ..... ..... .....    @fmt_vdvjvkva
+vfnmsub_d        0000 10011110 ..... ..... ..... .....    @fmt_vdvjvkva
+xvfmadd_s        0000 10100001 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmadd_d        0000 10100010 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmsub_s        0000 10100101 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmsub_d        0000 10100110 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfnmadd_s       0000 10101001 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfnmadd_d       0000 10101010 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfnmsub_s       0000 10101101 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfnmsub_d       0000 10101110 ..... ..... ..... .....    @fmt_xdxjxkxa
+vfcmp_cond_s     0000 11000101 ..... ..... ..... .....    @fmt_vdvjvkfcond
+vfcmp_cond_d     0000 11000110 ..... ..... ..... .....    @fmt_vdvjvkfcond
+xvfcmp_cond_s    0000 11001001 ..... ..... ..... .....    @fmt_xdxjxkfcond
+xvfcmp_cond_d    0000 11001010 ..... ..... ..... .....    @fmt_xdxjxkfcond
+vbitsel_v        0000 11010001 ..... ..... ..... .....    @fmt_vdvjvkva
+xvbitsel_v       0000 11010010 ..... ..... ..... .....    @fmt_xdxjxkxa
+vshuf_b          0000 11010101 ..... ..... ..... .....    @fmt_vdvjvkva
+xvshuf_b         0000 11010110 ..... ..... ..... .....    @fmt_xdxjxkxa
+vextr_v          0000 11011001 ..... ..... ..... .....    @fmt_vdvjvkvui5
+xvextr_v         0000 11011010 ..... ..... ..... .....    @fmt_xdxjxkvui5
+vfmaddsub_s      0000 11101001 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmaddsub_d      0000 11101010 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmsubadd_s      0000 11101101 ..... ..... ..... .....    @fmt_vdvjvkva
+vfmsubadd_d      0000 11101110 ..... ..... ..... .....    @fmt_vdvjvkva
+xvfmaddsub_s     0000 11110001 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmaddsub_d     0000 11110010 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmsubadd_s     0000 11110101 ..... ..... ..... .....    @fmt_xdxjxkxa
+xvfmsubadd_d     0000 11110110 ..... ..... ..... .....    @fmt_xdxjxkxa
+
+vstelm_d         0011 00010001 0 . ........ ..... .....   @fmt_vdrjsi8idx1
+vstelm_w         0011 00010010 .. ........ ..... .....    @fmt_vdrjsi8idx2
+vstelm_h         0011 0001010 ... ........ ..... .....    @fmt_vdrjsi8idx3
+vstelm_b         0011 000110 .... ........ ..... .....    @fmt_vdrjsi8idx4
+xvldrepl_d       0011 00100001 0 ......... ..... .....    @fmt_xdrjsi9
+xvldrepl_w       0011 00100010 .......... ..... .....     @fmt_xdrjsi10
+xvldrepl_h       0011 0010010 ........... ..... .....     @fmt_xdrjsi11
+xvldrepl_b       0011 001010 ............ ..... .....     @fmt_xdrjsi12
+xvstelm_d        0011 00110001 .. ........ ..... .....    @fmt_xdrjsi8idx2
+xvstelm_w        0011 0011001 ... ........ ..... .....    @fmt_xdrjsi8idx3
+xvstelm_h        0011 001101 .... ........ ..... .....    @fmt_xdrjsi8idx4
+xvstelm_b        0011 00111 ..... ........ ..... .....    @fmt_xdrjsi8idx
+vseq_b           0111 00000000 00000 ..... ..... .....    @fmt_vdvjvk
+vseq_h           0111 00000000 00001 ..... ..... .....    @fmt_vdvjvk
+vseq_w           0111 00000000 00010 ..... ..... .....    @fmt_vdvjvk
+vseq_d           0111 00000000 00011 ..... ..... .....    @fmt_vdvjvk
+vsle_b           0111 00000000 00100 ..... ..... .....    @fmt_vdvjvk
+vsle_h           0111 00000000 00101 ..... ..... .....    @fmt_vdvjvk
+vsle_w           0111 00000000 00110 ..... ..... .....    @fmt_vdvjvk
+vsle_d           0111 00000000 00111 ..... ..... .....    @fmt_vdvjvk
+vsle_bu          0111 00000000 01000 ..... ..... .....    @fmt_vdvjvk
+vsle_hu          0111 00000000 01001 ..... ..... .....    @fmt_vdvjvk
+vsle_wu          0111 00000000 01010 ..... ..... .....    @fmt_vdvjvk
+vsle_du          0111 00000000 01011 ..... ..... .....    @fmt_vdvjvk
+vslt_b           0111 00000000 01100 ..... ..... .....    @fmt_vdvjvk
+vslt_h           0111 00000000 01101 ..... ..... .....    @fmt_vdvjvk
+vslt_w           0111 00000000 01110 ..... ..... .....    @fmt_vdvjvk
+vslt_d           0111 00000000 01111 ..... ..... .....    @fmt_vdvjvk
+vslt_bu          0111 00000000 10000 ..... ..... .....    @fmt_vdvjvk
+vslt_hu          0111 00000000 10001 ..... ..... .....    @fmt_vdvjvk
+vslt_wu          0111 00000000 10010 ..... ..... .....    @fmt_vdvjvk
+vslt_du          0111 00000000 10011 ..... ..... .....    @fmt_vdvjvk
+vadd_b           0111 00000000 10100 ..... ..... .....    @fmt_vdvjvk
+vadd_h           0111 00000000 10101 ..... ..... .....    @fmt_vdvjvk
+vadd_w           0111 00000000 10110 ..... ..... .....    @fmt_vdvjvk
+vadd_d           0111 00000000 10111 ..... ..... .....    @fmt_vdvjvk
+vsub_b           0111 00000000 11000 ..... ..... .....    @fmt_vdvjvk
+vsub_h           0111 00000000 11001 ..... ..... .....    @fmt_vdvjvk
+vsub_w           0111 00000000 11010 ..... ..... .....    @fmt_vdvjvk
+vsub_d           0111 00000000 11011 ..... ..... .....    @fmt_vdvjvk
+vaddwev_h_b      0111 00000001 11100 ..... ..... .....    @fmt_vdvjvk
+vaddwev_w_h      0111 00000001 11101 ..... ..... .....    @fmt_vdvjvk
+vaddwev_d_w      0111 00000001 11110 ..... ..... .....    @fmt_vdvjvk
+vaddwev_q_d      0111 00000001 11111 ..... ..... .....    @fmt_vdvjvk
+vsubwev_h_b      0111 00000010 00000 ..... ..... .....    @fmt_vdvjvk
+vsubwev_w_h      0111 00000010 00001 ..... ..... .....    @fmt_vdvjvk
+vsubwev_d_w      0111 00000010 00010 ..... ..... .....    @fmt_vdvjvk
+vsubwev_q_d      0111 00000010 00011 ..... ..... .....    @fmt_vdvjvk
+vaddwod_h_b      0111 00000010 00100 ..... ..... .....    @fmt_vdvjvk
+vaddwod_w_h      0111 00000010 00101 ..... ..... .....    @fmt_vdvjvk
+vaddwod_d_w      0111 00000010 00110 ..... ..... .....    @fmt_vdvjvk
+vaddwod_q_d      0111 00000010 00111 ..... ..... .....    @fmt_vdvjvk
+vsubwod_h_b      0111 00000010 01000 ..... ..... .....    @fmt_vdvjvk
+vsubwod_w_h      0111 00000010 01001 ..... ..... .....    @fmt_vdvjvk
+vsubwod_d_w      0111 00000010 01010 ..... ..... .....    @fmt_vdvjvk
+vsubwod_q_d      0111 00000010 01011 ..... ..... .....    @fmt_vdvjvk
+#vaddwl_h_b       0111 00000010 01100 ..... ..... .....    @fmt_vdvjvk
+#vaddwl_w_h       0111 00000010 01101 ..... ..... .....    @fmt_vdvjvk
+#vaddwl_d_w       0111 00000010 01110 ..... ..... .....    @fmt_vdvjvk
+#vaddwl_q_d       0111 00000010 01111 ..... ..... .....    @fmt_vdvjvk
+#vsubwl_h_b       0111 00000010 10000 ..... ..... .....    @fmt_vdvjvk
+#vsubwl_w_h       0111 00000010 10001 ..... ..... .....    @fmt_vdvjvk
+#vsubwl_d_w       0111 00000010 10010 ..... ..... .....    @fmt_vdvjvk
+#vsubwl_q_d       0111 00000010 10011 ..... ..... .....    @fmt_vdvjvk
+#vaddwh_h_b       0111 00000010 10100 ..... ..... .....    @fmt_vdvjvk
+#vaddwh_w_h       0111 00000010 10101 ..... ..... .....    @fmt_vdvjvk
+#vaddwh_d_w       0111 00000010 10110 ..... ..... .....    @fmt_vdvjvk
+#vaddwh_q_d       0111 00000010 10111 ..... ..... .....    @fmt_vdvjvk
+#vsubwh_h_b       0111 00000010 11000 ..... ..... .....    @fmt_vdvjvk
+#vsubwh_w_h       0111 00000010 11001 ..... ..... .....    @fmt_vdvjvk
+#vsubwh_d_w       0111 00000010 11010 ..... ..... .....    @fmt_vdvjvk
+#vsubwh_q_d       0111 00000010 11011 ..... ..... .....    @fmt_vdvjvk
+vaddwev_h_bu     0111 00000010 11100 ..... ..... .....    @fmt_vdvjvk
+vaddwev_w_hu     0111 00000010 11101 ..... ..... .....    @fmt_vdvjvk
+vaddwev_d_wu     0111 00000010 11110 ..... ..... .....    @fmt_vdvjvk
+vaddwev_q_du     0111 00000010 11111 ..... ..... .....    @fmt_vdvjvk
+vsubwev_h_bu     0111 00000011 00000 ..... ..... .....    @fmt_vdvjvk
+vsubwev_w_hu     0111 00000011 00001 ..... ..... .....    @fmt_vdvjvk
+vsubwev_d_wu     0111 00000011 00010 ..... ..... .....    @fmt_vdvjvk
+vsubwev_q_du     0111 00000011 00011 ..... ..... .....    @fmt_vdvjvk
+vaddwod_h_bu     0111 00000011 00100 ..... ..... .....    @fmt_vdvjvk
+vaddwod_w_hu     0111 00000011 00101 ..... ..... .....    @fmt_vdvjvk
+vaddwod_d_wu     0111 00000011 00110 ..... ..... .....    @fmt_vdvjvk
+vaddwod_q_du     0111 00000011 00111 ..... ..... .....    @fmt_vdvjvk
+vsubwod_h_bu     0111 00000011 01000 ..... ..... .....    @fmt_vdvjvk
+vsubwod_w_hu     0111 00000011 01001 ..... ..... .....    @fmt_vdvjvk
+vsubwod_d_wu     0111 00000011 01010 ..... ..... .....    @fmt_vdvjvk
+vsubwod_q_du     0111 00000011 01011 ..... ..... .....    @fmt_vdvjvk
+vaddwev_h_bu_b   0111 00000011 11100 ..... ..... .....    @fmt_vdvjvk
+vaddwev_w_hu_h   0111 00000011 11101 ..... ..... .....    @fmt_vdvjvk
+vaddwev_d_wu_w   0111 00000011 11110 ..... ..... .....    @fmt_vdvjvk
+vaddwev_q_du_d   0111 00000011 11111 ..... ..... .....    @fmt_vdvjvk
+vaddwod_h_bu_b   0111 00000100 00000 ..... ..... .....    @fmt_vdvjvk
+vaddwod_w_hu_h   0111 00000100 00001 ..... ..... .....    @fmt_vdvjvk
+vaddwod_d_wu_w   0111 00000100 00010 ..... ..... .....    @fmt_vdvjvk
+vaddwod_q_du_d   0111 00000100 00011 ..... ..... .....    @fmt_vdvjvk
+vsadd_b          0111 00000100 01100 ..... ..... .....    @fmt_vdvjvk
+vsadd_h          0111 00000100 01101 ..... ..... .....    @fmt_vdvjvk
+vsadd_w          0111 00000100 01110 ..... ..... .....    @fmt_vdvjvk
+vsadd_d          0111 00000100 01111 ..... ..... .....    @fmt_vdvjvk
+vssub_b          0111 00000100 10000 ..... ..... .....    @fmt_vdvjvk
+vssub_h          0111 00000100 10001 ..... ..... .....    @fmt_vdvjvk
+vssub_w          0111 00000100 10010 ..... ..... .....    @fmt_vdvjvk
+vssub_d          0111 00000100 10011 ..... ..... .....    @fmt_vdvjvk
+vsadd_bu         0111 00000100 10100 ..... ..... .....    @fmt_vdvjvk
+vsadd_hu         0111 00000100 10101 ..... ..... .....    @fmt_vdvjvk
+vsadd_wu         0111 00000100 10110 ..... ..... .....    @fmt_vdvjvk
+vsadd_du         0111 00000100 10111 ..... ..... .....    @fmt_vdvjvk
+vssub_bu         0111 00000100 11000 ..... ..... .....    @fmt_vdvjvk
+vssub_hu         0111 00000100 11001 ..... ..... .....    @fmt_vdvjvk
+vssub_wu         0111 00000100 11010 ..... ..... .....    @fmt_vdvjvk
+vssub_du         0111 00000100 11011 ..... ..... .....    @fmt_vdvjvk
+vhaddw_h_b       0111 00000101 01000 ..... ..... .....    @fmt_vdvjvk
+vhaddw_w_h       0111 00000101 01001 ..... ..... .....    @fmt_vdvjvk
+vhaddw_d_w       0111 00000101 01010 ..... ..... .....    @fmt_vdvjvk
+vhaddw_q_d       0111 00000101 01011 ..... ..... .....    @fmt_vdvjvk
+vhsubw_h_b       0111 00000101 01100 ..... ..... .....    @fmt_vdvjvk
+vhsubw_w_h       0111 00000101 01101 ..... ..... .....    @fmt_vdvjvk
+vhsubw_d_w       0111 00000101 01110 ..... ..... .....    @fmt_vdvjvk
+vhsubw_q_d       0111 00000101 01111 ..... ..... .....    @fmt_vdvjvk
+vhaddw_hu_bu     0111 00000101 10000 ..... ..... .....    @fmt_vdvjvk
+vhaddw_wu_hu     0111 00000101 10001 ..... ..... .....    @fmt_vdvjvk
+vhaddw_du_wu     0111 00000101 10010 ..... ..... .....    @fmt_vdvjvk
+vhaddw_qu_du     0111 00000101 10011 ..... ..... .....    @fmt_vdvjvk
+vhsubw_hu_bu     0111 00000101 10100 ..... ..... .....    @fmt_vdvjvk
+vhsubw_wu_hu     0111 00000101 10101 ..... ..... .....    @fmt_vdvjvk
+vhsubw_du_wu     0111 00000101 10110 ..... ..... .....    @fmt_vdvjvk
+vhsubw_qu_du     0111 00000101 10111 ..... ..... .....    @fmt_vdvjvk
+vadda_b          0111 00000101 11000 ..... ..... .....    @fmt_vdvjvk
+vadda_h          0111 00000101 11001 ..... ..... .....    @fmt_vdvjvk
+vadda_w          0111 00000101 11010 ..... ..... .....    @fmt_vdvjvk
+vadda_d          0111 00000101 11011 ..... ..... .....    @fmt_vdvjvk
+vabsd_b          0111 00000110 00000 ..... ..... .....    @fmt_vdvjvk
+vabsd_h          0111 00000110 00001 ..... ..... .....    @fmt_vdvjvk
+vabsd_w          0111 00000110 00010 ..... ..... .....    @fmt_vdvjvk
+vabsd_d          0111 00000110 00011 ..... ..... .....    @fmt_vdvjvk
+vabsd_bu         0111 00000110 00100 ..... ..... .....    @fmt_vdvjvk
+vabsd_hu         0111 00000110 00101 ..... ..... .....    @fmt_vdvjvk
+vabsd_wu         0111 00000110 00110 ..... ..... .....    @fmt_vdvjvk
+vabsd_du         0111 00000110 00111 ..... ..... .....    @fmt_vdvjvk
+vavg_b           0111 00000110 01000 ..... ..... .....    @fmt_vdvjvk
+vavg_h           0111 00000110 01001 ..... ..... .....    @fmt_vdvjvk
+vavg_w           0111 00000110 01010 ..... ..... .....    @fmt_vdvjvk
+vavg_d           0111 00000110 01011 ..... ..... .....    @fmt_vdvjvk
+vavg_bu          0111 00000110 01100 ..... ..... .....    @fmt_vdvjvk
+vavg_hu          0111 00000110 01101 ..... ..... .....    @fmt_vdvjvk
+vavg_wu          0111 00000110 01110 ..... ..... .....    @fmt_vdvjvk
+vavg_du          0111 00000110 01111 ..... ..... .....    @fmt_vdvjvk
+vavgr_b          0111 00000110 10000 ..... ..... .....    @fmt_vdvjvk
+vavgr_h          0111 00000110 10001 ..... ..... .....    @fmt_vdvjvk
+vavgr_w          0111 00000110 10010 ..... ..... .....    @fmt_vdvjvk
+vavgr_d          0111 00000110 10011 ..... ..... .....    @fmt_vdvjvk
+vavgr_bu         0111 00000110 10100 ..... ..... .....    @fmt_vdvjvk
+vavgr_hu         0111 00000110 10101 ..... ..... .....    @fmt_vdvjvk
+vavgr_wu         0111 00000110 10110 ..... ..... .....    @fmt_vdvjvk
+vavgr_du         0111 00000110 10111 ..... ..... .....    @fmt_vdvjvk
+vmax_b           0111 00000111 00000 ..... ..... .....    @fmt_vdvjvk
+vmax_h           0111 00000111 00001 ..... ..... .....    @fmt_vdvjvk
+vmax_w           0111 00000111 00010 ..... ..... .....    @fmt_vdvjvk
+vmax_d           0111 00000111 00011 ..... ..... .....    @fmt_vdvjvk
+vmin_b           0111 00000111 00100 ..... ..... .....    @fmt_vdvjvk
+vmin_h           0111 00000111 00101 ..... ..... .....    @fmt_vdvjvk
+vmin_w           0111 00000111 00110 ..... ..... .....    @fmt_vdvjvk
+vmin_d           0111 00000111 00111 ..... ..... .....    @fmt_vdvjvk
+vmax_bu          0111 00000111 01000 ..... ..... .....    @fmt_vdvjvk
+vmax_hu          0111 00000111 01001 ..... ..... .....    @fmt_vdvjvk
+vmax_wu          0111 00000111 01010 ..... ..... .....    @fmt_vdvjvk
+vmax_du          0111 00000111 01011 ..... ..... .....    @fmt_vdvjvk
+vmin_bu          0111 00000111 01100 ..... ..... .....    @fmt_vdvjvk
+vmin_hu          0111 00000111 01101 ..... ..... .....    @fmt_vdvjvk
+vmin_wu          0111 00000111 01110 ..... ..... .....    @fmt_vdvjvk
+vmin_du          0111 00000111 01111 ..... ..... .....    @fmt_vdvjvk
+vmul_b           0111 00001000 01000 ..... ..... .....    @fmt_vdvjvk
+vmul_h           0111 00001000 01001 ..... ..... .....    @fmt_vdvjvk
+vmul_w           0111 00001000 01010 ..... ..... .....    @fmt_vdvjvk
+vmul_d           0111 00001000 01011 ..... ..... .....    @fmt_vdvjvk
+vmuh_b           0111 00001000 01100 ..... ..... .....    @fmt_vdvjvk
+vmuh_h           0111 00001000 01101 ..... ..... .....    @fmt_vdvjvk
+vmuh_w           0111 00001000 01110 ..... ..... .....    @fmt_vdvjvk
+vmuh_d           0111 00001000 01111 ..... ..... .....    @fmt_vdvjvk
+vmuh_bu          0111 00001000 10000 ..... ..... .....    @fmt_vdvjvk
+vmuh_hu          0111 00001000 10001 ..... ..... .....    @fmt_vdvjvk
+vmuh_wu          0111 00001000 10010 ..... ..... .....    @fmt_vdvjvk
+vmuh_du          0111 00001000 10011 ..... ..... .....    @fmt_vdvjvk
+vmulwev_h_b      0111 00001001 00000 ..... ..... .....    @fmt_vdvjvk
+vmulwev_w_h      0111 00001001 00001 ..... ..... .....    @fmt_vdvjvk
+vmulwev_d_w      0111 00001001 00010 ..... ..... .....    @fmt_vdvjvk
+vmulwev_q_d      0111 00001001 00011 ..... ..... .....    @fmt_vdvjvk
+vmulwod_h_b      0111 00001001 00100 ..... ..... .....    @fmt_vdvjvk
+vmulwod_w_h      0111 00001001 00101 ..... ..... .....    @fmt_vdvjvk
+vmulwod_d_w      0111 00001001 00110 ..... ..... .....    @fmt_vdvjvk
+vmulwod_q_d      0111 00001001 00111 ..... ..... .....    @fmt_vdvjvk
+vmulwev_h_bu     0111 00001001 10000 ..... ..... .....    @fmt_vdvjvk
+vmulwev_w_hu     0111 00001001 10001 ..... ..... .....    @fmt_vdvjvk
+vmulwev_d_wu     0111 00001001 10010 ..... ..... .....    @fmt_vdvjvk
+vmulwev_q_du     0111 00001001 10011 ..... ..... .....    @fmt_vdvjvk
+vmulwod_h_bu     0111 00001001 10100 ..... ..... .....    @fmt_vdvjvk
+vmulwod_w_hu     0111 00001001 10101 ..... ..... .....    @fmt_vdvjvk
+vmulwod_d_wu     0111 00001001 10110 ..... ..... .....    @fmt_vdvjvk
+vmulwod_q_du     0111 00001001 10111 ..... ..... .....    @fmt_vdvjvk
+vmulwev_h_bu_b   0111 00001010 00000 ..... ..... .....    @fmt_vdvjvk
+vmulwev_w_hu_h   0111 00001010 00001 ..... ..... .....    @fmt_vdvjvk
+vmulwev_d_wu_w   0111 00001010 00010 ..... ..... .....    @fmt_vdvjvk
+vmulwev_q_du_d   0111 00001010 00011 ..... ..... .....    @fmt_vdvjvk
+vmulwod_h_bu_b   0111 00001010 00100 ..... ..... .....    @fmt_vdvjvk
+vmulwod_w_hu_h   0111 00001010 00101 ..... ..... .....    @fmt_vdvjvk
+vmulwod_d_wu_w   0111 00001010 00110 ..... ..... .....    @fmt_vdvjvk
+vmulwod_q_du_d   0111 00001010 00111 ..... ..... .....    @fmt_vdvjvk
+vmadd_b          0111 00001010 10000 ..... ..... .....    @fmt_vdvjvk
+vmadd_h          0111 00001010 10001 ..... ..... .....    @fmt_vdvjvk
+vmadd_w          0111 00001010 10010 ..... ..... .....    @fmt_vdvjvk
+vmadd_d          0111 00001010 10011 ..... ..... .....    @fmt_vdvjvk
+vmsub_b          0111 00001010 10100 ..... ..... .....    @fmt_vdvjvk
+vmsub_h          0111 00001010 10101 ..... ..... .....    @fmt_vdvjvk
+vmsub_w          0111 00001010 10110 ..... ..... .....    @fmt_vdvjvk
+vmsub_d          0111 00001010 10111 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_h_b     0111 00001010 11000 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_w_h     0111 00001010 11001 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_d_w     0111 00001010 11010 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_q_d     0111 00001010 11011 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_h_b     0111 00001010 11100 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_w_h     0111 00001010 11101 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_d_w     0111 00001010 11110 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_q_d     0111 00001010 11111 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_h_bu    0111 00001011 01000 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_w_hu    0111 00001011 01001 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_d_wu    0111 00001011 01010 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_q_du    0111 00001011 01011 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_h_bu    0111 00001011 01100 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_w_hu    0111 00001011 01101 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_d_wu    0111 00001011 01110 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_q_du    0111 00001011 01111 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_h_bu_b  0111 00001011 11000 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_w_hu_h  0111 00001011 11001 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_d_wu_w  0111 00001011 11010 ..... ..... .....    @fmt_vdvjvk
+vmaddwev_q_du_d  0111 00001011 11011 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_h_bu_b  0111 00001011 11100 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_w_hu_h  0111 00001011 11101 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_d_wu_w  0111 00001011 11110 ..... ..... .....    @fmt_vdvjvk
+vmaddwod_q_du_d  0111 00001011 11111 ..... ..... .....    @fmt_vdvjvk
+vdiv_b           0111 00001110 00000 ..... ..... .....    @fmt_vdvjvk
+vdiv_h           0111 00001110 00001 ..... ..... .....    @fmt_vdvjvk
+vdiv_w           0111 00001110 00010 ..... ..... .....    @fmt_vdvjvk
+vdiv_d           0111 00001110 00011 ..... ..... .....    @fmt_vdvjvk
+vmod_b           0111 00001110 00100 ..... ..... .....    @fmt_vdvjvk
+vmod_h           0111 00001110 00101 ..... ..... .....    @fmt_vdvjvk
+vmod_w           0111 00001110 00110 ..... ..... .....    @fmt_vdvjvk
+vmod_d           0111 00001110 00111 ..... ..... .....    @fmt_vdvjvk
+vdiv_bu          0111 00001110 01000 ..... ..... .....    @fmt_vdvjvk
+vdiv_hu          0111 00001110 01001 ..... ..... .....    @fmt_vdvjvk
+vdiv_wu          0111 00001110 01010 ..... ..... .....    @fmt_vdvjvk
+vdiv_du          0111 00001110 01011 ..... ..... .....    @fmt_vdvjvk
+vmod_bu          0111 00001110 01100 ..... ..... .....    @fmt_vdvjvk
+vmod_hu          0111 00001110 01101 ..... ..... .....    @fmt_vdvjvk
+vmod_wu          0111 00001110 01110 ..... ..... .....    @fmt_vdvjvk
+vmod_du          0111 00001110 01111 ..... ..... .....    @fmt_vdvjvk
+vsll_b           0111 00001110 10000 ..... ..... .....    @fmt_vdvjvk
+vsll_h           0111 00001110 10001 ..... ..... .....    @fmt_vdvjvk
+vsll_w           0111 00001110 10010 ..... ..... .....    @fmt_vdvjvk
+vsll_d           0111 00001110 10011 ..... ..... .....    @fmt_vdvjvk
+vsrl_b           0111 00001110 10100 ..... ..... .....    @fmt_vdvjvk
+vsrl_h           0111 00001110 10101 ..... ..... .....    @fmt_vdvjvk
+vsrl_w           0111 00001110 10110 ..... ..... .....    @fmt_vdvjvk
+vsrl_d           0111 00001110 10111 ..... ..... .....    @fmt_vdvjvk
+vsra_b           0111 00001110 11000 ..... ..... .....    @fmt_vdvjvk
+vsra_h           0111 00001110 11001 ..... ..... .....    @fmt_vdvjvk
+vsra_w           0111 00001110 11010 ..... ..... .....    @fmt_vdvjvk
+vsra_d           0111 00001110 11011 ..... ..... .....    @fmt_vdvjvk
+vrotr_b          0111 00001110 11100 ..... ..... .....    @fmt_vdvjvk
+vrotr_h          0111 00001110 11101 ..... ..... .....    @fmt_vdvjvk
+vrotr_w          0111 00001110 11110 ..... ..... .....    @fmt_vdvjvk
+vrotr_d          0111 00001110 11111 ..... ..... .....    @fmt_vdvjvk
+vsrlr_b          0111 00001111 00000 ..... ..... .....    @fmt_vdvjvk
+vsrlr_h          0111 00001111 00001 ..... ..... .....    @fmt_vdvjvk
+vsrlr_w          0111 00001111 00010 ..... ..... .....    @fmt_vdvjvk
+vsrlr_d          0111 00001111 00011 ..... ..... .....    @fmt_vdvjvk
+vsrar_b          0111 00001111 00100 ..... ..... .....    @fmt_vdvjvk
+vsrar_h          0111 00001111 00101 ..... ..... .....    @fmt_vdvjvk
+vsrar_w          0111 00001111 00110 ..... ..... .....    @fmt_vdvjvk
+vsrar_d          0111 00001111 00111 ..... ..... .....    @fmt_vdvjvk
+vsrln_b_h        0111 00001111 01001 ..... ..... .....    @fmt_vdvjvk
+vsrln_h_w        0111 00001111 01010 ..... ..... .....    @fmt_vdvjvk
+vsrln_w_d        0111 00001111 01011 ..... ..... .....    @fmt_vdvjvk
+vsran_b_h        0111 00001111 01101 ..... ..... .....    @fmt_vdvjvk
+vsran_h_w        0111 00001111 01110 ..... ..... .....    @fmt_vdvjvk
+vsran_w_d        0111 00001111 01111 ..... ..... .....    @fmt_vdvjvk
+vsrlrn_b_h       0111 00001111 10001 ..... ..... .....    @fmt_vdvjvk
+vsrlrn_h_w       0111 00001111 10010 ..... ..... .....    @fmt_vdvjvk
+vsrlrn_w_d       0111 00001111 10011 ..... ..... .....    @fmt_vdvjvk
+vsrarn_b_h       0111 00001111 10101 ..... ..... .....    @fmt_vdvjvk
+vsrarn_h_w       0111 00001111 10110 ..... ..... .....    @fmt_vdvjvk
+vsrarn_w_d       0111 00001111 10111 ..... ..... .....    @fmt_vdvjvk
+vssrln_b_h       0111 00001111 11001 ..... ..... .....    @fmt_vdvjvk
+vssrln_h_w       0111 00001111 11010 ..... ..... .....    @fmt_vdvjvk
+vssrln_w_d       0111 00001111 11011 ..... ..... .....    @fmt_vdvjvk
+vssran_b_h       0111 00001111 11101 ..... ..... .....    @fmt_vdvjvk
+vssran_h_w       0111 00001111 11110 ..... ..... .....    @fmt_vdvjvk
+vssran_w_d       0111 00001111 11111 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_b_h      0111 00010000 00001 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_h_w      0111 00010000 00010 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_w_d      0111 00010000 00011 ..... ..... .....    @fmt_vdvjvk
+vssrarn_b_h      0111 00010000 00101 ..... ..... .....    @fmt_vdvjvk
+vssrarn_h_w      0111 00010000 00110 ..... ..... .....    @fmt_vdvjvk
+vssrarn_w_d      0111 00010000 00111 ..... ..... .....    @fmt_vdvjvk
+vssrln_bu_h      0111 00010000 01001 ..... ..... .....    @fmt_vdvjvk
+vssrln_hu_w      0111 00010000 01010 ..... ..... .....    @fmt_vdvjvk
+vssrln_wu_d      0111 00010000 01011 ..... ..... .....    @fmt_vdvjvk
+vssran_bu_h      0111 00010000 01101 ..... ..... .....    @fmt_vdvjvk
+vssran_hu_w      0111 00010000 01110 ..... ..... .....    @fmt_vdvjvk
+vssran_wu_d      0111 00010000 01111 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_bu_h     0111 00010000 10001 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_hu_w     0111 00010000 10010 ..... ..... .....    @fmt_vdvjvk
+vssrlrn_wu_d     0111 00010000 10011 ..... ..... .....    @fmt_vdvjvk
+vssrarn_bu_h     0111 00010000 10101 ..... ..... .....    @fmt_vdvjvk
+vssrarn_hu_w     0111 00010000 10110 ..... ..... .....    @fmt_vdvjvk
+vssrarn_wu_d     0111 00010000 10111 ..... ..... .....    @fmt_vdvjvk
+vbitclr_b        0111 00010000 11000 ..... ..... .....    @fmt_vdvjvk
+vbitclr_h        0111 00010000 11001 ..... ..... .....    @fmt_vdvjvk
+vbitclr_w        0111 00010000 11010 ..... ..... .....    @fmt_vdvjvk
+vbitclr_d        0111 00010000 11011 ..... ..... .....    @fmt_vdvjvk
+vbitset_b        0111 00010000 11100 ..... ..... .....    @fmt_vdvjvk
+vbitset_h        0111 00010000 11101 ..... ..... .....    @fmt_vdvjvk
+vbitset_w        0111 00010000 11110 ..... ..... .....    @fmt_vdvjvk
+vbitset_d        0111 00010000 11111 ..... ..... .....    @fmt_vdvjvk
+vbitrev_b        0111 00010001 00000 ..... ..... .....    @fmt_vdvjvk
+vbitrev_h        0111 00010001 00001 ..... ..... .....    @fmt_vdvjvk
+vbitrev_w        0111 00010001 00010 ..... ..... .....    @fmt_vdvjvk
+vbitrev_d        0111 00010001 00011 ..... ..... .....    @fmt_vdvjvk
+vpackev_b        0111 00010001 01100 ..... ..... .....    @fmt_vdvjvk
+vpackev_h        0111 00010001 01101 ..... ..... .....    @fmt_vdvjvk
+vpackev_w        0111 00010001 01110 ..... ..... .....    @fmt_vdvjvk
+vpackev_d        0111 00010001 01111 ..... ..... .....    @fmt_vdvjvk
+vpackod_b        0111 00010001 10000 ..... ..... .....    @fmt_vdvjvk
+vpackod_h        0111 00010001 10001 ..... ..... .....    @fmt_vdvjvk
+vpackod_w        0111 00010001 10010 ..... ..... .....    @fmt_vdvjvk
+vpackod_d        0111 00010001 10011 ..... ..... .....    @fmt_vdvjvk
+vilvl_b          0111 00010001 10100 ..... ..... .....    @fmt_vdvjvk
+vilvl_h          0111 00010001 10101 ..... ..... .....    @fmt_vdvjvk
+vilvl_w          0111 00010001 10110 ..... ..... .....    @fmt_vdvjvk
+vilvl_d          0111 00010001 10111 ..... ..... .....    @fmt_vdvjvk
+vilvh_b          0111 00010001 11000 ..... ..... .....    @fmt_vdvjvk
+vilvh_h          0111 00010001 11001 ..... ..... .....    @fmt_vdvjvk
+vilvh_w          0111 00010001 11010 ..... ..... .....    @fmt_vdvjvk
+vilvh_d          0111 00010001 11011 ..... ..... .....    @fmt_vdvjvk
+vpickev_b        0111 00010001 11100 ..... ..... .....    @fmt_vdvjvk
+vpickev_h        0111 00010001 11101 ..... ..... .....    @fmt_vdvjvk
+vpickev_w        0111 00010001 11110 ..... ..... .....    @fmt_vdvjvk
+vpickev_d        0111 00010001 11111 ..... ..... .....    @fmt_vdvjvk
+vpickod_b        0111 00010010 00000 ..... ..... .....    @fmt_vdvjvk
+vpickod_h        0111 00010010 00001 ..... ..... .....    @fmt_vdvjvk
+vpickod_w        0111 00010010 00010 ..... ..... .....    @fmt_vdvjvk
+vpickod_d        0111 00010010 00011 ..... ..... .....    @fmt_vdvjvk
+vreplve_b        0111 00010010 00100 ..... ..... .....    @fmt_vdvjrk
+vreplve_h        0111 00010010 00101 ..... ..... .....    @fmt_vdvjrk
+vreplve_w        0111 00010010 00110 ..... ..... .....    @fmt_vdvjrk
+vreplve_d        0111 00010010 00111 ..... ..... .....    @fmt_vdvjrk
+vand_v           0111 00010010 01100 ..... ..... .....    @fmt_vdvjvk
+vor_v            0111 00010010 01101 ..... ..... .....    @fmt_vdvjvk
+vxor_v           0111 00010010 01110 ..... ..... .....    @fmt_vdvjvk
+vnor_v           0111 00010010 01111 ..... ..... .....    @fmt_vdvjvk
+vandn_v          0111 00010010 10000 ..... ..... .....    @fmt_vdvjvk
+vorn_v           0111 00010010 10001 ..... ..... .....    @fmt_vdvjvk
+vfrstp_b         0111 00010010 10110 ..... ..... .....    @fmt_vdvjvk
+vfrstp_h         0111 00010010 10111 ..... ..... .....    @fmt_vdvjvk
+vadd_q           0111 00010010 11010 ..... ..... .....    @fmt_vdvjvk
+vsub_q           0111 00010010 11011 ..... ..... .....    @fmt_vdvjvk
+vsigncov_b       0111 00010010 11100 ..... ..... .....    @fmt_vdvjvk
+vsigncov_h       0111 00010010 11101 ..... ..... .....    @fmt_vdvjvk
+vsigncov_w       0111 00010010 11110 ..... ..... .....    @fmt_vdvjvk
+vsigncov_d       0111 00010010 11111 ..... ..... .....    @fmt_vdvjvk
+vfadd_s          0111 00010011 00001 ..... ..... .....    @fmt_vdvjvk
+vfadd_d          0111 00010011 00010 ..... ..... .....    @fmt_vdvjvk
+vfsub_s          0111 00010011 00101 ..... ..... .....    @fmt_vdvjvk
+vfsub_d          0111 00010011 00110 ..... ..... .....    @fmt_vdvjvk
+vfmul_s          0111 00010011 10001 ..... ..... .....    @fmt_vdvjvk
+vfmul_d          0111 00010011 10010 ..... ..... .....    @fmt_vdvjvk
+vfdiv_s          0111 00010011 10101 ..... ..... .....    @fmt_vdvjvk
+vfdiv_d          0111 00010011 10110 ..... ..... .....    @fmt_vdvjvk
+vfmax_s          0111 00010011 11001 ..... ..... .....    @fmt_vdvjvk
+vfmax_d          0111 00010011 11010 ..... ..... .....    @fmt_vdvjvk
+vfmin_s          0111 00010011 11101 ..... ..... .....    @fmt_vdvjvk
+vfmin_d          0111 00010011 11110 ..... ..... .....    @fmt_vdvjvk
+vfmaxa_s         0111 00010100 00001 ..... ..... .....    @fmt_vdvjvk
+vfmaxa_d         0111 00010100 00010 ..... ..... .....    @fmt_vdvjvk
+vfmina_s         0111 00010100 00101 ..... ..... .....    @fmt_vdvjvk
+vfmina_d         0111 00010100 00110 ..... ..... .....    @fmt_vdvjvk
+vfscaleb_s       0111 00010100 01001 ..... ..... .....    @fmt_vdvjvk
+vfscaleb_d       0111 00010100 01010 ..... ..... .....    @fmt_vdvjvk
+vfcvt_h_s        0111 00010100 01100 ..... ..... .....    @fmt_vdvjvk
+vfcvt_s_d        0111 00010100 01101 ..... ..... .....    @fmt_vdvjvk
+vffint_s_l       0111 00010100 10000 ..... ..... .....    @fmt_vdvjvk
+vftint_w_d       0111 00010100 10011 ..... ..... .....    @fmt_vdvjvk
+vftintrm_w_d     0111 00010100 10100 ..... ..... .....    @fmt_vdvjvk
+vftintrp_w_d     0111 00010100 10101 ..... ..... .....    @fmt_vdvjvk
+vftintrz_w_d     0111 00010100 10110 ..... ..... .....    @fmt_vdvjvk
+vftintrne_w_d    0111 00010100 10111 ..... ..... .....    @fmt_vdvjvk
+vshuf_h          0111 00010111 10101 ..... ..... .....    @fmt_vdvjvk
+vshuf_w          0111 00010111 10110 ..... ..... .....    @fmt_vdvjvk
+vshuf_d          0111 00010111 10111 ..... ..... .....    @fmt_vdvjvk
+vseqi_b          0111 00101000 00000 ..... ..... .....    @fmt_vdvjsi5
+vseqi_h          0111 00101000 00001 ..... ..... .....    @fmt_vdvjsi5
+vseqi_w          0111 00101000 00010 ..... ..... .....    @fmt_vdvjsi5
+vseqi_d          0111 00101000 00011 ..... ..... .....    @fmt_vdvjsi5
+vslei_b          0111 00101000 00100 ..... ..... .....    @fmt_vdvjsi5
+vslei_h          0111 00101000 00101 ..... ..... .....    @fmt_vdvjsi5
+vslei_w          0111 00101000 00110 ..... ..... .....    @fmt_vdvjsi5
+vslei_d          0111 00101000 00111 ..... ..... .....    @fmt_vdvjsi5
+vslei_bu         0111 00101000 01000 ..... ..... .....    @fmt_vdvjui5
+vslei_hu         0111 00101000 01001 ..... ..... .....    @fmt_vdvjui5
+vslei_wu         0111 00101000 01010 ..... ..... .....    @fmt_vdvjui5
+vslei_du         0111 00101000 01011 ..... ..... .....    @fmt_vdvjui5
+vslti_b          0111 00101000 01100 ..... ..... .....    @fmt_vdvjsi5
+vslti_h          0111 00101000 01101 ..... ..... .....    @fmt_vdvjsi5
+vslti_w          0111 00101000 01110 ..... ..... .....    @fmt_vdvjsi5
+vslti_d          0111 00101000 01111 ..... ..... .....    @fmt_vdvjsi5
+vslti_bu         0111 00101000 10000 ..... ..... .....    @fmt_vdvjui5
+vslti_hu         0111 00101000 10001 ..... ..... .....    @fmt_vdvjui5
+vslti_wu         0111 00101000 10010 ..... ..... .....    @fmt_vdvjui5
+vslti_du         0111 00101000 10011 ..... ..... .....    @fmt_vdvjui5
+vaddi_bu         0111 00101000 10100 ..... ..... .....    @fmt_vdvjui5
+vaddi_hu         0111 00101000 10101 ..... ..... .....    @fmt_vdvjui5
+vaddi_wu         0111 00101000 10110 ..... ..... .....    @fmt_vdvjui5
+vaddi_du         0111 00101000 10111 ..... ..... .....    @fmt_vdvjui5
+vsubi_bu         0111 00101000 11000 ..... ..... .....    @fmt_vdvjui5
+vsubi_hu         0111 00101000 11001 ..... ..... .....    @fmt_vdvjui5
+vsubi_wu         0111 00101000 11010 ..... ..... .....    @fmt_vdvjui5
+vsubi_du         0111 00101000 11011 ..... ..... .....    @fmt_vdvjui5
+vbsll_v          0111 00101000 11100 ..... ..... .....    @fmt_vdvjui5
+vbsrl_v          0111 00101000 11101 ..... ..... .....    @fmt_vdvjui5
+vmaxi_b          0111 00101001 00000 ..... ..... .....    @fmt_vdvjsi5
+vmaxi_h          0111 00101001 00001 ..... ..... .....    @fmt_vdvjsi5
+vmaxi_w          0111 00101001 00010 ..... ..... .....    @fmt_vdvjsi5
+vmaxi_d          0111 00101001 00011 ..... ..... .....    @fmt_vdvjsi5
+vmini_b          0111 00101001 00100 ..... ..... .....    @fmt_vdvjsi5
+vmini_h          0111 00101001 00101 ..... ..... .....    @fmt_vdvjsi5
+vmini_w          0111 00101001 00110 ..... ..... .....    @fmt_vdvjsi5
+vmini_d          0111 00101001 00111 ..... ..... .....    @fmt_vdvjsi5
+vmaxi_bu         0111 00101001 01000 ..... ..... .....    @fmt_vdvjui5
+vmaxi_hu         0111 00101001 01001 ..... ..... .....    @fmt_vdvjui5
+vmaxi_wu         0111 00101001 01010 ..... ..... .....    @fmt_vdvjui5
+vmaxi_du         0111 00101001 01011 ..... ..... .....    @fmt_vdvjui5
+vmini_bu         0111 00101001 01100 ..... ..... .....    @fmt_vdvjui5
+vmini_hu         0111 00101001 01101 ..... ..... .....    @fmt_vdvjui5
+vmini_wu         0111 00101001 01110 ..... ..... .....    @fmt_vdvjui5
+vmini_du         0111 00101001 01111 ..... ..... .....    @fmt_vdvjui5
+vfrstpi_b        0111 00101001 10100 ..... ..... .....    @fmt_vdvjui5
+vfrstpi_h        0111 00101001 10101 ..... ..... .....    @fmt_vdvjui5
+vclrstri_v       0111 00101001 10110 ..... ..... .....    @fmt_vdvjui5
+vmepatmsk_v      0111 00101001 10111 ..... ..... .....    @fmt_vdmodeui5
+vclo_b           0111 00101001 11000 00000 ..... .....    @fmt_vdvj
+vclo_h           0111 00101001 11000 00001 ..... .....    @fmt_vdvj
+vclo_w           0111 00101001 11000 00010 ..... .....    @fmt_vdvj
+vclo_d           0111 00101001 11000 00011 ..... .....    @fmt_vdvj
+vclz_b           0111 00101001 11000 00100 ..... .....    @fmt_vdvj
+vclz_h           0111 00101001 11000 00101 ..... .....    @fmt_vdvj
+vclz_w           0111 00101001 11000 00110 ..... .....    @fmt_vdvj
+vclz_d           0111 00101001 11000 00111 ..... .....    @fmt_vdvj
+vpcnt_b          0111 00101001 11000 01000 ..... .....    @fmt_vdvj
+vpcnt_h          0111 00101001 11000 01001 ..... .....    @fmt_vdvj
+vpcnt_w          0111 00101001 11000 01010 ..... .....    @fmt_vdvj
+vpcnt_d          0111 00101001 11000 01011 ..... .....    @fmt_vdvj
+vneg_b           0111 00101001 11000 01100 ..... .....    @fmt_vdvj
+vneg_h           0111 00101001 11000 01101 ..... .....    @fmt_vdvj
+vneg_w           0111 00101001 11000 01110 ..... .....    @fmt_vdvj
+vneg_d           0111 00101001 11000 01111 ..... .....    @fmt_vdvj
+vmskltz_b        0111 00101001 11000 10000 ..... .....    @fmt_vdvj
+vmskltz_h        0111 00101001 11000 10001 ..... .....    @fmt_vdvj
+vmskltz_w        0111 00101001 11000 10010 ..... .....    @fmt_vdvj
+vmskltz_d        0111 00101001 11000 10011 ..... .....    @fmt_vdvj
+vmskgez_b        0111 00101001 11000 10100 ..... .....    @fmt_vdvj
+vmsknz_b         0111 00101001 11000 11000 ..... .....    @fmt_vdvj
+vmskcopy_b       0111 00101001 11000 11100 ..... .....    @fmt_vdvj
+vmskfill_b       0111 00101001 11001 00000 ..... .....    @fmt_vdvj
+vfrstm_b         0111 00101001 11001 00100 ..... .....    @fmt_vdvj
+vfrstm_h         0111 00101001 11001 00101 ..... .....    @fmt_vdvj
+vseteqz_v        0111 00101001 11001 00110 ..... 00 ...   @fmt_cdvj
+vsetnez_v        0111 00101001 11001 00111 ..... 00 ...   @fmt_cdvj
+vsetanyeqz_b     0111 00101001 11001 01000 ..... 00 ...   @fmt_cdvj
+vsetanyeqz_h     0111 00101001 11001 01001 ..... 00 ...   @fmt_cdvj
+vsetanyeqz_w     0111 00101001 11001 01010 ..... 00 ...   @fmt_cdvj
+vsetanyeqz_d     0111 00101001 11001 01011 ..... 00 ...   @fmt_cdvj
+vsetallnez_b     0111 00101001 11001 01100 ..... 00 ...   @fmt_cdvj
+vsetallnez_h     0111 00101001 11001 01101 ..... 00 ...   @fmt_cdvj
+vsetallnez_w     0111 00101001 11001 01110 ..... 00 ...   @fmt_cdvj
+vsetallnez_d     0111 00101001 11001 01111 ..... 00 ...   @fmt_cdvj
+vflogb_s         0111 00101001 11001 10001 ..... .....    @fmt_vdvj
+vflogb_d         0111 00101001 11001 10010 ..... .....    @fmt_vdvj
+vfclass_s        0111 00101001 11001 10101 ..... .....    @fmt_vdvj
+vfclass_d        0111 00101001 11001 10110 ..... .....    @fmt_vdvj
+vfsqrt_s         0111 00101001 11001 11001 ..... .....    @fmt_vdvj
+vfsqrt_d         0111 00101001 11001 11010 ..... .....    @fmt_vdvj
+vfrecip_s        0111 00101001 11001 11101 ..... .....    @fmt_vdvj
+vfrecip_d        0111 00101001 11001 11110 ..... .....    @fmt_vdvj
+vfrsqrt_s        0111 00101001 11010 00001 ..... .....    @fmt_vdvj
+vfrsqrt_d        0111 00101001 11010 00010 ..... .....    @fmt_vdvj
+vfrint_s         0111 00101001 11010 01101 ..... .....    @fmt_vdvj
+vfrint_d         0111 00101001 11010 01110 ..... .....    @fmt_vdvj
+vfrintrm_s       0111 00101001 11010 10001 ..... .....    @fmt_vdvj
+vfrintrm_d       0111 00101001 11010 10010 ..... .....    @fmt_vdvj
+vfrintrp_s       0111 00101001 11010 10101 ..... .....    @fmt_vdvj
+vfrintrp_d       0111 00101001 11010 10110 ..... .....    @fmt_vdvj
+vfrintrz_s       0111 00101001 11010 11001 ..... .....    @fmt_vdvj
+vfrintrz_d       0111 00101001 11010 11010 ..... .....    @fmt_vdvj
+vfrintrne_s      0111 00101001 11010 11101 ..... .....    @fmt_vdvj
+vfrintrne_d      0111 00101001 11010 11110 ..... .....    @fmt_vdvj
+vextl_w_b        0111 00101001 11011 00001 ..... .....    @fmt_vdvj
+vextl_d_b        0111 00101001 11011 00010 ..... .....    @fmt_vdvj
+vextl_d_h        0111 00101001 11011 00101 ..... .....    @fmt_vdvj
+vextl_w_bu       0111 00101001 11011 01011 ..... .....    @fmt_vdvj
+vextl_d_bu       0111 00101001 11011 01100 ..... .....    @fmt_vdvj
+vextl_d_hu       0111 00101001 11011 01111 ..... .....    @fmt_vdvj
+vhadd8_d_bu      0111 00101001 11011 10100 ..... .....    @fmt_vdvj
+vhminpos_w_hu    0111 00101001 11011 10101 ..... .....    @fmt_vdvj
+vhminpos_d_hu    0111 00101001 11011 10110 ..... .....    @fmt_vdvj
+vhminpos_q_hu    0111 00101001 11011 10111 ..... .....    @fmt_vdvj
+vclrtail_b       0111 00101001 11011 11000 ..... .....    @fmt_vdvj
+vclrtail_h       0111 00101001 11011 11001 ..... .....    @fmt_vdvj
+vfcvtl_s_h       0111 00101001 11011 11010 ..... .....    @fmt_vdvj
+vfcvth_s_h       0111 00101001 11011 11011 ..... .....    @fmt_vdvj
+vfcvtl_d_s       0111 00101001 11011 11100 ..... .....    @fmt_vdvj
+vfcvth_d_s       0111 00101001 11011 11101 ..... .....    @fmt_vdvj
+vffint_s_w       0111 00101001 11100 00000 ..... .....    @fmt_vdvj
+vffint_s_wu      0111 00101001 11100 00001 ..... .....    @fmt_vdvj
+vffint_d_l       0111 00101001 11100 00010 ..... .....    @fmt_vdvj
+vffint_d_lu      0111 00101001 11100 00011 ..... .....    @fmt_vdvj
+vffintl_d_w      0111 00101001 11100 00100 ..... .....    @fmt_vdvj
+vffinth_d_w      0111 00101001 11100 00101 ..... .....    @fmt_vdvj
+vftint_w_s       0111 00101001 11100 01100 ..... .....    @fmt_vdvj
+vftint_l_d       0111 00101001 11100 01101 ..... .....    @fmt_vdvj
+vftintrm_w_s     0111 00101001 11100 01110 ..... .....    @fmt_vdvj
+vftintrm_l_d     0111 00101001 11100 01111 ..... .....    @fmt_vdvj
+vftintrp_w_s     0111 00101001 11100 10000 ..... .....    @fmt_vdvj
+vftintrp_l_d     0111 00101001 11100 10001 ..... .....    @fmt_vdvj
+vftintrz_w_s     0111 00101001 11100 10010 ..... .....    @fmt_vdvj
+vftintrz_l_d     0111 00101001 11100 10011 ..... .....    @fmt_vdvj
+vftintrne_w_s    0111 00101001 11100 10100 ..... .....    @fmt_vdvj
+vftintrne_l_d    0111 00101001 11100 10101 ..... .....    @fmt_vdvj
+vftint_wu_s      0111 00101001 11100 10110 ..... .....    @fmt_vdvj
+vftint_lu_d      0111 00101001 11100 10111 ..... .....    @fmt_vdvj
+vftintrz_wu_s    0111 00101001 11100 11100 ..... .....    @fmt_vdvj
+vftintrz_lu_d    0111 00101001 11100 11101 ..... .....    @fmt_vdvj
+vftintl_l_s      0111 00101001 11101 00000 ..... .....    @fmt_vdvj
+vftinth_l_s      0111 00101001 11101 00001 ..... .....    @fmt_vdvj
+vftintrml_l_s    0111 00101001 11101 00010 ..... .....    @fmt_vdvj
+vftintrmh_l_s    0111 00101001 11101 00011 ..... .....    @fmt_vdvj
+vftintrpl_l_s    0111 00101001 11101 00100 ..... .....    @fmt_vdvj
+vftintrph_l_s    0111 00101001 11101 00101 ..... .....    @fmt_vdvj
+vftintrzl_l_s    0111 00101001 11101 00110 ..... .....    @fmt_vdvj
+vftintrzh_l_s    0111 00101001 11101 00111 ..... .....    @fmt_vdvj
+vftintrnel_l_s   0111 00101001 11101 01000 ..... .....    @fmt_vdvj
+vftintrneh_l_s   0111 00101001 11101 01001 ..... .....    @fmt_vdvj
+vexth_h_b        0111 00101001 11101 11000 ..... .....    @fmt_vdvj
+vexth_w_h        0111 00101001 11101 11001 ..... .....    @fmt_vdvj
+vexth_d_w        0111 00101001 11101 11010 ..... .....    @fmt_vdvj
+vexth_q_d        0111 00101001 11101 11011 ..... .....    @fmt_vdvj
+vexth_hu_bu      0111 00101001 11101 11100 ..... .....    @fmt_vdvj
+vexth_wu_hu      0111 00101001 11101 11101 ..... .....    @fmt_vdvj
+vexth_du_wu      0111 00101001 11101 11110 ..... .....    @fmt_vdvj
+vexth_qu_du      0111 00101001 11101 11111 ..... .....    @fmt_vdvj
+vreplgr2vr_b     0111 00101001 11110 00000 ..... .....    @fmt_vdrj
+vreplgr2vr_h     0111 00101001 11110 00001 ..... .....    @fmt_vdrj
+vreplgr2vr_w     0111 00101001 11110 00010 ..... .....    @fmt_vdrj
+vreplgr2vr_d     0111 00101001 11110 00011 ..... .....    @fmt_vdrj
+vrotri_b         0111 00101010 00000 01 ... ..... .....   @fmt_vdvjui3
+vrotri_h         0111 00101010 00000 1 .... ..... .....   @fmt_vdvjui4
+vrotri_w         0111 00101010 00001 ..... ..... .....    @fmt_vdvjui5
+vrotri_d         0111 00101010 0001 ...... ..... .....    @fmt_vdvjui6
+vsrlri_b         0111 00101010 01000 01 ... ..... .....   @fmt_vdvjui3
+vsrlri_h         0111 00101010 01000 1 .... ..... .....   @fmt_vdvjui4
+vsrlri_w         0111 00101010 01001 ..... ..... .....    @fmt_vdvjui5
+vsrlri_d         0111 00101010 0101 ...... ..... .....    @fmt_vdvjui6
+vsrari_b         0111 00101010 10000 01 ... ..... .....   @fmt_vdvjui3
+vsrari_h         0111 00101010 10000 1 .... ..... .....   @fmt_vdvjui4
+vsrari_w         0111 00101010 10001 ..... ..... .....    @fmt_vdvjui5
+vsrari_d         0111 00101010 1001 ...... ..... .....    @fmt_vdvjui6
+vinsgr2vr_b      0111 00101110 10111 0 .... ..... .....   @fmt_vdrjui4
+vinsgr2vr_h      0111 00101110 10111 10 ... ..... .....   @fmt_vdrjui3
+vinsgr2vr_w      0111 00101110 10111 110 .. ..... .....   @fmt_vdrjui2
+vinsgr2vr_d      0111 00101110 10111 1110 . ..... .....   @fmt_vdrjui1
+vpickve2gr_b     0111 00101110 11111 0 .... ..... .....   @fmt_rdvjui4
+vpickve2gr_h     0111 00101110 11111 10 ... ..... .....   @fmt_rdvjui3
+vpickve2gr_w     0111 00101110 11111 110 .. ..... .....   @fmt_rdvjui2
+vpickve2gr_d     0111 00101110 11111 1110 . ..... .....   @fmt_rdvjui1
+vpickve2gr_bu    0111 00101111 00111 0 .... ..... .....   @fmt_rdvjui4
+vpickve2gr_hu    0111 00101111 00111 10 ... ..... .....   @fmt_rdvjui3
+vpickve2gr_wu    0111 00101111 00111 110 .. ..... .....   @fmt_rdvjui2
+vpickve2gr_du    0111 00101111 00111 1110 . ..... .....   @fmt_rdvjui1
+vreplvei_b       0111 00101111 01111 0 .... ..... .....   @fmt_vdvjui4
+vreplvei_h       0111 00101111 01111 10 ... ..... .....   @fmt_vdvjui3
+vreplvei_w       0111 00101111 01111 110 .. ..... .....   @fmt_vdvjui2
+vreplvei_d       0111 00101111 01111 1110 . ..... .....   @fmt_vdvjui1
+vextrcoli_b      0111 00101111 10111 0 .... ..... .....   @fmt_vdvjui4
+vextrcoli_h      0111 00101111 10111 10 ... ..... .....   @fmt_vdvjui3
+vextrcoli_w      0111 00101111 10111 110 .. ..... .....   @fmt_vdvjui2
+vextrcoli_d      0111 00101111 10111 1110 . ..... .....   @fmt_vdvjui1
+vsllwil_h_b      0111 00110000 10000 01 ... ..... .....   @fmt_vdvjui3
+vsllwil_w_h      0111 00110000 10000 1 .... ..... .....   @fmt_vdvjui4
+vsllwil_d_w      0111 00110000 10001 ..... ..... .....    @fmt_vdvjui5
+vextl_q_d        0111 00110000 10010 00000 ..... .....    @fmt_vdvj
+vsllwil_hu_bu    0111 00110000 11000 01 ... ..... .....   @fmt_vdvjui3
+vsllwil_wu_hu    0111 00110000 11000 1 .... ..... .....   @fmt_vdvjui4
+vsllwil_du_wu    0111 00110000 11001 ..... ..... .....    @fmt_vdvjui5
+vextl_qu_du      0111 00110000 11010 00000 ..... .....    @fmt_vdvj
+vbitclri_b       0111 00110001 00000 01 ... ..... .....   @fmt_vdvjui3
+vbitclri_h       0111 00110001 00000 1 .... ..... .....   @fmt_vdvjui4
+vbitclri_w       0111 00110001 00001 ..... ..... .....    @fmt_vdvjui5
+vbitclri_d       0111 00110001 0001 ...... ..... .....    @fmt_vdvjui6
+vbitseti_b       0111 00110001 01000 01 ... ..... .....   @fmt_vdvjui3
+vbitseti_h       0111 00110001 01000 1 .... ..... .....   @fmt_vdvjui4
+vbitseti_w       0111 00110001 01001 ..... ..... .....    @fmt_vdvjui5
+vbitseti_d       0111 00110001 0101 ...... ..... .....    @fmt_vdvjui6
+vbitrevi_b       0111 00110001 10000 01 ... ..... .....   @fmt_vdvjui3
+vbitrevi_h       0111 00110001 10000 1 .... ..... .....   @fmt_vdvjui4
+vbitrevi_w       0111 00110001 10001 ..... ..... .....    @fmt_vdvjui5
+vbitrevi_d       0111 00110001 1001 ...... ..... .....    @fmt_vdvjui6
+vbstrc12i_b      0111 00110001 11000 01 ... ..... .....   @fmt_vdvjui3
+vbstrc12i_h      0111 00110001 11000 1 .... ..... .....   @fmt_vdvjui4
+vbstrc12i_w      0111 00110001 11001 ..... ..... .....    @fmt_vdvjui5
+vbstrc12i_d      0111 00110001 1101 ...... ..... .....    @fmt_vdvjui6
+vbstrc21i_b      0111 00110010 00000 01 ... ..... .....   @fmt_vdvjui3
+vbstrc21i_h      0111 00110010 00000 1 .... ..... .....   @fmt_vdvjui4
+vbstrc21i_w      0111 00110010 00001 ..... ..... .....    @fmt_vdvjui5
+vbstrc21i_d      0111 00110010 0001 ...... ..... .....    @fmt_vdvjui6
+vsat_b           0111 00110010 01000 01 ... ..... .....   @fmt_vdvjui3
+vsat_h           0111 00110010 01000 1 .... ..... .....   @fmt_vdvjui4
+vsat_w           0111 00110010 01001 ..... ..... .....    @fmt_vdvjui5
+vsat_d           0111 00110010 0101 ...... ..... .....    @fmt_vdvjui6
+vsat_bu          0111 00110010 10000 01 ... ..... .....   @fmt_vdvjui3
+vsat_hu          0111 00110010 10000 1 .... ..... .....   @fmt_vdvjui4
+vsat_wu          0111 00110010 10001 ..... ..... .....    @fmt_vdvjui5
+vsat_du          0111 00110010 1001 ...... ..... .....    @fmt_vdvjui6
+vslli_b          0111 00110010 11000 01 ... ..... .....   @fmt_vdvjui3
+vslli_h          0111 00110010 11000 1 .... ..... .....   @fmt_vdvjui4
+vslli_w          0111 00110010 11001 ..... ..... .....    @fmt_vdvjui5
+vslli_d          0111 00110010 1101 ...... ..... .....    @fmt_vdvjui6
+vsrli_b          0111 00110011 00000 01 ... ..... .....   @fmt_vdvjui3
+vsrli_h          0111 00110011 00000 1 .... ..... .....   @fmt_vdvjui4
+vsrli_w          0111 00110011 00001 ..... ..... .....    @fmt_vdvjui5
+vsrli_d          0111 00110011 0001 ...... ..... .....    @fmt_vdvjui6
+vsrai_b          0111 00110011 01000 01 ... ..... .....   @fmt_vdvjui3
+vsrai_h          0111 00110011 01000 1 .... ..... .....   @fmt_vdvjui4
+vsrai_w          0111 00110011 01001 ..... ..... .....    @fmt_vdvjui5
+vsrai_d          0111 00110011 0101 ...... ..... .....    @fmt_vdvjui6
+vsrlrneni_b_h    0111 00110011 10000 1 .... ..... .....   @fmt_vdvjui4
+vsrlrneni_h_w    0111 00110011 10001 ..... ..... .....    @fmt_vdvjui5
+vsrlrneni_w_d    0111 00110011 1001 ...... ..... .....    @fmt_vdvjui6
+vsrlrneni_d_q    0111 00110011 101 ....... ..... .....    @fmt_vdvjui7
+vsrarneni_b_h    0111 00110011 11000 1 .... ..... .....   @fmt_vdvjui4
+vsrarneni_h_w    0111 00110011 11001 ..... ..... .....    @fmt_vdvjui5
+vsrarneni_w_d    0111 00110011 1101 ...... ..... .....    @fmt_vdvjui6
+vsrarneni_d_q    0111 00110011 111 ....... ..... .....    @fmt_vdvjui7
+vsrlni_b_h       0111 00110100 00000 1 .... ..... .....   @fmt_vdvjui4
+vsrlni_h_w       0111 00110100 00001 ..... ..... .....    @fmt_vdvjui5
+vsrlni_w_d       0111 00110100 0001 ...... ..... .....    @fmt_vdvjui6
+vsrlni_d_q       0111 00110100 001 ....... ..... .....    @fmt_vdvjui7
+vsrlrni_b_h      0111 00110100 01000 1 .... ..... .....   @fmt_vdvjui4
+vsrlrni_h_w      0111 00110100 01001 ..... ..... .....    @fmt_vdvjui5
+vsrlrni_w_d      0111 00110100 0101 ...... ..... .....    @fmt_vdvjui6
+vsrlrni_d_q      0111 00110100 011 ....... ..... .....    @fmt_vdvjui7
+vssrlni_b_h      0111 00110100 10000 1 .... ..... .....   @fmt_vdvjui4
+vssrlni_h_w      0111 00110100 10001 ..... ..... .....    @fmt_vdvjui5
+vssrlni_w_d      0111 00110100 1001 ...... ..... .....    @fmt_vdvjui6
+vssrlni_d_q      0111 00110100 101 ....... ..... .....    @fmt_vdvjui7
+vssrlni_bu_h     0111 00110100 11000 1 .... ..... .....   @fmt_vdvjui4
+vssrlni_hu_w     0111 00110100 11001 ..... ..... .....    @fmt_vdvjui5
+vssrlni_wu_d     0111 00110100 1101 ...... ..... .....    @fmt_vdvjui6
+vssrlni_du_q     0111 00110100 111 ....... ..... .....    @fmt_vdvjui7
+vssrlrni_b_h     0111 00110101 00000 1 .... ..... .....   @fmt_vdvjui4
+vssrlrni_h_w     0111 00110101 00001 ..... ..... .....    @fmt_vdvjui5
+vssrlrni_w_d     0111 00110101 0001 ...... ..... .....    @fmt_vdvjui6
+vssrlrni_d_q     0111 00110101 001 ....... ..... .....    @fmt_vdvjui7
+vssrlrni_bu_h    0111 00110101 01000 1 .... ..... .....   @fmt_vdvjui4
+vssrlrni_hu_w    0111 00110101 01001 ..... ..... .....    @fmt_vdvjui5
+vssrlrni_wu_d    0111 00110101 0101 ...... ..... .....    @fmt_vdvjui6
+vssrlrni_du_q    0111 00110101 011 ....... ..... .....    @fmt_vdvjui7
+vsrani_b_h       0111 00110101 10000 1 .... ..... .....   @fmt_vdvjui4
+vsrani_h_w       0111 00110101 10001 ..... ..... .....    @fmt_vdvjui5
+vsrani_w_d       0111 00110101 1001 ...... ..... .....    @fmt_vdvjui6
+vsrani_d_q       0111 00110101 101 ....... ..... .....    @fmt_vdvjui7
+vsrarni_b_h      0111 00110101 11000 1 .... ..... .....   @fmt_vdvjui4
+vsrarni_h_w      0111 00110101 11001 ..... ..... .....    @fmt_vdvjui5
+vsrarni_w_d      0111 00110101 1101 ...... ..... .....    @fmt_vdvjui6
+vsrarni_d_q      0111 00110101 111 ....... ..... .....    @fmt_vdvjui7
+vssrani_b_h      0111 00110110 00000 1 .... ..... .....   @fmt_vdvjui4
+vssrani_h_w      0111 00110110 00001 ..... ..... .....    @fmt_vdvjui5
+vssrani_w_d      0111 00110110 0001 ...... ..... .....    @fmt_vdvjui6
+vssrani_d_q      0111 00110110 001 ....... ..... .....    @fmt_vdvjui7
+vssrani_bu_h     0111 00110110 01000 1 .... ..... .....   @fmt_vdvjui4
+vssrani_hu_w     0111 00110110 01001 ..... ..... .....    @fmt_vdvjui5
+vssrani_wu_d     0111 00110110 0101 ...... ..... .....    @fmt_vdvjui6
+vssrani_du_q     0111 00110110 011 ....... ..... .....    @fmt_vdvjui7
+vssrarni_b_h     0111 00110110 10000 1 .... ..... .....   @fmt_vdvjui4
+vssrarni_h_w     0111 00110110 10001 ..... ..... .....    @fmt_vdvjui5
+vssrarni_w_d     0111 00110110 1001 ...... ..... .....    @fmt_vdvjui6
+vssrarni_d_q     0111 00110110 101 ....... ..... .....    @fmt_vdvjui7
+vssrarni_bu_h    0111 00110110 11000 1 .... ..... .....   @fmt_vdvjui4
+vssrarni_hu_w    0111 00110110 11001 ..... ..... .....    @fmt_vdvjui5
+vssrarni_wu_d    0111 00110110 1101 ...... ..... .....    @fmt_vdvjui6
+vssrarni_du_q    0111 00110110 111 ....... ..... .....    @fmt_vdvjui7
+vssrlrneni_b_h   0111 00110111 00000 1 .... ..... .....   @fmt_vdvjui4
+vssrlrneni_h_w   0111 00110111 00001 ..... ..... .....    @fmt_vdvjui5
+vssrlrneni_w_d   0111 00110111 0001 ...... ..... .....    @fmt_vdvjui6
+vssrlrneni_d_q   0111 00110111 001 ....... ..... .....    @fmt_vdvjui7
+vssrlrneni_bu_h  0111 00110111 01000 1 .... ..... .....   @fmt_vdvjui4
+vssrlrneni_hu_w  0111 00110111 01001 ..... ..... .....    @fmt_vdvjui5
+vssrlrneni_wu_d  0111 00110111 0101 ...... ..... .....    @fmt_vdvjui6
+vssrlrneni_du_q  0111 00110111 011 ....... ..... .....    @fmt_vdvjui7
+vssrarneni_b_h   0111 00110111 10000 1 .... ..... .....   @fmt_vdvjui4
+vssrarneni_h_w   0111 00110111 10001 ..... ..... .....    @fmt_vdvjui5
+vssrarneni_w_d   0111 00110111 1001 ...... ..... .....    @fmt_vdvjui6
+vssrarneni_d_q   0111 00110111 101 ....... ..... .....    @fmt_vdvjui7
+vssrarneni_bu_h  0111 00110111 11000 1 .... ..... .....   @fmt_vdvjui4
+vssrarneni_hu_w  0111 00110111 11001 ..... ..... .....    @fmt_vdvjui5
+vssrarneni_wu_d  0111 00110111 1101 ...... ..... .....    @fmt_vdvjui6
+vssrarneni_du_q  0111 00110111 111 ....... ..... .....    @fmt_vdvjui7
+vextrins_d       0111 00111000 00 ........ ..... .....    @fmt_vdvjui8
+vextrins_w       0111 00111000 01 ........ ..... .....    @fmt_vdvjui8
+vextrins_h       0111 00111000 10 ........ ..... .....    @fmt_vdvjui8
+vextrins_b       0111 00111000 11 ........ ..... .....    @fmt_vdvjui8
+vshuf4i_b        0111 00111001 00 ........ ..... .....    @fmt_vdvjui8
+vshuf4i_h        0111 00111001 01 ........ ..... .....    @fmt_vdvjui8
+vshuf4i_w        0111 00111001 10 ........ ..... .....    @fmt_vdvjui8
+vshuf4i_d        0111 00111001 11 ........ ..... .....    @fmt_vdvjui8
+vshufi1_b        0111 00111010 00 ........ ..... .....    @fmt_vdvjui8
+vshufi2_b        0111 00111010 01 ........ ..... .....    @fmt_vdvjui8
+vshufi3_b        0111 00111010 10 ........ ..... .....    @fmt_vdvjui8
+vshufi4_b        0111 00111010 11 ........ ..... .....    @fmt_vdvjui8
+vshufi1_h        0111 00111011 00 ........ ..... .....    @fmt_vdvjui8
+vshufi2_h        0111 00111011 01 ........ ..... .....    @fmt_vdvjui8
+vseli_h          0111 00111011 10 ........ ..... .....    @fmt_vdvjui8
+vseli_w          0111 00111011 11 ........ ..... .....    @fmt_vdvjui8
+vseli_d          0111 00111100 00 ........ ..... .....    @fmt_vdvjui8
+vbitseli_b       0111 00111100 01 ........ ..... .....    @fmt_vdvjui8
+vbitmvzi_b       0111 00111100 10 ........ ..... .....    @fmt_vdvjui8
+vbitmvnzi_b      0111 00111100 11 ........ ..... .....    @fmt_vdvjui8
+vandi_b          0111 00111101 00 ........ ..... .....    @fmt_vdvjui8
+vori_b           0111 00111101 01 ........ ..... .....    @fmt_vdvjui8
+vxori_b          0111 00111101 10 ........ ..... .....    @fmt_vdvjui8
+vnori_b          0111 00111101 11 ........ ..... .....    @fmt_vdvjui8
+vldi             0111 00111110 00 ............. .....     @fmt_vdi13
+vpermi_w         0111 00111110 01 ........ ..... .....    @fmt_vdvjui8
+xvseq_b          0111 01000000 00000 ..... ..... .....    @fmt_xdxjxk
+xvseq_h          0111 01000000 00001 ..... ..... .....    @fmt_xdxjxk
+xvseq_w          0111 01000000 00010 ..... ..... .....    @fmt_xdxjxk
+xvseq_d          0111 01000000 00011 ..... ..... .....    @fmt_xdxjxk
+xvsle_b          0111 01000000 00100 ..... ..... .....    @fmt_xdxjxk
+xvsle_h          0111 01000000 00101 ..... ..... .....    @fmt_xdxjxk
+xvsle_w          0111 01000000 00110 ..... ..... .....    @fmt_xdxjxk
+xvsle_d          0111 01000000 00111 ..... ..... .....    @fmt_xdxjxk
+xvsle_bu         0111 01000000 01000 ..... ..... .....    @fmt_xdxjxk
+xvsle_hu         0111 01000000 01001 ..... ..... .....    @fmt_xdxjxk
+xvsle_wu         0111 01000000 01010 ..... ..... .....    @fmt_xdxjxk
+xvsle_du         0111 01000000 01011 ..... ..... .....    @fmt_xdxjxk
+xvslt_b          0111 01000000 01100 ..... ..... .....    @fmt_xdxjxk
+xvslt_h          0111 01000000 01101 ..... ..... .....    @fmt_xdxjxk
+xvslt_w          0111 01000000 01110 ..... ..... .....    @fmt_xdxjxk
+xvslt_d          0111 01000000 01111 ..... ..... .....    @fmt_xdxjxk
+xvslt_bu         0111 01000000 10000 ..... ..... .....    @fmt_xdxjxk
+xvslt_hu         0111 01000000 10001 ..... ..... .....    @fmt_xdxjxk
+xvslt_wu         0111 01000000 10010 ..... ..... .....    @fmt_xdxjxk
+xvslt_du         0111 01000000 10011 ..... ..... .....    @fmt_xdxjxk
+xvadd_b          0111 01000000 10100 ..... ..... .....    @fmt_xdxjxk
+xvadd_h          0111 01000000 10101 ..... ..... .....    @fmt_xdxjxk
+xvadd_w          0111 01000000 10110 ..... ..... .....    @fmt_xdxjxk
+xvadd_d          0111 01000000 10111 ..... ..... .....    @fmt_xdxjxk
+xvsub_b          0111 01000000 11000 ..... ..... .....    @fmt_xdxjxk
+xvsub_h          0111 01000000 11001 ..... ..... .....    @fmt_xdxjxk
+xvsub_w          0111 01000000 11010 ..... ..... .....    @fmt_xdxjxk
+xvsub_d          0111 01000000 11011 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_h_b     0111 01000001 11100 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_w_h     0111 01000001 11101 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_d_w     0111 01000001 11110 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_q_d     0111 01000001 11111 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_h_b     0111 01000010 00000 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_w_h     0111 01000010 00001 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_d_w     0111 01000010 00010 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_q_d     0111 01000010 00011 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_h_b     0111 01000010 00100 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_w_h     0111 01000010 00101 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_d_w     0111 01000010 00110 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_q_d     0111 01000010 00111 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_h_b     0111 01000010 01000 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_w_h     0111 01000010 01001 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_d_w     0111 01000010 01010 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_q_d     0111 01000010 01011 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_h_bu    0111 01000010 11100 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_w_hu    0111 01000010 11101 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_d_wu    0111 01000010 11110 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_q_du    0111 01000010 11111 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_h_bu    0111 01000011 00000 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_w_hu    0111 01000011 00001 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_d_wu    0111 01000011 00010 ..... ..... .....    @fmt_xdxjxk
+xvsubwev_q_du    0111 01000011 00011 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_h_bu    0111 01000011 00100 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_w_hu    0111 01000011 00101 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_d_wu    0111 01000011 00110 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_q_du    0111 01000011 00111 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_h_bu    0111 01000011 01000 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_w_hu    0111 01000011 01001 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_d_wu    0111 01000011 01010 ..... ..... .....    @fmt_xdxjxk
+xvsubwod_q_du    0111 01000011 01011 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_h_bu_b  0111 01000011 11100 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_w_hu_h  0111 01000011 11101 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_d_wu_w  0111 01000011 11110 ..... ..... .....    @fmt_xdxjxk
+xvaddwev_q_du_d  0111 01000011 11111 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_h_bu_b  0111 01000100 00000 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_w_hu_h  0111 01000100 00001 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_d_wu_w  0111 01000100 00010 ..... ..... .....    @fmt_xdxjxk
+xvaddwod_q_du_d  0111 01000100 00011 ..... ..... .....    @fmt_xdxjxk
+xvsadd_b         0111 01000100 01100 ..... ..... .....    @fmt_xdxjxk
+xvsadd_h         0111 01000100 01101 ..... ..... .....    @fmt_xdxjxk
+xvsadd_w         0111 01000100 01110 ..... ..... .....    @fmt_xdxjxk
+xvsadd_d         0111 01000100 01111 ..... ..... .....    @fmt_xdxjxk
+xvssub_b         0111 01000100 10000 ..... ..... .....    @fmt_xdxjxk
+xvssub_h         0111 01000100 10001 ..... ..... .....    @fmt_xdxjxk
+xvssub_w         0111 01000100 10010 ..... ..... .....    @fmt_xdxjxk
+xvssub_d         0111 01000100 10011 ..... ..... .....    @fmt_xdxjxk
+xvsadd_bu        0111 01000100 10100 ..... ..... .....    @fmt_xdxjxk
+xvsadd_hu        0111 01000100 10101 ..... ..... .....    @fmt_xdxjxk
+xvsadd_wu        0111 01000100 10110 ..... ..... .....    @fmt_xdxjxk
+xvsadd_du        0111 01000100 10111 ..... ..... .....    @fmt_xdxjxk
+xvssub_bu        0111 01000100 11000 ..... ..... .....    @fmt_xdxjxk
+xvssub_hu        0111 01000100 11001 ..... ..... .....    @fmt_xdxjxk
+xvssub_wu        0111 01000100 11010 ..... ..... .....    @fmt_xdxjxk
+xvssub_du        0111 01000100 11011 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_h_b      0111 01000101 01000 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_w_h      0111 01000101 01001 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_d_w      0111 01000101 01010 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_q_d      0111 01000101 01011 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_h_b      0111 01000101 01100 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_w_h      0111 01000101 01101 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_d_w      0111 01000101 01110 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_q_d      0111 01000101 01111 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_hu_bu    0111 01000101 10000 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_wu_hu    0111 01000101 10001 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_du_wu    0111 01000101 10010 ..... ..... .....    @fmt_xdxjxk
+xvhaddw_qu_du    0111 01000101 10011 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_hu_bu    0111 01000101 10100 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_wu_hu    0111 01000101 10101 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_du_wu    0111 01000101 10110 ..... ..... .....    @fmt_xdxjxk
+xvhsubw_qu_du    0111 01000101 10111 ..... ..... .....    @fmt_xdxjxk
+xvadda_b         0111 01000101 11000 ..... ..... .....    @fmt_xdxjxk
+xvadda_h         0111 01000101 11001 ..... ..... .....    @fmt_xdxjxk
+xvadda_w         0111 01000101 11010 ..... ..... .....    @fmt_xdxjxk
+xvadda_d         0111 01000101 11011 ..... ..... .....    @fmt_xdxjxk
+xvabsd_b         0111 01000110 00000 ..... ..... .....    @fmt_xdxjxk
+xvabsd_h         0111 01000110 00001 ..... ..... .....    @fmt_xdxjxk
+xvabsd_w         0111 01000110 00010 ..... ..... .....    @fmt_xdxjxk
+xvabsd_d         0111 01000110 00011 ..... ..... .....    @fmt_xdxjxk
+xvabsd_bu        0111 01000110 00100 ..... ..... .....    @fmt_xdxjxk
+xvabsd_hu        0111 01000110 00101 ..... ..... .....    @fmt_xdxjxk
+xvabsd_wu        0111 01000110 00110 ..... ..... .....    @fmt_xdxjxk
+xvabsd_du        0111 01000110 00111 ..... ..... .....    @fmt_xdxjxk
+xvavg_b          0111 01000110 01000 ..... ..... .....    @fmt_xdxjxk
+xvavg_h          0111 01000110 01001 ..... ..... .....    @fmt_xdxjxk
+xvavg_w          0111 01000110 01010 ..... ..... .....    @fmt_xdxjxk
+xvavg_d          0111 01000110 01011 ..... ..... .....    @fmt_xdxjxk
+xvavg_bu         0111 01000110 01100 ..... ..... .....    @fmt_xdxjxk
+xvavg_hu         0111 01000110 01101 ..... ..... .....    @fmt_xdxjxk
+xvavg_wu         0111 01000110 01110 ..... ..... .....    @fmt_xdxjxk
+xvavg_du         0111 01000110 01111 ..... ..... .....    @fmt_xdxjxk
+xvavgr_b         0111 01000110 10000 ..... ..... .....    @fmt_xdxjxk
+xvavgr_h         0111 01000110 10001 ..... ..... .....    @fmt_xdxjxk
+xvavgr_w         0111 01000110 10010 ..... ..... .....    @fmt_xdxjxk
+xvavgr_d         0111 01000110 10011 ..... ..... .....    @fmt_xdxjxk
+xvavgr_bu        0111 01000110 10100 ..... ..... .....    @fmt_xdxjxk
+xvavgr_hu        0111 01000110 10101 ..... ..... .....    @fmt_xdxjxk
+xvavgr_wu        0111 01000110 10110 ..... ..... .....    @fmt_xdxjxk
+xvavgr_du        0111 01000110 10111 ..... ..... .....    @fmt_xdxjxk
+xvmax_b          0111 01000111 00000 ..... ..... .....    @fmt_xdxjxk
+xvmax_h          0111 01000111 00001 ..... ..... .....    @fmt_xdxjxk
+xvmax_w          0111 01000111 00010 ..... ..... .....    @fmt_xdxjxk
+xvmax_d          0111 01000111 00011 ..... ..... .....    @fmt_xdxjxk
+xvmin_b          0111 01000111 00100 ..... ..... .....    @fmt_xdxjxk
+xvmin_h          0111 01000111 00101 ..... ..... .....    @fmt_xdxjxk
+xvmin_w          0111 01000111 00110 ..... ..... .....    @fmt_xdxjxk
+xvmin_d          0111 01000111 00111 ..... ..... .....    @fmt_xdxjxk
+xvmax_bu         0111 01000111 01000 ..... ..... .....    @fmt_xdxjxk
+xvmax_hu         0111 01000111 01001 ..... ..... .....    @fmt_xdxjxk
+xvmax_wu         0111 01000111 01010 ..... ..... .....    @fmt_xdxjxk
+xvmax_du         0111 01000111 01011 ..... ..... .....    @fmt_xdxjxk
+xvmin_bu         0111 01000111 01100 ..... ..... .....    @fmt_xdxjxk
+xvmin_hu         0111 01000111 01101 ..... ..... .....    @fmt_xdxjxk
+xvmin_wu         0111 01000111 01110 ..... ..... .....    @fmt_xdxjxk
+xvmin_du         0111 01000111 01111 ..... ..... .....    @fmt_xdxjxk
+xvmul_b          0111 01001000 01000 ..... ..... .....    @fmt_xdxjxk
+xvmul_h          0111 01001000 01001 ..... ..... .....    @fmt_xdxjxk
+xvmul_w          0111 01001000 01010 ..... ..... .....    @fmt_xdxjxk
+xvmul_d          0111 01001000 01011 ..... ..... .....    @fmt_xdxjxk
+xvmuh_b          0111 01001000 01100 ..... ..... .....    @fmt_xdxjxk
+xvmuh_h          0111 01001000 01101 ..... ..... .....    @fmt_xdxjxk
+xvmuh_w          0111 01001000 01110 ..... ..... .....    @fmt_xdxjxk
+xvmuh_d          0111 01001000 01111 ..... ..... .....    @fmt_xdxjxk
+xvmuh_bu         0111 01001000 10000 ..... ..... .....    @fmt_xdxjxk
+xvmuh_hu         0111 01001000 10001 ..... ..... .....    @fmt_xdxjxk
+xvmuh_wu         0111 01001000 10010 ..... ..... .....    @fmt_xdxjxk
+xvmuh_du         0111 01001000 10011 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_h_b     0111 01001001 00000 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_w_h     0111 01001001 00001 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_d_w     0111 01001001 00010 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_q_d     0111 01001001 00011 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_h_b     0111 01001001 00100 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_w_h     0111 01001001 00101 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_d_w     0111 01001001 00110 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_q_d     0111 01001001 00111 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_h_bu    0111 01001001 10000 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_w_hu    0111 01001001 10001 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_d_wu    0111 01001001 10010 ..... ..... .....    @fmt_xdxjxk
+xvmulwev_q_du    0111 01001001 10011 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_h_bu    0111 01001001 10100 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_w_hu    0111 01001001 10101 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_d_wu    0111 01001001 10110 ..... ..... .....    @fmt_xdxjxk
+xvmulwod_q_du    0111 01001001 10111 ..... ..... .....    @fmt_xdxjxk
+#xvmulwl_h_bu     0111 01001001 11000 ..... ..... .....    @fmt_xdxjxk
+#xvmulwl_w_hu     0111 01001001 11001 ..... ..... .....    @fmt_xdxjxk
+#xvmulwl_d_wu     0111 01001001 11010 ..... ..... .....    @fmt_xdxjxk
+#xvmulwl_q_du     0111 01001001 11011 ..... ..... .....    @fmt_xdxjxk
+#xvmulwh_h_bu     0111 01001001 11100 ..... ..... .....    @fmt_xdxjxk
+#xvmulwh_w_hu     0111 01001001 11101 ..... ..... .....    @fmt_xdxjxk
+#xvmulwh_d_wu     0111 01001001 11110 ..... ..... .....    @fmt_xdxjxk
+#xvmulwh_q_du     0111 01001001 11111 ..... ..... .....    @fmt_xdxjxk
+#xvmulwev_h_bu_b  0111 01001010 00000 ..... ..... .....    @fmt_xdxjxk
+#xvmulwev_w_hu_h  0111 01001010 00001 ..... ..... .....    @fmt_xdxjxk
+#xvmulwev_d_wu_w  0111 01001010 00010 ..... ..... .....    @fmt_xdxjxk
+#xvmulwev_q_du_d  0111 01001010 00011 ..... ..... .....    @fmt_xdxjxk
+#xvmulwod_h_bu_b  0111 01001010 00100 ..... ..... .....    @fmt_xdxjxk
+#xvmulwod_w_hu_h  0111 01001010 00101 ..... ..... .....    @fmt_xdxjxk
+#xvmulwod_d_wu_w  0111 01001010 00110 ..... ..... .....    @fmt_xdxjxk
+#xvmulwod_q_du_d  0111 01001010 00111 ..... ..... .....    @fmt_xdxjxk
+xvmadd_b         0111 01001010 10000 ..... ..... .....    @fmt_xdxjxk
+xvmadd_h         0111 01001010 10001 ..... ..... .....    @fmt_xdxjxk
+xvmadd_w         0111 01001010 10010 ..... ..... .....    @fmt_xdxjxk
+xvmadd_d         0111 01001010 10011 ..... ..... .....    @fmt_xdxjxk
+xvmsub_b         0111 01001010 10100 ..... ..... .....    @fmt_xdxjxk
+xvmsub_h         0111 01001010 10101 ..... ..... .....    @fmt_xdxjxk
+xvmsub_w         0111 01001010 10110 ..... ..... .....    @fmt_xdxjxk
+xvmsub_d         0111 01001010 10111 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_h_b    0111 01001010 11000 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_w_h    0111 01001010 11001 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_d_w    0111 01001010 11010 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_q_d    0111 01001010 11011 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_h_b    0111 01001010 11100 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_w_h    0111 01001010 11101 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_d_w    0111 01001010 11110 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_q_d    0111 01001010 11111 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_h_bu   0111 01001011 01000 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_w_hu   0111 01001011 01001 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_d_wu   0111 01001011 01010 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_q_du   0111 01001011 01011 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_h_bu   0111 01001011 01100 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_w_hu   0111 01001011 01101 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_d_wu   0111 01001011 01110 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_q_du   0111 01001011 01111 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_h_bu_b 0111 01001011 11000 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_w_hu_h 0111 01001011 11001 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_d_wu_w 0111 01001011 11010 ..... ..... .....    @fmt_xdxjxk
+xvmaddwev_q_du_d 0111 01001011 11011 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_h_bu_b 0111 01001011 11100 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_w_hu_h 0111 01001011 11101 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_d_wu_w 0111 01001011 11110 ..... ..... .....    @fmt_xdxjxk
+xvmaddwod_q_du_d 0111 01001011 11111 ..... ..... .....    @fmt_xdxjxk
+xvdiv_b          0111 01001110 00000 ..... ..... .....    @fmt_xdxjxk
+xvdiv_h          0111 01001110 00001 ..... ..... .....    @fmt_xdxjxk
+xvdiv_w          0111 01001110 00010 ..... ..... .....    @fmt_xdxjxk
+xvdiv_d          0111 01001110 00011 ..... ..... .....    @fmt_xdxjxk
+xvmod_b          0111 01001110 00100 ..... ..... .....    @fmt_xdxjxk
+xvmod_h          0111 01001110 00101 ..... ..... .....    @fmt_xdxjxk
+xvmod_w          0111 01001110 00110 ..... ..... .....    @fmt_xdxjxk
+xvmod_d          0111 01001110 00111 ..... ..... .....    @fmt_xdxjxk
+xvdiv_bu         0111 01001110 01000 ..... ..... .....    @fmt_xdxjxk
+xvdiv_hu         0111 01001110 01001 ..... ..... .....    @fmt_xdxjxk
+xvdiv_wu         0111 01001110 01010 ..... ..... .....    @fmt_xdxjxk
+xvdiv_du         0111 01001110 01011 ..... ..... .....    @fmt_xdxjxk
+xvmod_bu         0111 01001110 01100 ..... ..... .....    @fmt_xdxjxk
+xvmod_hu         0111 01001110 01101 ..... ..... .....    @fmt_xdxjxk
+xvmod_wu         0111 01001110 01110 ..... ..... .....    @fmt_xdxjxk
+xvmod_du         0111 01001110 01111 ..... ..... .....    @fmt_xdxjxk
+xvsll_b          0111 01001110 10000 ..... ..... .....    @fmt_xdxjxk
+xvsll_h          0111 01001110 10001 ..... ..... .....    @fmt_xdxjxk
+xvsll_w          0111 01001110 10010 ..... ..... .....    @fmt_xdxjxk
+xvsll_d          0111 01001110 10011 ..... ..... .....    @fmt_xdxjxk
+xvsrl_b          0111 01001110 10100 ..... ..... .....    @fmt_xdxjxk
+xvsrl_h          0111 01001110 10101 ..... ..... .....    @fmt_xdxjxk
+xvsrl_w          0111 01001110 10110 ..... ..... .....    @fmt_xdxjxk
+xvsrl_d          0111 01001110 10111 ..... ..... .....    @fmt_xdxjxk
+xvsra_b          0111 01001110 11000 ..... ..... .....    @fmt_xdxjxk
+xvsra_h          0111 01001110 11001 ..... ..... .....    @fmt_xdxjxk
+xvsra_w          0111 01001110 11010 ..... ..... .....    @fmt_xdxjxk
+xvsra_d          0111 01001110 11011 ..... ..... .....    @fmt_xdxjxk
+xvrotr_b         0111 01001110 11100 ..... ..... .....    @fmt_xdxjxk
+xvrotr_h         0111 01001110 11101 ..... ..... .....    @fmt_xdxjxk
+xvrotr_w         0111 01001110 11110 ..... ..... .....    @fmt_xdxjxk
+xvrotr_d         0111 01001110 11111 ..... ..... .....    @fmt_xdxjxk
+xvsrlr_b         0111 01001111 00000 ..... ..... .....    @fmt_xdxjxk
+xvsrlr_h         0111 01001111 00001 ..... ..... .....    @fmt_xdxjxk
+xvsrlr_w         0111 01001111 00010 ..... ..... .....    @fmt_xdxjxk
+xvsrlr_d         0111 01001111 00011 ..... ..... .....    @fmt_xdxjxk
+xvsrar_b         0111 01001111 00100 ..... ..... .....    @fmt_xdxjxk
+xvsrar_h         0111 01001111 00101 ..... ..... .....    @fmt_xdxjxk
+xvsrar_w         0111 01001111 00110 ..... ..... .....    @fmt_xdxjxk
+xvsrar_d         0111 01001111 00111 ..... ..... .....    @fmt_xdxjxk
+xvsrln_b_h       0111 01001111 01001 ..... ..... .....    @fmt_xdxjxk
+xvsrln_h_w       0111 01001111 01010 ..... ..... .....    @fmt_xdxjxk
+xvsrln_w_d       0111 01001111 01011 ..... ..... .....    @fmt_xdxjxk
+xvsran_b_h       0111 01001111 01101 ..... ..... .....    @fmt_xdxjxk
+xvsran_h_w       0111 01001111 01110 ..... ..... .....    @fmt_xdxjxk
+xvsran_w_d       0111 01001111 01111 ..... ..... .....    @fmt_xdxjxk
+xvsrlrn_b_h      0111 01001111 10001 ..... ..... .....    @fmt_xdxjxk
+xvsrlrn_h_w      0111 01001111 10010 ..... ..... .....    @fmt_xdxjxk
+xvsrlrn_w_d      0111 01001111 10011 ..... ..... .....    @fmt_xdxjxk
+xvsrarn_b_h      0111 01001111 10101 ..... ..... .....    @fmt_xdxjxk
+xvsrarn_h_w      0111 01001111 10110 ..... ..... .....    @fmt_xdxjxk
+xvsrarn_w_d      0111 01001111 10111 ..... ..... .....    @fmt_xdxjxk
+xvssrln_b_h      0111 01001111 11001 ..... ..... .....    @fmt_xdxjxk
+xvssrln_h_w      0111 01001111 11010 ..... ..... .....    @fmt_xdxjxk
+xvssrln_w_d      0111 01001111 11011 ..... ..... .....    @fmt_xdxjxk
+xvssran_b_h      0111 01001111 11101 ..... ..... .....    @fmt_xdxjxk
+xvssran_h_w      0111 01001111 11110 ..... ..... .....    @fmt_xdxjxk
+xvssran_w_d      0111 01001111 11111 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_b_h     0111 01010000 00001 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_h_w     0111 01010000 00010 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_w_d     0111 01010000 00011 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_b_h     0111 01010000 00101 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_h_w     0111 01010000 00110 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_w_d     0111 01010000 00111 ..... ..... .....    @fmt_xdxjxk
+xvssrln_bu_h     0111 01010000 01001 ..... ..... .....    @fmt_xdxjxk
+xvssrln_hu_w     0111 01010000 01010 ..... ..... .....    @fmt_xdxjxk
+xvssrln_wu_d     0111 01010000 01011 ..... ..... .....    @fmt_xdxjxk
+xvssran_bu_h     0111 01010000 01101 ..... ..... .....    @fmt_xdxjxk
+xvssran_hu_w     0111 01010000 01110 ..... ..... .....    @fmt_xdxjxk
+xvssran_wu_d     0111 01010000 01111 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_bu_h    0111 01010000 10001 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_hu_w    0111 01010000 10010 ..... ..... .....    @fmt_xdxjxk
+xvssrlrn_wu_d    0111 01010000 10011 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_bu_h    0111 01010000 10101 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_hu_w    0111 01010000 10110 ..... ..... .....    @fmt_xdxjxk
+xvssrarn_wu_d    0111 01010000 10111 ..... ..... .....    @fmt_xdxjxk
+xvbitclr_b       0111 01010000 11000 ..... ..... .....    @fmt_xdxjxk
+xvbitclr_h       0111 01010000 11001 ..... ..... .....    @fmt_xdxjxk
+xvbitclr_w       0111 01010000 11010 ..... ..... .....    @fmt_xdxjxk
+xvbitclr_d       0111 01010000 11011 ..... ..... .....    @fmt_xdxjxk
+xvbitset_b       0111 01010000 11100 ..... ..... .....    @fmt_xdxjxk
+xvbitset_h       0111 01010000 11101 ..... ..... .....    @fmt_xdxjxk
+xvbitset_w       0111 01010000 11110 ..... ..... .....    @fmt_xdxjxk
+xvbitset_d       0111 01010000 11111 ..... ..... .....    @fmt_xdxjxk
+xvbitrev_b       0111 01010001 00000 ..... ..... .....    @fmt_xdxjxk
+xvbitrev_h       0111 01010001 00001 ..... ..... .....    @fmt_xdxjxk
+xvbitrev_w       0111 01010001 00010 ..... ..... .....    @fmt_xdxjxk
+xvbitrev_d       0111 01010001 00011 ..... ..... .....    @fmt_xdxjxk
+xvpackev_b       0111 01010001 01100 ..... ..... .....    @fmt_xdxjxk
+xvpackev_h       0111 01010001 01101 ..... ..... .....    @fmt_xdxjxk
+xvpackev_w       0111 01010001 01110 ..... ..... .....    @fmt_xdxjxk
+xvpackev_d       0111 01010001 01111 ..... ..... .....    @fmt_xdxjxk
+xvpackod_b       0111 01010001 10000 ..... ..... .....    @fmt_xdxjxk
+xvpackod_h       0111 01010001 10001 ..... ..... .....    @fmt_xdxjxk
+xvpackod_w       0111 01010001 10010 ..... ..... .....    @fmt_xdxjxk
+xvpackod_d       0111 01010001 10011 ..... ..... .....    @fmt_xdxjxk
+xvilvl_b         0111 01010001 10100 ..... ..... .....    @fmt_xdxjxk
+xvilvl_h         0111 01010001 10101 ..... ..... .....    @fmt_xdxjxk
+xvilvl_w         0111 01010001 10110 ..... ..... .....    @fmt_xdxjxk
+xvilvl_d         0111 01010001 10111 ..... ..... .....    @fmt_xdxjxk
+xvilvh_b         0111 01010001 11000 ..... ..... .....    @fmt_xdxjxk
+xvilvh_h         0111 01010001 11001 ..... ..... .....    @fmt_xdxjxk
+xvilvh_w         0111 01010001 11010 ..... ..... .....    @fmt_xdxjxk
+xvilvh_d         0111 01010001 11011 ..... ..... .....    @fmt_xdxjxk
+xvpickev_b       0111 01010001 11100 ..... ..... .....    @fmt_xdxjxk
+xvpickev_h       0111 01010001 11101 ..... ..... .....    @fmt_xdxjxk
+xvpickev_w       0111 01010001 11110 ..... ..... .....    @fmt_xdxjxk
+xvpickev_d       0111 01010001 11111 ..... ..... .....    @fmt_xdxjxk
+xvpickod_b       0111 01010010 00000 ..... ..... .....    @fmt_xdxjxk
+xvpickod_h       0111 01010010 00001 ..... ..... .....    @fmt_xdxjxk
+xvpickod_w       0111 01010010 00010 ..... ..... .....    @fmt_xdxjxk
+xvpickod_d       0111 01010010 00011 ..... ..... .....    @fmt_xdxjxk
+xvreplve_b       0111 01010010 00100 ..... ..... .....    @fmt_xdxjrk
+xvreplve_h       0111 01010010 00101 ..... ..... .....    @fmt_xdxjrk
+xvreplve_w       0111 01010010 00110 ..... ..... .....    @fmt_xdxjrk
+xvreplve_d       0111 01010010 00111 ..... ..... .....    @fmt_xdxjrk
+xvand_v          0111 01010010 01100 ..... ..... .....    @fmt_xdxjxk
+xvor_v           0111 01010010 01101 ..... ..... .....    @fmt_xdxjxk
+xvxor_v          0111 01010010 01110 ..... ..... .....    @fmt_xdxjxk
+xvnor_v          0111 01010010 01111 ..... ..... .....    @fmt_xdxjxk
+xvandn_v         0111 01010010 10000 ..... ..... .....    @fmt_xdxjxk
+xvorn_v          0111 01010010 10001 ..... ..... .....    @fmt_xdxjxk
+xvfrstp_b        0111 01010010 10110 ..... ..... .....    @fmt_xdxjxk
+xvfrstp_h        0111 01010010 10111 ..... ..... .....    @fmt_xdxjxk
+xvadd_q          0111 01010010 11010 ..... ..... .....    @fmt_xdxjxk
+xvsub_q          0111 01010010 11011 ..... ..... .....    @fmt_xdxjxk
+xvsigncov_b      0111 01010010 11100 ..... ..... .....    @fmt_xdxjxk
+xvsigncov_h      0111 01010010 11101 ..... ..... .....    @fmt_xdxjxk
+xvsigncov_w      0111 01010010 11110 ..... ..... .....    @fmt_xdxjxk
+xvsigncov_d      0111 01010010 11111 ..... ..... .....    @fmt_xdxjxk
+xvfadd_s         0111 01010011 00001 ..... ..... .....    @fmt_xdxjxk
+xvfadd_d         0111 01010011 00010 ..... ..... .....    @fmt_xdxjxk
+xvfsub_s         0111 01010011 00101 ..... ..... .....    @fmt_xdxjxk
+xvfsub_d         0111 01010011 00110 ..... ..... .....    @fmt_xdxjxk
+xvfaddsub_s      0111 01010011 01001 ..... ..... .....    @fmt_xdxjxk
+xvfaddsub_d      0111 01010011 01010 ..... ..... .....    @fmt_xdxjxk
+xvfsubadd_s      0111 01010011 01101 ..... ..... .....    @fmt_xdxjxk
+xvfsubadd_d      0111 01010011 01110 ..... ..... .....    @fmt_xdxjxk
+xvfmul_s         0111 01010011 10001 ..... ..... .....    @fmt_xdxjxk
+xvfmul_d         0111 01010011 10010 ..... ..... .....    @fmt_xdxjxk
+xvfdiv_s         0111 01010011 10101 ..... ..... .....    @fmt_xdxjxk
+xvfdiv_d         0111 01010011 10110 ..... ..... .....    @fmt_xdxjxk
+xvfmax_s         0111 01010011 11001 ..... ..... .....    @fmt_xdxjxk
+xvfmax_d         0111 01010011 11010 ..... ..... .....    @fmt_xdxjxk
+xvfmin_s         0111 01010011 11101 ..... ..... .....    @fmt_xdxjxk
+xvfmin_d         0111 01010011 11110 ..... ..... .....    @fmt_xdxjxk
+xvfmaxa_s        0111 01010100 00001 ..... ..... .....    @fmt_xdxjxk
+xvfmaxa_d        0111 01010100 00010 ..... ..... .....    @fmt_xdxjxk
+xvfmina_s        0111 01010100 00101 ..... ..... .....    @fmt_xdxjxk
+xvfmina_d        0111 01010100 00110 ..... ..... .....    @fmt_xdxjxk
+xvfscaleb_s      0111 01010100 01001 ..... ..... .....    @fmt_xdxjxk
+xvfscaleb_d      0111 01010100 01010 ..... ..... .....    @fmt_xdxjxk
+xvfcvt_h_s       0111 01010100 01100 ..... ..... .....    @fmt_xdxjxk
+xvfcvt_s_d       0111 01010100 01101 ..... ..... .....    @fmt_xdxjxk
+xvffint_s_l      0111 01010100 10000 ..... ..... .....    @fmt_xdxjxk
+xvftint_w_d      0111 01010100 10011 ..... ..... .....    @fmt_xdxjxk
+xvftintrm_w_d    0111 01010100 10100 ..... ..... .....    @fmt_xdxjxk
+xvftintrp_w_d    0111 01010100 10101 ..... ..... .....    @fmt_xdxjxk
+xvftintrz_w_d    0111 01010100 10110 ..... ..... .....    @fmt_xdxjxk
+xvftintrne_w_d   0111 01010100 10111 ..... ..... .....    @fmt_xdxjxk
+xvhadd4_h_bu     0111 01010100 11101 ..... ..... .....    @fmt_xdxjxk
+xvshuf4_w        0111 01010100 11110 ..... ..... .....    @fmt_xdxjxk
+xvshuf2_d        0111 01010100 11111 ..... ..... .....    @fmt_xdxjxk
+xvpmul_w         0111 01010110 00000 ..... ..... .....    @fmt_xdxjxk
+xvpmul_d         0111 01010110 00001 ..... ..... .....    @fmt_xdxjxk
+xvpmuh_w         0111 01010110 00010 ..... ..... .....    @fmt_xdxjxk
+xvpmuh_d         0111 01010110 00011 ..... ..... .....    @fmt_xdxjxk
+xvpmulacc_w      0111 01010110 00100 ..... ..... .....    @fmt_xdxjxk
+xvpmulacc_d      0111 01010110 00101 ..... ..... .....    @fmt_xdxjxk
+xvpmuhacc_w      0111 01010110 00110 ..... ..... .....    @fmt_xdxjxk
+xvpmuhacc_d      0111 01010110 00111 ..... ..... .....    @fmt_xdxjxk
+xvpmulwl_h_b     0111 01010110 01000 ..... ..... .....    @fmt_xdxjxk
+xvpmulwl_w_h     0111 01010110 01001 ..... ..... .....    @fmt_xdxjxk
+xvpmulwl_d_w     0111 01010110 01010 ..... ..... .....    @fmt_xdxjxk
+xvpmulwl_q_d     0111 01010110 01011 ..... ..... .....    @fmt_xdxjxk
+xvpmulwh_h_b     0111 01010110 01100 ..... ..... .....    @fmt_xdxjxk
+xvpmulwh_w_h     0111 01010110 01101 ..... ..... .....    @fmt_xdxjxk
+xvpmulwh_d_w     0111 01010110 01110 ..... ..... .....    @fmt_xdxjxk
+xvpmulwh_q_d     0111 01010110 01111 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwl_h_b    0111 01010110 10000 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwl_w_h    0111 01010110 10001 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwl_d_w    0111 01010110 10010 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwl_q_d    0111 01010110 10011 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwh_h_b    0111 01010110 10100 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwh_w_h    0111 01010110 10101 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwh_d_w    0111 01010110 10110 ..... ..... .....    @fmt_xdxjxk
+xvpmaddwh_q_d    0111 01010110 10111 ..... ..... .....    @fmt_xdxjxk
+xvpdp2_q_d       0111 01010110 11000 ..... ..... .....    @fmt_xdxjxk
+xvpdp2add_q_d    0111 01010110 11001 ..... ..... .....    @fmt_xdxjxk
+xvcdp4_re_d_h    0111 01010111 00000 ..... ..... .....    @fmt_xdxjxk
+xvcdp4_im_d_h    0111 01010111 00001 ..... ..... .....    @fmt_xdxjxk
+xvcdp4add_re_d_h 0111 01010111 00010 ..... ..... .....    @fmt_xdxjxk
+xvcdp4add_im_d_h 0111 01010111 00011 ..... ..... .....    @fmt_xdxjxk
+xvcdp2_re_q_w    0111 01010111 00100 ..... ..... .....    @fmt_xdxjxk
+xvcdp2_im_q_w    0111 01010111 00101 ..... ..... .....    @fmt_xdxjxk
+xvcdp2add_re_q_w 0111 01010111 00110 ..... ..... .....    @fmt_xdxjxk
+xvcdp2add_im_q_w 0111 01010111 00111 ..... ..... .....    @fmt_xdxjxk
+xvsignsel_w      0111 01010111 10010 ..... ..... .....    @fmt_xdxjxk
+xvsignsel_d      0111 01010111 10011 ..... ..... .....    @fmt_xdxjxk
+xvshuf_h         0111 01010111 10101 ..... ..... .....    @fmt_xdxjxk
+xvshuf_w         0111 01010111 10110 ..... ..... .....    @fmt_xdxjxk
+xvshuf_d         0111 01010111 10111 ..... ..... .....    @fmt_xdxjxk
+xvperm_w         0111 01010111 11010 ..... ..... .....    @fmt_xdxjxk
+xvseqi_b         0111 01101000 00000 ..... ..... .....    @fmt_xdxjsi5
+xvseqi_h         0111 01101000 00001 ..... ..... .....    @fmt_xdxjsi5
+xvseqi_w         0111 01101000 00010 ..... ..... .....    @fmt_xdxjsi5
+xvseqi_d         0111 01101000 00011 ..... ..... .....    @fmt_xdxjsi5
+xvslei_b         0111 01101000 00100 ..... ..... .....    @fmt_xdxjsi5
+xvslei_h         0111 01101000 00101 ..... ..... .....    @fmt_xdxjsi5
+xvslei_w         0111 01101000 00110 ..... ..... .....    @fmt_xdxjsi5
+xvslei_d         0111 01101000 00111 ..... ..... .....    @fmt_xdxjsi5
+xvslei_bu        0111 01101000 01000 ..... ..... .....    @fmt_xdxjui5
+xvslei_hu        0111 01101000 01001 ..... ..... .....    @fmt_xdxjui5
+xvslei_wu        0111 01101000 01010 ..... ..... .....    @fmt_xdxjui5
+xvslei_du        0111 01101000 01011 ..... ..... .....    @fmt_xdxjui5
+xvslti_b         0111 01101000 01100 ..... ..... .....    @fmt_xdxjsi5
+xvslti_h         0111 01101000 01101 ..... ..... .....    @fmt_xdxjsi5
+xvslti_w         0111 01101000 01110 ..... ..... .....    @fmt_xdxjsi5
+xvslti_d         0111 01101000 01111 ..... ..... .....    @fmt_xdxjsi5
+xvslti_bu        0111 01101000 10000 ..... ..... .....    @fmt_xdxjui5
+xvslti_hu        0111 01101000 10001 ..... ..... .....    @fmt_xdxjui5
+xvslti_wu        0111 01101000 10010 ..... ..... .....    @fmt_xdxjui5
+xvslti_du        0111 01101000 10011 ..... ..... .....    @fmt_xdxjui5
+xvaddi_bu        0111 01101000 10100 ..... ..... .....    @fmt_xdxjui5
+xvaddi_hu        0111 01101000 10101 ..... ..... .....    @fmt_xdxjui5
+xvaddi_wu        0111 01101000 10110 ..... ..... .....    @fmt_xdxjui5
+xvaddi_du        0111 01101000 10111 ..... ..... .....    @fmt_xdxjui5
+xvsubi_bu        0111 01101000 11000 ..... ..... .....    @fmt_xdxjui5
+xvsubi_hu        0111 01101000 11001 ..... ..... .....    @fmt_xdxjui5
+xvsubi_wu        0111 01101000 11010 ..... ..... .....    @fmt_xdxjui5
+xvsubi_du        0111 01101000 11011 ..... ..... .....    @fmt_xdxjui5
+xvbsll_v         0111 01101000 11100 ..... ..... .....    @fmt_xdxjui5
+xvbsrl_v         0111 01101000 11101 ..... ..... .....    @fmt_xdxjui5
+xvmaxi_b         0111 01101001 00000 ..... ..... .....    @fmt_xdxjsi5
+xvmaxi_h         0111 01101001 00001 ..... ..... .....    @fmt_xdxjsi5
+xvmaxi_w         0111 01101001 00010 ..... ..... .....    @fmt_xdxjsi5
+xvmaxi_d         0111 01101001 00011 ..... ..... .....    @fmt_xdxjsi5
+xvmini_b         0111 01101001 00100 ..... ..... .....    @fmt_xdxjsi5
+xvmini_h         0111 01101001 00101 ..... ..... .....    @fmt_xdxjsi5
+xvmini_w         0111 01101001 00110 ..... ..... .....    @fmt_xdxjsi5
+xvmini_d         0111 01101001 00111 ..... ..... .....    @fmt_xdxjsi5
+xvmaxi_bu        0111 01101001 01000 ..... ..... .....    @fmt_xdxjui5
+xvmaxi_hu        0111 01101001 01001 ..... ..... .....    @fmt_xdxjui5
+xvmaxi_wu        0111 01101001 01010 ..... ..... .....    @fmt_xdxjui5
+xvmaxi_du        0111 01101001 01011 ..... ..... .....    @fmt_xdxjui5
+xvmini_bu        0111 01101001 01100 ..... ..... .....    @fmt_xdxjui5
+xvmini_hu        0111 01101001 01101 ..... ..... .....    @fmt_xdxjui5
+xvmini_wu        0111 01101001 01110 ..... ..... .....    @fmt_xdxjui5
+xvmini_du        0111 01101001 01111 ..... ..... .....    @fmt_xdxjui5
+xvrandsigni_b    0111 01101001 10000 ..... ..... .....    @fmt_xdxjui5
+xvrandsigni_h    0111 01101001 10001 ..... ..... .....    @fmt_xdxjui5
+xvrorsigni_b     0111 01101001 10010 ..... ..... .....    @fmt_xdxjui5
+xvrorsigni_h     0111 01101001 10011 ..... ..... .....    @fmt_xdxjui5
+xvfrstpi_b       0111 01101001 10100 ..... ..... .....    @fmt_xdxjui5
+xvfrstpi_h       0111 01101001 10101 ..... ..... .....    @fmt_xdxjui5
+xvclrstri_v      0111 01101001 10110 ..... ..... .....    @fmt_xdxjui5
+xvmepatmsk_v     0111 01101001 10111 ..... ..... .....    @fmt_xdmodeui5
+xvclo_b          0111 01101001 11000 00000 ..... .....    @fmt_xdxj
+xvclo_h          0111 01101001 11000 00001 ..... .....    @fmt_xdxj
+xvclo_w          0111 01101001 11000 00010 ..... .....    @fmt_xdxj
+xvclo_d          0111 01101001 11000 00011 ..... .....    @fmt_xdxj
+xvclz_b          0111 01101001 11000 00100 ..... .....    @fmt_xdxj
+xvclz_h          0111 01101001 11000 00101 ..... .....    @fmt_xdxj
+xvclz_w          0111 01101001 11000 00110 ..... .....    @fmt_xdxj
+xvclz_d          0111 01101001 11000 00111 ..... .....    @fmt_xdxj
+xvpcnt_b         0111 01101001 11000 01000 ..... .....    @fmt_xdxj
+xvpcnt_h         0111 01101001 11000 01001 ..... .....    @fmt_xdxj
+xvpcnt_w         0111 01101001 11000 01010 ..... .....    @fmt_xdxj
+xvpcnt_d         0111 01101001 11000 01011 ..... .....    @fmt_xdxj
+xvneg_b          0111 01101001 11000 01100 ..... .....    @fmt_xdxj
+xvneg_h          0111 01101001 11000 01101 ..... .....    @fmt_xdxj
+xvneg_w          0111 01101001 11000 01110 ..... .....    @fmt_xdxj
+xvneg_d          0111 01101001 11000 01111 ..... .....    @fmt_xdxj
+xvmskltz_b       0111 01101001 11000 10000 ..... .....    @fmt_xdxj
+xvmskltz_h       0111 01101001 11000 10001 ..... .....    @fmt_xdxj
+xvmskltz_w       0111 01101001 11000 10010 ..... .....    @fmt_xdxj
+xvmskltz_d       0111 01101001 11000 10011 ..... .....    @fmt_xdxj
+xvmskgez_b       0111 01101001 11000 10100 ..... .....    @fmt_xdxj
+xvmsknz_b        0111 01101001 11000 11000 ..... .....    @fmt_xdxj
+xvmskcopy_b      0111 01101001 11000 11100 ..... .....    @fmt_xdxj
+xvmskfill_b      0111 01101001 11001 00000 ..... .....    @fmt_xdxj
+xvfrstm_b        0111 01101001 11001 00100 ..... .....    @fmt_xdxj
+xvfrstm_h        0111 01101001 11001 00101 ..... .....    @fmt_xdxj
+xvseteqz_v       0111 01101001 11001 00110 ..... 00 ...   @fmt_cdxj
+xvsetnez_v       0111 01101001 11001 00111 ..... 00 ...   @fmt_cdxj
+xvsetanyeqz_b    0111 01101001 11001 01000 ..... 00 ...   @fmt_cdxj
+xvsetanyeqz_h    0111 01101001 11001 01001 ..... 00 ...   @fmt_cdxj
+xvsetanyeqz_w    0111 01101001 11001 01010 ..... 00 ...   @fmt_cdxj
+xvsetanyeqz_d    0111 01101001 11001 01011 ..... 00 ...   @fmt_cdxj
+xvsetallnez_b    0111 01101001 11001 01100 ..... 00 ...   @fmt_cdxj
+xvsetallnez_h    0111 01101001 11001 01101 ..... 00 ...   @fmt_cdxj
+xvsetallnez_w    0111 01101001 11001 01110 ..... 00 ...   @fmt_cdxj
+xvsetallnez_d    0111 01101001 11001 01111 ..... 00 ...   @fmt_cdxj
+xvflogb_s        0111 01101001 11001 10001 ..... .....    @fmt_xdxj
+xvflogb_d        0111 01101001 11001 10010 ..... .....    @fmt_xdxj
+xvfclass_s       0111 01101001 11001 10101 ..... .....    @fmt_xdxj
+xvfclass_d       0111 01101001 11001 10110 ..... .....    @fmt_xdxj
+xvfsqrt_s        0111 01101001 11001 11001 ..... .....    @fmt_xdxj
+xvfsqrt_d        0111 01101001 11001 11010 ..... .....    @fmt_xdxj
+xvfrecip_s       0111 01101001 11001 11101 ..... .....    @fmt_xdxj
+xvfrecip_d       0111 01101001 11001 11110 ..... .....    @fmt_xdxj
+xvfrsqrt_s       0111 01101001 11010 00001 ..... .....    @fmt_xdxj
+xvfrsqrt_d       0111 01101001 11010 00010 ..... .....    @fmt_xdxj
+xvfrint_s        0111 01101001 11010 01101 ..... .....    @fmt_xdxj
+xvfrint_d        0111 01101001 11010 01110 ..... .....    @fmt_xdxj
+xvfrintrm_s      0111 01101001 11010 10001 ..... .....    @fmt_xdxj
+xvfrintrm_d      0111 01101001 11010 10010 ..... .....    @fmt_xdxj
+xvfrintrp_s      0111 01101001 11010 10101 ..... .....    @fmt_xdxj
+xvfrintrp_d      0111 01101001 11010 10110 ..... .....    @fmt_xdxj
+xvfrintrz_s      0111 01101001 11010 11001 ..... .....    @fmt_xdxj
+xvfrintrz_d      0111 01101001 11010 11010 ..... .....    @fmt_xdxj
+xvfrintrne_s     0111 01101001 11010 11101 ..... .....    @fmt_xdxj
+xvfrintrne_d     0111 01101001 11010 11110 ..... .....    @fmt_xdxj
+xvextl_w_b       0111 01101001 11011 00001 ..... .....    @fmt_xdxj
+xvextl_d_b       0111 01101001 11011 00010 ..... .....    @fmt_xdxj
+xvextl_d_h       0111 01101001 11011 00101 ..... .....    @fmt_xdxj
+xvextl_w_bu      0111 01101001 11011 01011 ..... .....    @fmt_xdxj
+xvextl_d_bu      0111 01101001 11011 01100 ..... .....    @fmt_xdxj
+xvextl_d_hu      0111 01101001 11011 01111 ..... .....    @fmt_xdxj
+xvhadd8_d_bu     0111 01101001 11011 10100 ..... .....    @fmt_xdxj
+xvhminpos_w_hu   0111 01101001 11011 10101 ..... .....    @fmt_xdxj
+xvhminpos_d_hu   0111 01101001 11011 10110 ..... .....    @fmt_xdxj
+xvhminpos_q_hu   0111 01101001 11011 10111 ..... .....    @fmt_xdxj
+xvclrtail_b      0111 01101001 11011 11000 ..... .....    @fmt_xdxj
+xvclrtail_h      0111 01101001 11011 11001 ..... .....    @fmt_xdxj
+xvfcvtl_s_h      0111 01101001 11011 11010 ..... .....    @fmt_xdxj
+xvfcvth_s_h      0111 01101001 11011 11011 ..... .....    @fmt_xdxj
+xvfcvtl_d_s      0111 01101001 11011 11100 ..... .....    @fmt_xdxj
+xvfcvth_d_s      0111 01101001 11011 11101 ..... .....    @fmt_xdxj
+xvffint_s_w      0111 01101001 11100 00000 ..... .....    @fmt_xdxj
+xvffint_s_wu     0111 01101001 11100 00001 ..... .....    @fmt_xdxj
+xvffint_d_l      0111 01101001 11100 00010 ..... .....    @fmt_xdxj
+xvffint_d_lu     0111 01101001 11100 00011 ..... .....    @fmt_xdxj
+xvffintl_d_w     0111 01101001 11100 00100 ..... .....    @fmt_xdxj
+xvffinth_d_w     0111 01101001 11100 00101 ..... .....    @fmt_xdxj
+xvftint_w_s      0111 01101001 11100 01100 ..... .....    @fmt_xdxj
+xvftint_l_d      0111 01101001 11100 01101 ..... .....    @fmt_xdxj
+xvftintrm_w_s    0111 01101001 11100 01110 ..... .....    @fmt_xdxj
+xvftintrm_l_d    0111 01101001 11100 01111 ..... .....    @fmt_xdxj
+xvftintrp_w_s    0111 01101001 11100 10000 ..... .....    @fmt_xdxj
+xvftintrp_l_d    0111 01101001 11100 10001 ..... .....    @fmt_xdxj
+xvftintrz_w_s    0111 01101001 11100 10010 ..... .....    @fmt_xdxj
+xvftintrz_l_d    0111 01101001 11100 10011 ..... .....    @fmt_xdxj
+xvftintrne_w_s   0111 01101001 11100 10100 ..... .....    @fmt_xdxj
+xvftintrne_l_d   0111 01101001 11100 10101 ..... .....    @fmt_xdxj
+xvftint_wu_s     0111 01101001 11100 10110 ..... .....    @fmt_xdxj
+xvftint_lu_d     0111 01101001 11100 10111 ..... .....    @fmt_xdxj
+xvftintrz_wu_s   0111 01101001 11100 11100 ..... .....    @fmt_xdxj
+xvftintrz_lu_d   0111 01101001 11100 11101 ..... .....    @fmt_xdxj
+xvftintl_l_s     0111 01101001 11101 00000 ..... .....    @fmt_xdxj
+xvftinth_l_s     0111 01101001 11101 00001 ..... .....    @fmt_xdxj
+xvftintrml_l_s   0111 01101001 11101 00010 ..... .....    @fmt_xdxj
+xvftintrmh_l_s   0111 01101001 11101 00011 ..... .....    @fmt_xdxj
+xvftintrpl_l_s   0111 01101001 11101 00100 ..... .....    @fmt_xdxj
+xvftintrph_l_s   0111 01101001 11101 00101 ..... .....    @fmt_xdxj
+xvftintrzl_l_s   0111 01101001 11101 00110 ..... .....    @fmt_xdxj
+xvftintrzh_l_s   0111 01101001 11101 00111 ..... .....    @fmt_xdxj
+xvftintrnel_l_s  0111 01101001 11101 01000 ..... .....    @fmt_xdxj
+xvftintrneh_l_s  0111 01101001 11101 01001 ..... .....    @fmt_xdxj
+xvexth_h_b       0111 01101001 11101 11000 ..... .....    @fmt_xdxj
+xvexth_w_h       0111 01101001 11101 11001 ..... .....    @fmt_xdxj
+xvexth_d_w       0111 01101001 11101 11010 ..... .....    @fmt_xdxj
+xvexth_q_d       0111 01101001 11101 11011 ..... .....    @fmt_xdxj
+xvexth_hu_bu     0111 01101001 11101 11100 ..... .....    @fmt_xdxj
+xvexth_wu_hu     0111 01101001 11101 11101 ..... .....    @fmt_xdxj
+xvexth_du_wu     0111 01101001 11101 11110 ..... .....    @fmt_xdxj
+xvexth_qu_du     0111 01101001 11101 11111 ..... .....    @fmt_xdxj
+xvreplgr2vr_b    0111 01101001 11110 00000 ..... .....    @fmt_xdrj
+xvreplgr2vr_h    0111 01101001 11110 00001 ..... .....    @fmt_xdrj
+xvreplgr2vr_w    0111 01101001 11110 00010 ..... .....    @fmt_xdrj
+xvreplgr2vr_d    0111 01101001 11110 00011 ..... .....    @fmt_xdrj
+vext2xv_h_b      0111 01101001 11110 00100 ..... .....    @fmt_xdxj
+vext2xv_w_b      0111 01101001 11110 00101 ..... .....    @fmt_xdxj
+vext2xv_d_b      0111 01101001 11110 00110 ..... .....    @fmt_xdxj
+vext2xv_w_h      0111 01101001 11110 00111 ..... .....    @fmt_xdxj
+vext2xv_d_h      0111 01101001 11110 01000 ..... .....    @fmt_xdxj
+vext2xv_d_w      0111 01101001 11110 01001 ..... .....    @fmt_xdxj
+vext2xv_hu_bu    0111 01101001 11110 01010 ..... .....    @fmt_xdxj
+vext2xv_wu_bu    0111 01101001 11110 01011 ..... .....    @fmt_xdxj
+vext2xv_du_bu    0111 01101001 11110 01100 ..... .....    @fmt_xdxj
+vext2xv_wu_hu    0111 01101001 11110 01101 ..... .....    @fmt_xdxj
+vext2xv_du_hu    0111 01101001 11110 01110 ..... .....    @fmt_xdxj
+vext2xv_du_wu    0111 01101001 11110 01111 ..... .....    @fmt_xdxj
+xvhseli_d        0111 01101001 11111 ..... ..... .....    @fmt_xdxjui5
+xvrotri_b        0111 01101010 00000 01 ... ..... .....   @fmt_xdxjui3
+xvrotri_h        0111 01101010 00000 1 .... ..... .....   @fmt_xdxjui4
+xvrotri_w        0111 01101010 00001 ..... ..... .....    @fmt_xdxjui5
+xvrotri_d        0111 01101010 0001 ...... ..... .....    @fmt_xdxjui6
+xvsrlri_b        0111 01101010 01000 01 ... ..... .....   @fmt_xdxjui3
+xvsrlri_h        0111 01101010 01000 1 .... ..... .....   @fmt_xdxjui4
+xvsrlri_w        0111 01101010 01001 ..... ..... .....    @fmt_xdxjui5
+xvsrlri_d        0111 01101010 0101 ...... ..... .....    @fmt_xdxjui6
+xvsrari_b        0111 01101010 10000 01 ... ..... .....   @fmt_xdxjui3
+xvsrari_h        0111 01101010 10000 1 .... ..... .....   @fmt_xdxjui4
+xvsrari_w        0111 01101010 10001 ..... ..... .....    @fmt_xdxjui5
+xvsrari_d        0111 01101010 1001 ...... ..... .....    @fmt_xdxjui6
+xvinsgr2vr_w     0111 01101110 10111 10 ... ..... .....   @fmt_xdrjui3
+xvinsgr2vr_d     0111 01101110 10111 110 .. ..... .....   @fmt_xdrjui2
+xvpickve2gr_w    0111 01101110 11111 10 ... ..... .....   @fmt_rdxjui3
+xvpickve2gr_d    0111 01101110 11111 110 .. ..... .....   @fmt_rdxjui2
+xvpickve2gr_wu   0111 01101111 00111 10 ... ..... .....   @fmt_rdxjui3
+xvpickve2gr_du   0111 01101111 00111 110 .. ..... .....   @fmt_rdxjui2
+xvrepl128vei_b   0111 01101111 01111 0 .... ..... .....   @fmt_xdxjui4
+xvrepl128vei_h   0111 01101111 01111 10 ... ..... .....   @fmt_xdxjui3
+xvrepl128vei_w   0111 01101111 01111 110 .. ..... .....   @fmt_xdxjui2
+xvrepl128vei_d   0111 01101111 01111 1110 . ..... .....   @fmt_xdxjui1
+xvextrcoli_b     0111 01101111 10111 0 .... ..... .....   @fmt_xdxjui4
+xvextrcoli_h     0111 01101111 10111 10 ... ..... .....   @fmt_xdxjui3
+xvextrcoli_w     0111 01101111 10111 110 .. ..... .....   @fmt_xdxjui2
+xvextrcoli_d     0111 01101111 10111 1110 . ..... .....   @fmt_xdxjui1
+xvinsve0_w       0111 01101111 11111 10 ... ..... .....   @fmt_xdxjui3
+xvinsve0_d       0111 01101111 11111 110 .. ..... .....   @fmt_xdxjui2
+xvpickve_w       0111 01110000 00111 10 ... ..... .....   @fmt_xdxjui3
+xvpickve_d       0111 01110000 00111 110 .. ..... .....   @fmt_xdxjui2
+xvreplve0_b      0111 01110000 01110 00000 ..... .....    @fmt_xdxj
+xvreplve0_h      0111 01110000 01111 00000 ..... .....    @fmt_xdxj
+xvreplve0_w      0111 01110000 01111 10000 ..... .....    @fmt_xdxj
+xvreplve0_d      0111 01110000 01111 11000 ..... .....    @fmt_xdxj
+xvreplve0_q      0111 01110000 01111 11100 ..... .....    @fmt_xdxj
+xvsllwil_h_b     0111 01110000 10000 01 ... ..... .....   @fmt_xdxjui3
+xvsllwil_w_h     0111 01110000 10000 1 .... ..... .....   @fmt_xdxjui4
+xvsllwil_d_w     0111 01110000 10001 ..... ..... .....    @fmt_xdxjui5
+xvextl_q_d       0111 01110000 10010 00000 ..... .....    @fmt_xdxj
+xvsllwil_hu_bu   0111 01110000 11000 01 ... ..... .....   @fmt_xdxjui3
+xvsllwil_wu_hu   0111 01110000 11000 1 .... ..... .....   @fmt_xdxjui4
+xvsllwil_du_wu   0111 01110000 11001 ..... ..... .....    @fmt_xdxjui5
+xvextl_qu_du     0111 01110000 11010 00000 ..... .....    @fmt_xdxj
+xvbitclri_b      0111 01110001 00000 01 ... ..... .....   @fmt_xdxjui3
+xvbitclri_h      0111 01110001 00000 1 .... ..... .....   @fmt_xdxjui4
+xvbitclri_w      0111 01110001 00001 ..... ..... .....    @fmt_xdxjui5
+xvbitclri_d      0111 01110001 0001 ...... ..... .....    @fmt_xdxjui6
+xvbitseti_b      0111 01110001 01000 01 ... ..... .....   @fmt_xdxjui3
+xvbitseti_h      0111 01110001 01000 1 .... ..... .....   @fmt_xdxjui4
+xvbitseti_w      0111 01110001 01001 ..... ..... .....    @fmt_xdxjui5
+xvbitseti_d      0111 01110001 0101 ...... ..... .....    @fmt_xdxjui6
+xvbitrevi_b      0111 01110001 10000 01 ... ..... .....   @fmt_xdxjui3
+xvbitrevi_h      0111 01110001 10000 1 .... ..... .....   @fmt_xdxjui4
+xvbitrevi_w      0111 01110001 10001 ..... ..... .....    @fmt_xdxjui5
+xvbitrevi_d      0111 01110001 1001 ...... ..... .....    @fmt_xdxjui6
+xvbstrc12i_b     0111 01110001 11000 01 ... ..... .....   @fmt_xdxjui3
+xvbstrc12i_h     0111 01110001 11000 1 .... ..... .....   @fmt_xdxjui4
+xvbstrc12i_w     0111 01110001 11001 ..... ..... .....    @fmt_xdxjui5
+xvbstrc12i_d     0111 01110001 1101 ...... ..... .....    @fmt_xdxjui6
+xvbstrc21i_b     0111 01110010 00000 01 ... ..... .....   @fmt_xdxjui3
+xvbstrc21i_h     0111 01110010 00000 1 .... ..... .....   @fmt_xdxjui4
+xvbstrc21i_w     0111 01110010 00001 ..... ..... .....    @fmt_xdxjui5
+xvbstrc21i_d     0111 01110010 0001 ...... ..... .....    @fmt_xdxjui6
+xvsat_b          0111 01110010 01000 01 ... ..... .....   @fmt_xdxjui3
+xvsat_h          0111 01110010 01000 1 .... ..... .....   @fmt_xdxjui4
+xvsat_w          0111 01110010 01001 ..... ..... .....    @fmt_xdxjui5
+xvsat_d          0111 01110010 0101 ...... ..... .....    @fmt_xdxjui6
+xvsat_bu         0111 01110010 10000 01 ... ..... .....   @fmt_xdxjui3
+xvsat_hu         0111 01110010 10000 1 .... ..... .....   @fmt_xdxjui4
+xvsat_wu         0111 01110010 10001 ..... ..... .....    @fmt_xdxjui5
+xvsat_du         0111 01110010 1001 ...... ..... .....    @fmt_xdxjui6
+xvslli_b         0111 01110010 11000 01 ... ..... .....   @fmt_xdxjui3
+xvslli_h         0111 01110010 11000 1 .... ..... .....   @fmt_xdxjui4
+xvslli_w         0111 01110010 11001 ..... ..... .....    @fmt_xdxjui5
+xvslli_d         0111 01110010 1101 ...... ..... .....    @fmt_xdxjui6
+xvsrli_b         0111 01110011 00000 01 ... ..... .....   @fmt_xdxjui3
+xvsrli_h         0111 01110011 00000 1 .... ..... .....   @fmt_xdxjui4
+xvsrli_w         0111 01110011 00001 ..... ..... .....    @fmt_xdxjui5
+xvsrli_d         0111 01110011 0001 ...... ..... .....    @fmt_xdxjui6
+xvsrai_b         0111 01110011 01000 01 ... ..... .....   @fmt_xdxjui3
+xvsrai_h         0111 01110011 01000 1 .... ..... .....   @fmt_xdxjui4
+xvsrai_w         0111 01110011 01001 ..... ..... .....    @fmt_xdxjui5
+xvsrai_d         0111 01110011 0101 ...... ..... .....    @fmt_xdxjui6
+xvsrlrneni_b_h   0111 01110011 10000 1 .... ..... .....   @fmt_xdxjui4
+xvsrlrneni_h_w   0111 01110011 10001 ..... ..... .....    @fmt_xdxjui5
+xvsrlrneni_w_d   0111 01110011 1001 ...... ..... .....    @fmt_xdxjui6
+xvsrlrneni_d_q   0111 01110011 101 ....... ..... .....    @fmt_xdxjui7
+xvsrarneni_b_h   0111 01110011 11000 1 .... ..... .....   @fmt_xdxjui4
+xvsrarneni_h_w   0111 01110011 11001 ..... ..... .....    @fmt_xdxjui5
+xvsrarneni_w_d   0111 01110011 1101 ...... ..... .....    @fmt_xdxjui6
+xvsrarneni_d_q   0111 01110011 111 ....... ..... .....    @fmt_xdxjui7
+xvsrlni_b_h      0111 01110100 00000 1 .... ..... .....   @fmt_xdxjui4
+xvsrlni_h_w      0111 01110100 00001 ..... ..... .....    @fmt_xdxjui5
+xvsrlni_w_d      0111 01110100 0001 ...... ..... .....    @fmt_xdxjui6
+xvsrlni_d_q      0111 01110100 001 ....... ..... .....    @fmt_xdxjui7
+xvsrlrni_b_h     0111 01110100 01000 1 .... ..... .....   @fmt_xdxjui4
+xvsrlrni_h_w     0111 01110100 01001 ..... ..... .....    @fmt_xdxjui5
+xvsrlrni_w_d     0111 01110100 0101 ...... ..... .....    @fmt_xdxjui6
+xvsrlrni_d_q     0111 01110100 011 ....... ..... .....    @fmt_xdxjui7
+xvssrlni_b_h     0111 01110100 10000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlni_h_w     0111 01110100 10001 ..... ..... .....    @fmt_xdxjui5
+xvssrlni_w_d     0111 01110100 1001 ...... ..... .....    @fmt_xdxjui6
+xvssrlni_d_q     0111 01110100 101 ....... ..... .....    @fmt_xdxjui7
+xvssrlni_bu_h    0111 01110100 11000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlni_hu_w    0111 01110100 11001 ..... ..... .....    @fmt_xdxjui5
+xvssrlni_wu_d    0111 01110100 1101 ...... ..... .....    @fmt_xdxjui6
+xvssrlni_du_q    0111 01110100 111 ....... ..... .....    @fmt_xdxjui7
+xvssrlrni_b_h    0111 01110101 00000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlrni_h_w    0111 01110101 00001 ..... ..... .....    @fmt_xdxjui5
+xvssrlrni_w_d    0111 01110101 0001 ...... ..... .....    @fmt_xdxjui6
+xvssrlrni_d_q    0111 01110101 001 ....... ..... .....    @fmt_xdxjui7
+xvssrlrni_bu_h   0111 01110101 01000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlrni_hu_w   0111 01110101 01001 ..... ..... .....    @fmt_xdxjui5
+xvssrlrni_wu_d   0111 01110101 0101 ...... ..... .....    @fmt_xdxjui6
+xvssrlrni_du_q   0111 01110101 011 ....... ..... .....    @fmt_xdxjui7
+xvsrani_b_h      0111 01110101 10000 1 .... ..... .....   @fmt_xdxjui4
+xvsrani_h_w      0111 01110101 10001 ..... ..... .....    @fmt_xdxjui5
+xvsrani_w_d      0111 01110101 1001 ...... ..... .....    @fmt_xdxjui6
+xvsrani_d_q      0111 01110101 101 ....... ..... .....    @fmt_xdxjui7
+xvsrarni_b_h     0111 01110101 11000 1 .... ..... .....   @fmt_xdxjui4
+xvsrarni_h_w     0111 01110101 11001 ..... ..... .....    @fmt_xdxjui5
+xvsrarni_w_d     0111 01110101 1101 ...... ..... .....    @fmt_xdxjui6
+xvsrarni_d_q     0111 01110101 111 ....... ..... .....    @fmt_xdxjui7
+xvssrani_b_h     0111 01110110 00000 1 .... ..... .....   @fmt_xdxjui4
+xvssrani_h_w     0111 01110110 00001 ..... ..... .....    @fmt_xdxjui5
+xvssrani_w_d     0111 01110110 0001 ...... ..... .....    @fmt_xdxjui6
+xvssrani_d_q     0111 01110110 001 ....... ..... .....    @fmt_xdxjui7
+xvssrani_bu_h    0111 01110110 01000 1 .... ..... .....   @fmt_xdxjui4
+xvssrani_hu_w    0111 01110110 01001 ..... ..... .....    @fmt_xdxjui5
+xvssrani_wu_d    0111 01110110 0101 ...... ..... .....    @fmt_xdxjui6
+xvssrani_du_q    0111 01110110 011 ....... ..... .....    @fmt_xdxjui7
+xvssrarni_b_h    0111 01110110 10000 1 .... ..... .....   @fmt_xdxjui4
+xvssrarni_h_w    0111 01110110 10001 ..... ..... .....    @fmt_xdxjui5
+xvssrarni_w_d    0111 01110110 1001 ...... ..... .....    @fmt_xdxjui6
+xvssrarni_d_q    0111 01110110 101 ....... ..... .....    @fmt_xdxjui7
+xvssrarni_bu_h   0111 01110110 11000 1 .... ..... .....   @fmt_xdxjui4
+xvssrarni_hu_w   0111 01110110 11001 ..... ..... .....    @fmt_xdxjui5
+xvssrarni_wu_d   0111 01110110 1101 ...... ..... .....    @fmt_xdxjui6
+xvssrarni_du_q   0111 01110110 111 ....... ..... .....    @fmt_xdxjui7
+xvssrlrneni_b_h  0111 01110111 00000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlrneni_h_w  0111 01110111 00001 ..... ..... .....    @fmt_xdxjui5
+xvssrlrneni_w_d  0111 01110111 0001 ...... ..... .....    @fmt_xdxjui6
+xvssrlrneni_d_q  0111 01110111 001 ....... ..... .....    @fmt_xdxjui7
+xvssrlrneni_bu_h 0111 01110111 01000 1 .... ..... .....   @fmt_xdxjui4
+xvssrlrneni_hu_w 0111 01110111 01001 ..... ..... .....    @fmt_xdxjui5
+xvssrlrneni_wu_d 0111 01110111 0101 ...... ..... .....    @fmt_xdxjui6
+xvssrlrneni_du_q 0111 01110111 011 ....... ..... .....    @fmt_xdxjui7
+xvssrarneni_b_h  0111 01110111 10000 1 .... ..... .....   @fmt_xdxjui4
+xvssrarneni_h_w  0111 01110111 10001 ..... ..... .....    @fmt_xdxjui5
+xvssrarneni_w_d  0111 01110111 1001 ...... ..... .....    @fmt_xdxjui6
+xvssrarneni_d_q  0111 01110111 101 ....... ..... .....    @fmt_xdxjui7
+xvssrarneni_bu_h 0111 01110111 11000 1 .... ..... .....   @fmt_xdxjui4
+xvssrarneni_hu_w 0111 01110111 11001 ..... ..... .....    @fmt_xdxjui5
+xvssrarneni_wu_d 0111 01110111 1101 ...... ..... .....    @fmt_xdxjui6
+xvssrarneni_du_q 0111 01110111 111 ....... ..... .....    @fmt_xdxjui7
+xvextrins_d      0111 01111000 00 ........ ..... .....    @fmt_xdxjui8
+xvextrins_w      0111 01111000 01 ........ ..... .....    @fmt_xdxjui8
+xvextrins_h      0111 01111000 10 ........ ..... .....    @fmt_xdxjui8
+xvextrins_b      0111 01111000 11 ........ ..... .....    @fmt_xdxjui8
+xvshuf4i_b       0111 01111001 00 ........ ..... .....    @fmt_xdxjui8
+xvshuf4i_h       0111 01111001 01 ........ ..... .....    @fmt_xdxjui8
+xvshuf4i_w       0111 01111001 10 ........ ..... .....    @fmt_xdxjui8
+xvshuf4i_d       0111 01111001 11 ........ ..... .....    @fmt_xdxjui8
+xvshufi1_b       0111 01111010 00 ........ ..... .....    @fmt_xdxjui8
+xvshufi2_b       0111 01111010 01 ........ ..... .....    @fmt_xdxjui8
+xvshufi3_b       0111 01111010 10 ........ ..... .....    @fmt_xdxjui8
+xvshufi4_b       0111 01111010 11 ........ ..... .....    @fmt_xdxjui8
+xvshufi1_h       0111 01111011 00 ........ ..... .....    @fmt_xdxjui8
+xvshufi2_h       0111 01111011 01 ........ ..... .....    @fmt_xdxjui8
+xvseli_h         0111 01111011 10 ........ ..... .....    @fmt_xdxjui8
+xvseli_w         0111 01111011 11 ........ ..... .....    @fmt_xdxjui8
+xvseli_d         0111 01111100 00 ........ ..... .....    @fmt_xdxjui8
+xvbitseli_b      0111 01111100 01 ........ ..... .....    @fmt_xdxjui8
+xvbitmvzi_b      0111 01111100 10 ........ ..... .....    @fmt_xdxjui8
+xvbitmvnzi_b     0111 01111100 11 ........ ..... .....    @fmt_xdxjui8
+xvandi_b         0111 01111101 00 ........ ..... .....    @fmt_xdxjui8
+xvori_b          0111 01111101 01 ........ ..... .....    @fmt_xdxjui8
+xvxori_b         0111 01111101 10 ........ ..... .....    @fmt_xdxjui8
+xvnori_b         0111 01111101 11 ........ ..... .....    @fmt_xdxjui8
+xvldi            0111 01111110 00 ............. .....     @fmt_xdi13
+xvpermi_w        0111 01111110 01 ........ ..... .....    @fmt_xdxjui8
+xvpermi_d        0111 01111110 10 ........ ..... .....    @fmt_xdxjui8
+xvpermi_q        0111 01111110 11 ........ ..... .....    @fmt_xdxjui8
+
+#lbt
+# x86mttop         000000000000000001110000...00000 @fmt_ptr
+# x86mftop         000000000000000001110100000..... @fmt_rd
+x86loope      0000000000000000011110.......... @fmt_rdrj
+x86loopne     0000000000000000011111.......... @fmt_rdrj
+x86inc_b         0000000000000000100000.....00000 @fmt_rj
+x86inc_h         0000000000000000100000.....00001 @fmt_rj
+x86inc_w         0000000000000000100000.....00010 @fmt_rj
+x86inc_d         0000000000000000100000.....00011 @fmt_rj
+x86dec_b         0000000000000000100000.....00100 @fmt_rj
+x86dec_h         0000000000000000100000.....00101 @fmt_rj
+x86dec_w         0000000000000000100000.....00110 @fmt_rj
+x86dec_d         0000000000000000100000.....00111 @fmt_rj
+x86settm         00000000000000001000000000001000 @fmt_empty
+x86clrtm         00000000000000001000000000101000 @fmt_empty
+x86inctop        00000000000000001000000000001001 @fmt_empty
+x86dectop        00000000000000001000000000101001 @fmt_empty
+# rotr_b           00000000000110100............... @fmt_rdrjrk
+# rotr_h           00000000000110101............... @fmt_rdrjrk
+# addu12i_w        00000000001010010............... @fmt_rdrjsi5
+# addu12i_d        00000000001010011............... @fmt_rdrjsi5
+adc_b            00000000001100000............... @fmt_rdrjrk
+adc_d            00000000001100011............... @fmt_rdrjrk
+adc_h            00000000001100001............... @fmt_rdrjrk
+adc_w            00000000001100010............... @fmt_rdrjrk
+sbc_b            00000000001100100............... @fmt_rdrjrk
+sbc_d            00000000001100111............... @fmt_rdrjrk
+sbc_h            00000000001100101............... @fmt_rdrjrk
+sbc_w            00000000001100110............... @fmt_rdrjrk
+rcr_b            00000000001101000............... @fmt_rdrjrk
+rcr_d            00000000001101011............... @fmt_rdrjrk
+rcr_h            00000000001101001............... @fmt_rdrjrk
+rcr_w            00000000001101010............... @fmt_rdrjrk
+setx86j          000000000011011010....00000..... @fmt_rdcond  
+x86mul_b         00000000001111101..........00000 @fmt_rjrk
+x86mul_bu        00000000001111101..........00100 @fmt_rjrk
+x86mul_d         00000000001111101..........00011 @fmt_rjrk
+x86mul_du        00000000001111101..........00111 @fmt_rjrk
+x86mul_h         00000000001111101..........00001 @fmt_rjrk
+x86mul_hu        00000000001111101..........00101 @fmt_rjrk
+x86mul_w         00000000001111101..........00010 @fmt_rjrk
+x86mul_wu        00000000001111101..........00110 @fmt_rjrk
+x86add_b         00000000001111110..........00100 @fmt_rjrk
+x86add_d         00000000001111110..........00111 @fmt_rjrk
+x86add_du        00000000001111110..........00001 @fmt_rjrk
+x86add_h         00000000001111110..........00101 @fmt_rjrk
+x86add_w         00000000001111110..........00110 @fmt_rjrk
+x86add_wu        00000000001111110..........00000 @fmt_rjrk
+x86sub_b         00000000001111110..........01000 @fmt_rjrk
+x86sub_d         00000000001111110..........01011 @fmt_rjrk
+x86sub_du        00000000001111110..........00011 @fmt_rjrk
+x86sub_h         00000000001111110..........01001 @fmt_rjrk
+x86sub_w         00000000001111110..........01010 @fmt_rjrk
+x86sub_wu        00000000001111110..........00010 @fmt_rjrk
+x86adc_b         00000000001111110..........01100 @fmt_rjrk
+x86adc_d         00000000001111110..........01111 @fmt_rjrk
+x86adc_h         00000000001111110..........01101 @fmt_rjrk
+x86adc_w         00000000001111110..........01110 @fmt_rjrk
+x86sbc_b         00000000001111110..........10000 @fmt_rjrk
+x86sbc_d         00000000001111110..........10011 @fmt_rjrk
+x86sbc_h         00000000001111110..........10001 @fmt_rjrk
+x86sbc_w         00000000001111110..........10010 @fmt_rjrk
+x86sll_b         00000000001111110..........10100 @fmt_rjrk
+x86sll_d         00000000001111110..........10111 @fmt_rjrk
+x86sll_h         00000000001111110..........10101 @fmt_rjrk
+x86sll_w         00000000001111110..........10110 @fmt_rjrk
+x86srl_b         00000000001111110..........11000 @fmt_rjrk
+x86srl_d         00000000001111110..........11011 @fmt_rjrk
+x86srl_h         00000000001111110..........11001 @fmt_rjrk
+x86srl_w         00000000001111110..........11010 @fmt_rjrk
+x86sra_b         00000000001111110..........11100 @fmt_rjrk
+x86sra_d         00000000001111110..........11111 @fmt_rjrk
+x86sra_h         00000000001111110..........11101 @fmt_rjrk
+x86sra_w         00000000001111110..........11110 @fmt_rjrk
+x86rotr_b        00000000001111111..........00000 @fmt_rjrk
+x86rotr_d        00000000001111111..........00010 @fmt_rjrk
+x86rotr_h        00000000001111111..........00001 @fmt_rjrk
+x86rotr_w        00000000001111111..........00011 @fmt_rjrk
+x86rotl_b        00000000001111111..........00100 @fmt_rjrk
+x86rotl_d        00000000001111111..........00111 @fmt_rjrk
+x86rotl_h        00000000001111111..........00101 @fmt_rjrk
+x86rotl_w        00000000001111111..........00110 @fmt_rjrk
+x86rcr_b         00000000001111111..........01000 @fmt_rjrk
+x86rcr_d         00000000001111111..........01011 @fmt_rjrk
+x86rcr_h         00000000001111111..........01001 @fmt_rjrk
+x86rcr_w         00000000001111111..........01010 @fmt_rjrk
+x86rcl_b         00000000001111111..........01100 @fmt_rjrk
+x86rcl_d         00000000001111111..........01111 @fmt_rjrk
+x86rcl_h         00000000001111111..........01101 @fmt_rjrk
+x86rcl_w         00000000001111111..........01110 @fmt_rjrk
+x86and_b         00000000001111111..........10000 @fmt_rjrk
+x86and_d         00000000001111111..........10011 @fmt_rjrk
+x86and_h         00000000001111111..........10001 @fmt_rjrk
+x86and_w         00000000001111111..........10010 @fmt_rjrk
+x86or_b          00000000001111111..........10100 @fmt_rjrk
+x86or_d          00000000001111111..........10111 @fmt_rjrk
+x86or_h          00000000001111111..........10101 @fmt_rjrk
+x86or_w          00000000001111111..........10110 @fmt_rjrk
+x86xor_b         00000000001111111..........11000 @fmt_rjrk
+x86xor_d         00000000001111111..........11011 @fmt_rjrk
+x86xor_h         00000000001111111..........11001 @fmt_rjrk
+x86xor_w         00000000001111111..........11010 @fmt_rjrk
+rcri_b           0000000001010000001............. @fmt_rdrjui3
+rcri_h           000000000101000001.............. @fmt_rdrjui4
+rcri_w           00000000010100001............... @fmt_rdrjui5
+rcri_d           0000000001010001................ @fmt_rdrjui6
+x86slli_b        0000000001010100001........00000 @fmt_rjui3
+x86slli_h        000000000101010001.........00001 @fmt_rjui4
+x86slli_w        00000000010101001..........00010 @fmt_rjui5
+x86slli_d        0000000001010101...........00011 @fmt_rjui6
+x86srli_b        0000000001010100001........00100 @fmt_rjui3
+x86srli_h        000000000101010001.........00101 @fmt_rjui4
+x86srli_w        00000000010101001..........00110 @fmt_rjui5
+x86srli_d        0000000001010101...........00111 @fmt_rjui6
+x86srai_b        0000000001010100001........01000 @fmt_rjui3
+x86srai_h        000000000101010001.........01001 @fmt_rjui4
+x86srai_w        00000000010101001..........01010 @fmt_rjui5
+x86srai_d        0000000001010101...........01011 @fmt_rjui6
+x86rotri_b       0000000001010100001........01100 @fmt_rjui3
+x86rotri_h       000000000101010001.........01101 @fmt_rjui4
+x86rotri_w       00000000010101001..........01110 @fmt_rjui5
+x86rotri_d       0000000001010101...........01111 @fmt_rjui6
+x86rcri_b        0000000001010100001........10000 @fmt_rjui3
+x86rcri_h        000000000101010001.........10001 @fmt_rjui4
+x86rcri_w        00000000010101001..........10010 @fmt_rjui5
+x86rcri_d        0000000001010101...........10011 @fmt_rjui6
+x86rotli_b       0000000001010100001........10100 @fmt_rjui3
+x86rotli_h       000000000101010001.........10101 @fmt_rjui4
+x86rotli_w       00000000010101001..........10110 @fmt_rjui5
+x86rotli_d       0000000001010101...........10111 @fmt_rjui6
+x86rcli_b        0000000001010100001........11000 @fmt_rjui3
+x86rcli_h        000000000101010001.........11001 @fmt_rjui4
+x86rcli_w        00000000010101001..........11010 @fmt_rjui5
+x86rcli_d        0000000001010101...........11011 @fmt_rjui6
+x86mfflag        00000000010111........00000..... @fmt_rdui8
+x86mtflag        00000000010111........00001..... @fmt_rdui8
+#jiscr0           010010................10000..... @fmt_offs21
+#jiscr1           010010................11000..... @fmt_offs21
+
+#x86settag        00000000010110.................. @fmt_rdui8
+
+
+#nmovf2gr         111100 00001 000000 00000 00000 ..... @fmt_rd
+#nsyncf           111100 00001 000001 ..... 00000 ..... @fmt_rdrk
+#nmovgr2f         111100 00001 000010 00000 ..... ..... @fmt_rdrj
+#nsetcc           111100 00001 000011 0.... 00000 ..... @fmt_rdcond
+#nx86add_bi       111110 0000. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86add_hi       111110 0001. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86add_wi       111110 0010. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86add_di       111110 0011. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sub_bi       111110 0100. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sub_hi       111110 0101. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sub_wi       111110 0110. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sub_di       111110 0111. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86adc_bi       111110 1000. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86adc_hi       111110 1001. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86adc_wi       111110 1010. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86adc_di       111110 1011. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sbc_bi       111110 1100. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sbc_hi       111110 1101. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sbc_wi       111110 1110. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sbc_di       111110 1111. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86and_bi       111111 0000. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86and_hi       111111 0001. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86and_wi       111111 0010. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86and_di       111111 0011. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86or_bi        111111 0100. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86or_hi        111111 0101. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86or_wi        111111 0110. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86or_di        111111 0111. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86xor_bi       111111 1000. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86xor_hi       111111 1001. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86xor_wi       111111 1010. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86xor_di       111111 1011. ...... ..... ..... ..... @fmt_rdrjsi12
+#nx86sll_bi       111100 00010 000000 01... ..... ..... @fmt_rdrjui3
+#nx86sll_hi       111100 00010 000000 1.... ..... ..... @fmt_rdrjui4
+#nx86sll_wi       111100 00010 000001 ..... ..... ..... @fmt_rdrjui5
+#nx86sll_di       111100 00010 00001. ..... ..... ..... @fmt_rdrjui6
+#nx86srl_bi       111100 00010 000100 01... ..... ..... @fmt_rdrjui3
+#nx86srl_hi       111100 00010 000100 1.... ..... ..... @fmt_rdrjui4
+#nx86srl_wi       111100 00010 000101 ..... ..... ..... @fmt_rdrjui5
+#nx86srl_di       111100 00010 00011. ..... ..... ..... @fmt_rdrjui6
+#nx86sra_bi       111100 00010 001000 01... ..... ..... @fmt_rdrjui3
+#nx86sra_hi       111100 00010 001000 1.... ..... ..... @fmt_rdrjui4
+#nx86sra_wi       111100 00010 001001 ..... ..... ..... @fmt_rdrjui5
+#nx86sra_di       111100 00010 00101. ..... ..... ..... @fmt_rdrjui6
+#nx86rotl_bi      111100 00010 001100 01... ..... ..... @fmt_rdrjui3
+#nx86rotl_hi      111100 00010 001100 1.... ..... ..... @fmt_rdrjui4
+#nx86rotl_wi      111100 00010 001101 ..... ..... ..... @fmt_rdrjui5
+#nx86rotl_di      111100 00010 00111. ..... ..... ..... @fmt_rdrjui6
+#nx86rotr_bi      111100 00010 010000 01... ..... ..... @fmt_rdrjui3
+#nx86rotr_hi      111100 00010 010000 1.... ..... ..... @fmt_rdrjui4
+#nx86rotr_wi      111100 00010 010001 ..... ..... ..... @fmt_rdrjui5
+#nx86rotr_di      111100 00010 01001. ..... ..... ..... @fmt_rdrjui6
+##nx86rcl_bi       111100 00010 010100 01... ..... ..... @fmt_rdrjui3
+##nx86rcl_hi       111100 00010 010100 1.... ..... ..... @fmt_rdrjui4
+##nx86rcl_wi       111100 00010 010101 ..... ..... ..... @fmt_rdrjui5
+##nx86rcl_di       111100 00010 01011. ..... ..... ..... @fmt_rdrjui6
+##nx86rcr_bi       111100 00010 011000 01... ..... ..... @fmt_rdrjui3
+##nx86rcr_hi       111100 00010 011000 1.... ..... ..... @fmt_rdrjui4
+##nx86rcr_wi       111100 00010 011001 ..... ..... ..... @fmt_rdrjui5
+##nx86rcr_di       111100 00010 01101. ..... ..... ..... @fmt_rdrjui6
+#nx86inc_b        111100 00010 011100 ..... 00000 ..... @fmt_rdrk
+#nx86inc_h        111100 00010 011100 ..... 00001 ..... @fmt_rdrk
+#nx86inc_w        111100 00010 011100 ..... 00010 ..... @fmt_rdrk
+#nx86inc_d        111100 00010 011100 ..... 00011 ..... @fmt_rdrk
+#nx86dec_b        111100 00010 011100 ..... 00100 ..... @fmt_rdrk
+#nx86dec_h        111100 00010 011100 ..... 00101 ..... @fmt_rdrk
+#nx86dec_w        111100 00010 011100 ..... 00110 ..... @fmt_rdrk
+#nx86dec_d        111100 00010 011100 ..... 00111 ..... @fmt_rdrk
+#nx86add_b        111100 00011 000000 ..... ..... ..... @fmt_rdrjrk
+#nx86add_h        111100 00011 000001 ..... ..... ..... @fmt_rdrjrk
+#nx86add_w        111100 00011 000010 ..... ..... ..... @fmt_rdrjrk
+#nx86add_d        111100 00011 000011 ..... ..... ..... @fmt_rdrjrk
+#nx86sub_b        111100 00011 000100 ..... ..... ..... @fmt_rdrjrk
+#nx86sub_h        111100 00011 000101 ..... ..... ..... @fmt_rdrjrk
+#nx86sub_w        111100 00011 000110 ..... ..... ..... @fmt_rdrjrk
+#nx86sub_d        111100 00011 000111 ..... ..... ..... @fmt_rdrjrk
+#nx86adc_b        111100 00011 001000 ..... ..... ..... @fmt_rdrjrk
+#nx86adc_h        111100 00011 001001 ..... ..... ..... @fmt_rdrjrk
+#nx86adc_w        111100 00011 001010 ..... ..... ..... @fmt_rdrjrk
+#nx86adc_d        111100 00011 001011 ..... ..... ..... @fmt_rdrjrk
+#nx86sbc_b        111100 00011 001100 ..... ..... ..... @fmt_rdrjrk
+#nx86sbc_h        111100 00011 001101 ..... ..... ..... @fmt_rdrjrk
+#nx86sbc_w        111100 00011 001110 ..... ..... ..... @fmt_rdrjrk
+#nx86sbc_d        111100 00011 001111 ..... ..... ..... @fmt_rdrjrk
+#nx86and_b        111100 00011 010000 ..... ..... ..... @fmt_rdrjrk
+#nx86and_h        111100 00011 010001 ..... ..... ..... @fmt_rdrjrk
+#nx86and_w        111100 00011 010010 ..... ..... ..... @fmt_rdrjrk
+#nx86and_d        111100 00011 010011 ..... ..... ..... @fmt_rdrjrk
+#nx86or_b         111100 00011 010100 ..... ..... ..... @fmt_rdrjrk
+#nx86or_h         111100 00011 010101 ..... ..... ..... @fmt_rdrjrk
+#nx86or_w         111100 00011 010110 ..... ..... ..... @fmt_rdrjrk
+#nx86or_d         111100 00011 010111 ..... ..... ..... @fmt_rdrjrk
+#nx86xor_b        111100 00011 011000 ..... ..... ..... @fmt_rdrjrk
+#nx86xor_h        111100 00011 011001 ..... ..... ..... @fmt_rdrjrk
+#nx86xor_w        111100 00011 011010 ..... ..... ..... @fmt_rdrjrk
+#nx86xor_d        111100 00011 011011 ..... ..... ..... @fmt_rdrjrk
+#nx86sll_b        111100 00011 011100 ..... ..... ..... @fmt_rdrjrk
+#nx86sll_h        111100 00011 011101 ..... ..... ..... @fmt_rdrjrk
+#nx86sll_w        111100 00011 011110 ..... ..... ..... @fmt_rdrjrk
+#nx86sll_d        111100 00011 011111 ..... ..... ..... @fmt_rdrjrk
+#nx86srl_b        111100 00011 100000 ..... ..... ..... @fmt_rdrjrk
+#nx86srl_h        111100 00011 100001 ..... ..... ..... @fmt_rdrjrk
+#nx86srl_w        111100 00011 100010 ..... ..... ..... @fmt_rdrjrk
+#nx86srl_d        111100 00011 100011 ..... ..... ..... @fmt_rdrjrk
+#nx86sra_b        111100 00011 100100 ..... ..... ..... @fmt_rdrjrk
+#nx86sra_h        111100 00011 100101 ..... ..... ..... @fmt_rdrjrk
+#nx86sra_w        111100 00011 100110 ..... ..... ..... @fmt_rdrjrk
+#nx86sra_d        111100 00011 100111 ..... ..... ..... @fmt_rdrjrk
+#nx86rotl_b       111100 00011 101000 ..... ..... ..... @fmt_rdrjrk
+#nx86rotl_h       111100 00011 101001 ..... ..... ..... @fmt_rdrjrk
+#nx86rotl_w       111100 00011 101010 ..... ..... ..... @fmt_rdrjrk
+#nx86rotl_d       111100 00011 101011 ..... ..... ..... @fmt_rdrjrk
+#nx86rotr_b       111100 00011 101100 ..... ..... ..... @fmt_rdrjrk
+#nx86rotr_h       111100 00011 101101 ..... ..... ..... @fmt_rdrjrk
+#nx86rotr_w       111100 00011 101110 ..... ..... ..... @fmt_rdrjrk
+#nx86rotr_d       111100 00011 101111 ..... ..... ..... @fmt_rdrjrk
+##nx86rcl_b        111100 00011 110000 ..... ..... ..... @fmt_rdrjrk
+##nx86rcl_h        111100 00011 110001 ..... ..... ..... @fmt_rdrjrk
+##nx86rcl_w        111100 00011 110010 ..... ..... ..... @fmt_rdrjrk
+##nx86rcl_d        111100 00011 110011 ..... ..... ..... @fmt_rdrjrk
+##nx86rcr_b        111100 00011 110100 ..... ..... ..... @fmt_rdrjrk
+##nx86rcr_h        111100 00011 110101 ..... ..... ..... @fmt_rdrjrk
+##nx86rcr_w        111100 00011 110110 ..... ..... ..... @fmt_rdrjrk
+##nx86rcr_d        111100 00011 110111 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_b        111100 00011 111000 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_h        111100 00011 111001 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_w        111100 00011 111010 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_d        111100 00011 111011 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_bu       111100 00011 111100 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_hu       111100 00011 111101 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_wu       111100 00011 111110 ..... ..... ..... @fmt_rdrjrk
+#nx86mul_du       111100 00011 111111 ..... ..... ..... @fmt_rdrjrk

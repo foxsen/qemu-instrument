@@ -1,6 +1,6 @@
 loongarch_tcg_ss.add(files(
   'assemble.c',
-  'decode.c',
+  'decode-new.c',
   'disasm.c',
   'ins.c',
   'ir2.c',
