@@ -26,9 +26,10 @@ static inline uint32_t read_opcode(CPUState *cs, uint64_t pc)
 #include "include/exec/translate-all.h"
 int la_decode(CPUState *cs, TranslationBlock *tb, int max_insns)
 {
-    /* 1. Make TB page non-writable
-     * 2. Bound the number of insns to avoid cross page
-     * See translator_loop(), loongarch_tr_init_disas_context
+    /* TODO tr_data中的一些数据和DisasContext差不多？ */
+    /* See translator_loop(), loongarch_tr_init_disas_context 
+     * 1. Make TB page non-writable
+     * 2. Bound the max_insns to avoid TB cross page
      */
     page_protect(tb->pc);
     int64_t bound = -(tb->pc | TARGET_PAGE_MASK) / 4;

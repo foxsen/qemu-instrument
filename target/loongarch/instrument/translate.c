@@ -235,8 +235,10 @@ int la_gen_prologue(CPUState *cs, TCGContext *tcg_ctx)
     context_switch_bt_to_native = (uint64_t)code_buf_rx;
 
     tr_init(NULL);
+    // TODO rename switch_instru_to_native
     generate_context_switch_bt_to_native(cs);
     int ins_nr = la_encode(tcg_ctx, code_buf_rw);
+    lsdebug("prologue: %p, %p\n", code_buf_rw, code_buf_rw + ins_nr * 4);
     tr_fini();
 
     return ins_nr;
@@ -254,6 +256,7 @@ int la_gen_epilogue(CPUState *cs, TCGContext *tcg_ctx)
     tr_init(NULL);
     generate_context_switch_native_to_bt(cs);
     int ins_nr = la_encode(tcg_ctx, code_buf_rw);
+    lsdebug("epilogue: %p, %p\n", code_buf_rw, code_buf_rw + ins_nr * 4);
     tr_fini();
 
     return ins_nr;
@@ -640,6 +643,7 @@ static void INS_free_all_itemp(CPUState *cs, INS INS)
 
 int INS_translate(CPUState *cs, INS INS)
 {
+    // FIXME 除了syscall还会有一些其他触发异常的指令，没有处理
     /* 
      * 做两件事:
      * 1. 寄存器重映射，为没有映射的寄存器分配临时寄存器
