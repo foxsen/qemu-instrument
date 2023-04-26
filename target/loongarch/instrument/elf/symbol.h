@@ -20,9 +20,11 @@ extern "C" {
     void image_add_symbol(image *image, const char * name, uint64_t addr, uint64_t size);
 
     symbol_info *image_get_symbol_by_name(image *image, const char *name);
+    /* use this function get symbol info */
     symbol_info *get_symbol_by_pc(uint64_t pc);
-    bool is_symbol_name_dupcalited(const char *name);
+    const char *get_symbol_name_by_pc(uint64_t pc);
 
+    bool is_symbol_name_dupcalited(const char *name);
     void print_collected_symbols(void);
 
 #ifdef __cplusplus

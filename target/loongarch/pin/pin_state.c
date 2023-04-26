@@ -49,19 +49,25 @@ void exit_instrument(CPUArchState *env, int code)
     }
 }
 
+// TODO LMJ move to target_mmap
+// FIXME use static may cause multi-thread problem
 static int need_check_load_so = 0;
 static int fd;
+static int64_t offset;
 static void pin_instrument_load_shared_object_check(CPULoongArchState * env)
 {
     /* void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset); */
     uint64_t syscall_nr = env->gpr[11];
     int prot = env->gpr[6];
-    fd = env->gpr[8];
 
     /* Only trace mmap a EXEC segment */
     if (syscall_nr != 222 || (prot & PROT_EXEC) == 0) {
         return;
     }
+    
+    /* save info used after mmap */
+    fd = env->gpr[8];
+    offset = env->gpr[9];
     need_check_load_so = 1;
 }
 
@@ -73,9 +79,10 @@ static void pin_instrument_load_shared_object(CPULoongArchState * env)
     }
     need_check_load_so = 0;
 
-    uint64_t retval = env->gpr[4];
+    uint64_t ret = env->gpr[4];
     IMG img;
-    parse_elf_symbol_with_fd(fd, retval, &img);
+    parse_elf_symbol_with_fd(fd, ret - offset, &img);
+    // FIXME I can't 100% sure it is an ELF?
     IMG_instrument(img);
 }
 

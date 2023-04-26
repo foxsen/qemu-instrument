@@ -92,8 +92,17 @@ symbol_info *get_symbol_by_pc(uint64_t pc)
             return sym;
         }
     }
-
     return NULL;
+}
+
+const char *get_symbol_name_by_pc(uint64_t pc)
+{
+    const char *name = "";
+    symbol_info *sym = get_symbol_by_pc(pc);
+    if (sym) {
+        name = sym->name;
+    }
+    return name;
 }
 
 void print_collected_symbols(void)

@@ -628,6 +628,7 @@ abi_long target_mmap(abi_ulong start, abi_ulong len, int target_prot,
     page_flags |= PAGE_RESET;
     page_set_flags(start, start + len, page_flags);
  the_end:
+    // TODO LMJ move parse symbol to here
     trace_target_mmap_complete(start);
     if (qemu_loglevel_mask(CPU_LOG_PAGE)) {
         log_page_dump(__func__);
