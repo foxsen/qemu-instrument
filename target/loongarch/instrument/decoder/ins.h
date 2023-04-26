@@ -20,6 +20,10 @@ typedef struct Ins {
     struct Ins *next;
 } Ins;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* === Ins Inspection API === */
 bool op_is_branch(LA_OPCODE op);
 bool op_is_direct_branch(LA_OPCODE op);
@@ -52,4 +56,7 @@ bool opnd_is_writeonly(Ins *ins, int i);
 bool opnd_is_readwrite(Ins *ins, int i);
 
 uint64_t ins_target_addr(Ins *ins, uint64_t pc);
+#ifdef __cplusplus
+}
+#endif
 #endif

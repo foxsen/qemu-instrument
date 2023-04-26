@@ -276,7 +276,11 @@ LA_OPND_TYPE get_opnd_type(Ins *ins, int i)
 LISA_REG_ACCESS_TYPE get_reg_access_type(Ins *ins, int i)
 {
     LISA_REG_ACCESS_FORMAT format = lisa_reg_access_table[ins->op];
-    lsassertm(format.valid, "reg access format not defined. opcode=%d\n", ins->op);
+    // lsassertm(format.valid, "reg access format not defined. opcode=%d\n", ins->op);
+    if (!format.valid) {
+        fprintf(stderr, "reg access format not defined. opcode=%d\n", ins->op);
+        return REG_ACCESS_INVALID;
+    }
     return format.opnd[i];
 }
 
