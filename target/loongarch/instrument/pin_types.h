@@ -7,9 +7,6 @@
 
 /* TODO rename to ins_block, and move to ins.h */
 typedef struct pin_ins {
-    struct pin_ins *next;
-    struct pin_ins *prev;
-
     /* origin ins info */
     uint64_t pc;
     uint32_t opcode;
@@ -20,6 +17,9 @@ typedef struct pin_ins {
     Ins *last_ins;
     int len;
     
+    struct pin_ins *next;
+    struct pin_ins *prev;
+
     /* instrument ins linked-list */
     /* indicate the position where callbacks to insert */
     Ins *ibefore_next_cb;
@@ -50,7 +50,7 @@ typedef struct pin_rtn {
     const char *name;
     uint64_t addr;
     uint64_t size;
-} *RTN;
+} RTN;
 
 INS INS_alloc(uint64_t pc, uint32_t opcode, Ins *origin_ins);
 BBL BBL_alloc(uint64_t pc);

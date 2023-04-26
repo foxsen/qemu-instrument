@@ -83,10 +83,10 @@ void TRACE_append_BBL(TRACE trace, BBL bbl)
 
 RTN RTN_alloc(const char *name, uint64_t addr, uint64_t size)
 {
-    RTN rtn = malloc(sizeof(struct pin_rtn));
-    rtn->name = name;
-    rtn->addr = addr;
-    rtn->size = size;
-    return rtn;
+    return (RTN) {
+        .name = name,
+        .addr = addr,
+        .size = size
+    };
 }
 
