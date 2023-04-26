@@ -36,6 +36,7 @@ CFLAGS = $(GLIB_CFLAGS)
 CFLAGS += -fPIC -Wall $(filter -W%, $(QEMU_CFLAGS))
 CFLAGS += $(if $(findstring no-psabi,$(QEMU_CFLAGS)),-Wpsabi)
 CFLAGS += -I$(SRC_PATH)/include
+CFLAGS += -O2
 
 # 照着CFLAGS抄的
 CXXFLAGS = $(GLIB_CFLAGS)
@@ -43,6 +44,7 @@ CXXFLAGS += -fPIC -Wall $(filter -W%, $(QEMU_CXXFLAGS))
 CXXFLAGS += $(if $(findstring no-psabi,$(QEMU_CXXFLAGS)),-Wpsabi)
 CXXFLAGS += -I$(SRC_PATH)/include
 CXXFLAGS += -std=gnu++11
+CXXFLAGS += -O2
 
 all: $(SONAMES)
 
