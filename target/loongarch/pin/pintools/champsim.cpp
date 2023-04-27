@@ -111,7 +111,7 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val)
     }
     trace_instr_format_t trace = {
         .ip = pc,
-        .ret_val = ret_val,
+        .ret_val = pc + 4,
         .is_branch = 1,
         .branch_taken = (unsigned char)taken,
         .destination_registers = {reg_rw_w(reg_rw)},
