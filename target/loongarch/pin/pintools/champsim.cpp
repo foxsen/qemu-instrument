@@ -18,8 +18,8 @@ typedef struct trace_instr_format {
     unsigned long long int destination_memory[NUM_INSTR_DESTINATIONS]; // output memory
     unsigned long long int source_memory[NUM_INSTR_SOURCES];           // input memory
     unsigned long long ret_val;
-    //unsigned int insn;
-    unsigned short op;
+    unsigned int insn;
+    //unsigned short op;
     unsigned char is_branch;    // is this branch
     unsigned char branch_taken; // if so, is this taken
 
@@ -65,7 +65,7 @@ static VOID ins_load_before(UINT64 pc, UINT64 addr)
     ins_load_addr = addr;
 }
 
-static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, /*UINT32 insn,*/ UINT16 op)
+static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 insn/*, UINT16 op*/)
 {
     if (icount < icount_begin) {
         return;
@@ -78,15 +78,15 @@ static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, /*UINT32 in
         .ip = pc,
         .source_memory = {ins_load_addr},
         .ret_val = ret_val,
-        //.insn = insn,
-        .op = op,
+        .insn = insn,
+        //.op = op,
         .destination_registers = {reg_rw_w(reg_rw)},
         .source_registers = {reg_rw_r0(reg_rw), reg_rw_r1(reg_rw), reg_rw_r2(reg_rw)},
     };
     put_trace(&trace);
 }
 
-static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, /*UINT32 insn,*/ UINT16 op)
+static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 insn/*, UINT16 op*/)
 {
     if (icount < icount_begin) {
         return;
@@ -98,15 +98,15 @@ static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, /*UINT32 insn,*/ UI
     trace_instr_format_t trace = {
         .ip = pc,
         .destination_memory = {addr},
-        //.insn = insn,
-        .op = op,
+        .insn = insn,
+        //.op = op,
         .destination_registers = {reg_rw_w(reg_rw)},
         .source_registers = {reg_rw_r0(reg_rw), reg_rw_r1(reg_rw), reg_rw_r2(reg_rw)},
     };
     put_trace(&trace);
 }
 
-static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, /*UINT32 insn,*/ UINT16 op)
+static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT32 insn/*, UINT16 op*/)
 {
     if (icount < icount_begin) {
         return;
@@ -118,8 +118,8 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, /*UIN
     trace_instr_format_t trace = {
         .ip = pc,
         .ret_val = pc + 4,
-        //.insn = insn,
-        .op = op,
+        .insn = insn,
+        //.op = op,
         .is_branch = 1,
         .branch_taken = (unsigned char)taken,
         .destination_registers = {reg_rw_w(reg_rw)},
@@ -128,7 +128,7 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, /*UIN
     put_trace(&trace);
 }
 
-static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, /*UINT32 insn,*/ UINT16 op)
+static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 insn/*, UINT16 op*/)
 {
     if (icount < icount_begin) {
         return;
@@ -140,8 +140,8 @@ static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, /*UINT32 insn,*
     trace_instr_format_t trace = {
         .ip = pc,
         .ret_val = ret_val,
-        //.insn = insn,
-        .op = op,
+        .insn = insn,
+        //.op = op,
         .destination_registers = {reg_rw_w(reg_rw)},
         .source_registers = {reg_rw_r0(reg_rw), reg_rw_r1(reg_rw), reg_rw_r2(reg_rw)},
     };
@@ -185,17 +185,17 @@ static VOID Instruction(INS ins, VOID* v)
         gpr_w = 0;
     }
     gpr_w += REG_GR_BASE;
-    //unsigned int insn = ins->opcode;
-    unsigned short op = ins->origin_ins->op;
+    unsigned int insn = ins->opcode;
+    //unsigned short op = ins->origin_ins->op;
     if (INS_IsMemoryRead(ins)) {
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_load_before, IARG_UINT64, ins->pc, IARG_MEMORYOP_EA, 0, IARG_END);
-        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_load_after, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, /*insn,*/ op, IARG_END);
+        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_load_after, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, insn,/* op,*/ IARG_END);
     } else if (INS_IsMemoryWrite(ins)) {
-        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_store, IARG_UINT64, ins->pc, IARG_MEMORYOP_EA, 0, IARG_UINT64, rw, IARG_UINT64, /*insn,*/ op, IARG_END);
+        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_store, IARG_UINT64, ins->pc, IARG_MEMORYOP_EA, 0, IARG_UINT64, rw, IARG_UINT64, insn,/* op,*/ IARG_END);
     } else if (INS_IsBranch(ins)) {
-        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_br, IARG_UINT64, ins->pc, IARG_BRANCH_TAKEN, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, /*insn,*/ op, IARG_END);
+        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_br, IARG_UINT64, ins->pc, IARG_BRANCH_TAKEN, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, insn,/* op,*/ IARG_END);
     } else {
-        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_others, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, /*insn,*/ op, IARG_END);
+        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_others, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, insn,/* op,*/ IARG_END);
     }
 }
 
