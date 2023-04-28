@@ -176,7 +176,7 @@ void tb_target_set_jmp_target(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 #else
 
 #include "qemu/bitops.h"
-#include "target/loongarch/instrument/ins.h"
+#include "target/loongarch/instrument/tr_data.h"
 #include "target/loongarch/instrument/decoder/disasm.h"
 #include "target/loongarch/instrument/decoder/assemble.h"
 #include "target/loongarch/instrument/util/error.h"

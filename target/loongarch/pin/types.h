@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h> // for NULL
-#include "../instrument/pin_types.h"
+#include "../instrument/tr_data.h"
 #include "reg.h"
 
 typedef unsigned char BOOL;

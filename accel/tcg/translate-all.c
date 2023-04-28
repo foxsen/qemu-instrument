@@ -63,7 +63,7 @@
 #include "internal.h"
 #ifdef CONFIG_LMJ
 #include "target/loongarch/instrument/instrument.h"
-#include "target/loongarch/instrument/ins.h"
+#include "target/loongarch/instrument/tr_data.h"
 #endif
 
 /* #define DEBUG_TB_INVALIDATE */

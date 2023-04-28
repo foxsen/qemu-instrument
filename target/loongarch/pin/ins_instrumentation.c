@@ -3,7 +3,7 @@
 #include "pin_state.h"
 #include <stdarg.h>
 #include "../instrument/util/error.h"
-#include "../instrument/ins.h"
+#include "../instrument/tr_data.h"
 #include "../instrument/regs.h"
 #include "../instrument/env.h"
 #include "../instrument/util/bitopts.h"

@@ -2,7 +2,7 @@
 #define _TRANSALTE_H_
 
 #include "env.h"
-#include "ins.h"
+#include "tr_data.h"
 #include <stdint.h>
 
 

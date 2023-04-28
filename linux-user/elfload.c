@@ -2757,7 +2757,7 @@ static bool parse_elf_properties(int image_fd,
 
 #ifdef CONFIG_LMJ
 #include "target/loongarch/instrument/elf/elf_parser.h"
-#include "target/loongarch/instrument/pin_types.h"
+#include "target/loongarch/instrument/tr_data.h"
 #include "target/loongarch/pin/pin_state.h"
 #endif
 static void load_elf_image(const char *image_name, int image_fd,
