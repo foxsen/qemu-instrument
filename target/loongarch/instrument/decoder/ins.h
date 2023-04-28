@@ -43,6 +43,7 @@ bool op_is_sc(LA_OPCODE op);
 LA_OPND_TYPE get_opnd_type(Ins *ins, int i);
 LISA_REG_ACCESS_TYPE get_reg_access_type(Ins *ins, int i);
 bool is_reg_access_type_valid(Ins *ins);
+
 bool opnd_is_reg(Ins *ins, int i);
 bool opnd_is_imm(Ins *ins, int i);
 bool opnd_is_gpr(Ins *ins, int i);
@@ -56,6 +57,7 @@ bool opnd_is_writeonly(Ins *ins, int i);
 bool opnd_is_readwrite(Ins *ins, int i);
 
 uint64_t ins_target_addr(Ins *ins, uint64_t pc);
+
 #ifdef __cplusplus
 }
 #endif
