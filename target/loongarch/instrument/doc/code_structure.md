@@ -4,11 +4,22 @@
 - 指令翻译：target/loongarch/instrument
 - 指令插桩：target/loongarch/pin
 
-## 指令解析
-- ins.h: 定义了 `Ins` 结构体，用于表示一条LA指令，并实现了检查获取指令信息的一些相关接口
-- disasm.h: 解析二进制生成 `Ins`
-- assemble.h: 将 `Ins` 汇编生成为机器码
-- ir2.h: LA指令的相关信息
+## 指令解析(decoder)
+- ins.h: 定义了表示一条LA指令的 `Ins` 结构体。并提供了一系列获取指令信息（指令类型、操作数类型、跳转目标地址）函数。
+- disasm.h: 解析二进制，生成 `Ins`
+- assemble.h: 将 `Ins` 汇编生成为二进制代码
+- ir2.h: 指令编码格式等基本信息
+- la_print.h：将指令、操作数转换为人类可读的字符串
+
+指令编码格式等数据保存在如下表中：
+
+```
+// 建议通过 `ins.h` 中提供的指令检查API获取这些信息
+lisa_format_table[]     // LoongArch指令编码格式
+ir2_opnd_type_table[]   // 操作数(rd, rj, rk) -> 操作数类型(GPR/FPR/IMM)
+bit_field_table[]       // 操作数(rd, rk, rk) -> 操作数所在位域
+ir2_opnd_type_table[]   // 指令中各操作数对寄存器的读写情况（不完整）
+```
 
 ## 翻译部分
 核心代码在：
