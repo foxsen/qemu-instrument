@@ -57,6 +57,23 @@ BOOL BBL_Valid(BBL x)
     return (x != NULL);
 }
 
+ADDRINT BBL_Address(BBL x)
+{
+    return x->pc;
+}
+
+USIZE BBL_Size(BBL x)
+{
+    return (x->nr_ins) * 4;
+}
+
+BOOL BBL_HasFallThrough(BBL x)
+{
+    IR2_OPCODE op = x->ins_tail->origin_ins->op;
+    if (op_is_branch(op) && !op_is_condition_branch(op))
+        return false;
+    return true;
+}
 
 /* INS */
 INS INS_Next(INS x)

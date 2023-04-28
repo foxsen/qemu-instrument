@@ -19,6 +19,9 @@ INS BBL_InsTail(BBL x);
 BBL BBL_Next(BBL x);
 BBL BBL_Prev(BBL x);
 BOOL BBL_Valid(BBL x);
+ADDRINT BBL_Address(BBL x);
+USIZE BBL_Size(BBL x);
+BOOL BBL_HasFallThrough(BBL x);
 
 INS INS_Next(INS x);
 INS INS_Prev(INS x);
