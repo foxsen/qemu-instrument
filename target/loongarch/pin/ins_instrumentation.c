@@ -767,8 +767,6 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
     /* AFUNPTR funptr = cb->func; */
     /* IR2_OPCODE op = INS->origin_ins->op; */
 
-    bool no_delay_action = false;
-
     for (int i = cb->arg_cnt - 1; i >= 0; --i) {
         IARG_TYPE arg_type = cb->arg[i].type;
         uint64_t arg_value = cb->arg[i].value;
@@ -797,13 +795,9 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
             }
             break;
         default:
-            no_delay_action = true;
             break;
         }
     }
-
-    /* TODO 对于IPOINT_AFTER，需要检查指令是否为跳转指令，若是则插桩会失败 */
-    lsassert(cb->ipoint == IPOINT_BEFORE || no_delay_action);
 }
 
 
@@ -913,6 +907,8 @@ static void insert_callback(INS INS, Ins *cur, ANALYSIS_CALL *cb)
 
 VOID INS_InsertCall(INS INS, IPOINT ipoint, AFUNPTR funptr, ...)
 {
+    lsassertm(ipoint == IPOINT_BEFORE || INS_HasFallThrough(INS), "can not instrument at IPOINT_AFTER for unconditional branch\n");
+
     /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
@@ -926,7 +922,8 @@ VOID INS_InsertCall(INS INS, IPOINT ipoint, AFUNPTR funptr, ...)
 
 VOID INS_InsertPredicatedCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 {
-    /* Parse Instrument Arguments to cb */
+    lsassertm(ipoint == IPOINT_BEFORE || INS_HasFallThrough(INS), "can not instrument at IPOINT_AFTER for unconditional branch\n");
+
     va_list valist;
     va_start(valist, funptr);
     ANALYSIS_CALL cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
@@ -1027,10 +1024,9 @@ VOID INS_InsertPredicatedCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 
 VOID INS_InsertIfCall(INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(ipoint == IPOINT_BEFORE);
+    lsassertm(ipoint == IPOINT_BEFORE || INS_HasFallThrough(INS), "can not instrument at IPOINT_AFTER for unconditional branch\n");
 
-    /* Parse Instrument Arguments to cb */
+    /* 此处不插桩，推迟到INS_InsertThenCall()再插桩 */
     va_list valist;
     va_start(valist, funptr);
     PIN_instru_ctx.ins_if_call_cb = parse_iarg(IOBJECT_INS, ipoint, funptr, valist);
@@ -1041,8 +1037,9 @@ VOID INS_InsertIfCall(INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 VOID INS_InsertThenCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 {
     /* FIXME more strict validation */
-    /* 目前的设计是ThenCall必须紧接着IfCall调用，因为IfCall的返回值放在$a0里 */
-    lsassertm(PIN_instru_ctx.ins_if_call_valid == true, "should call INS_InsertIfCall first\n");
+    /* ThenCall必须紧接着IfCall调用 */
+    /* 目前的设计是将IfCall的返回值放在$a0里，根据$a0决定是否调用thenCall */
+    lsassertm(PIN_instru_ctx.ins_if_call_valid == true && PIN_instru_ctx.ins_if_call_cb.ipoint == ipoint, "should call INS_InsertIfCall before INS_InsertThenCall\n");
     ANALYSIS_CALL *if_cb = &PIN_instru_ctx.ins_if_call_cb;
     PIN_instru_ctx.ins_if_call_valid = false;
 
@@ -1077,6 +1074,8 @@ VOID INS_InsertThenCall (INS INS, IPOINT ipoint, AFUNPTR funptr,...)
 
 VOID BBL_InsertCall(BBL bbl, IPOINT ipoint, AFUNPTR funptr, ...)
 {
+    lsassertm(ipoint == IPOINT_BEFORE || BBL_HasFallThrough(bbl), "can not instrument at IPOINT_AFTER for unconditional branch\n");
+
     /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
@@ -1090,10 +1089,8 @@ VOID BBL_InsertCall(BBL bbl, IPOINT ipoint, AFUNPTR funptr, ...)
 
 VOID BBL_InsertIfCall (BBL bbl, IPOINT ipoint, AFUNPTR funptr,...)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(ipoint == IPOINT_BEFORE);
+    lsassertm(ipoint == IPOINT_BEFORE || BBL_HasFallThrough(bbl), "can not instrument at IPOINT_AFTER for unconditional branch\n");
 
-    /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
     PIN_instru_ctx.bbl_if_call_cb = parse_iarg(IOBJECT_BBL, ipoint, funptr, valist);
@@ -1105,11 +1102,10 @@ VOID BBL_InsertThenCall (BBL BBL, IPOINT ipoint, AFUNPTR funptr,...)
 {
     /* FIXME more strict validation */
     /* 目前的设计是ThenCall必须紧接着IfCall调用，因为IfCall的返回值放在$a0里 */
-    lsassertm(PIN_instru_ctx.bbl_if_call_valid == true, "should call BBL_InsertIfCall first\n");
+    lsassertm(PIN_instru_ctx.bbl_if_call_valid == true && PIN_instru_ctx.bbl_if_call_cb.ipoint == ipoint, "should call BBL_InsertIfCall before BBL_InsertThenCall\n");
     ANALYSIS_CALL *if_cb = &PIN_instru_ctx.bbl_if_call_cb;
     PIN_instru_ctx.bbl_if_call_valid = false;
 
-    /* Parse Instrument Arguments to cb */
     va_list valist;
     va_start(valist, funptr);
     ANALYSIS_CALL then_cb = parse_iarg(IOBJECT_BBL, ipoint, funptr, valist);
@@ -1183,11 +1179,7 @@ VOID RTN_instrument(TRACE trace)
     int cb_cnt;
     ANALYSIS_CALL * cbs = RTN_get_entry_cbs(ins->pc, &cb_cnt);
     for (int i = 0; i < cb_cnt; ++i) {
-        if (cbs[i].ipoint == IPOINT_BEFORE) {
-            _RTN_InsertCall(ins, &cbs[i]);
-        } else {
-            lsassertm(0, "invalid rtn instument point %d\n", cbs[i].ipoint);
-        }
+        _RTN_InsertCall(ins, &cbs[i]);
     }
 
     /* 检查trace的最后一条指令是否为要函数插桩的函数出口 */
@@ -1202,11 +1194,7 @@ VOID RTN_instrument(TRACE trace)
 
         cbs = RTN_get_exit_cbs(ins->pc, &cb_cnt);
         for (int i = 0; i < cb_cnt; ++i) {
-            if (cbs[i].ipoint == IPOINT_AFTER) {
-                _RTN_InsertCall(ins, &cbs[i]);
-            } else {
-                lsassertm(0, "invalid rtn instument point %d\n", cbs[i].ipoint);
-            }
+            _RTN_InsertCall(ins, &cbs[i]);
         }
     }
 }
@@ -1227,7 +1215,7 @@ static VOID insert_inline_add(INS INS, VOID* ptr, UINT64 imm)
         INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, reg_val, reg_val, imm));
     } else {
         int reg_imm = reg_alloc_itemp();
-        INS_load_imm64_before(INS, cur, reg_imm, (uint64_t)imm);
+        INS_load_imm64_before(INS, cur, reg_imm, imm);
         INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADD_D, reg_val, reg_val, reg_imm));
         reg_free_itemp(reg_imm);
     }
@@ -1243,7 +1231,7 @@ static VOID insert_inline_add_atomic(INS INS, VOID* ptr, UINT64 imm)
     int reg_addr = reg_alloc_itemp();
     int reg_imm = reg_alloc_itemp();
     INS_load_imm64_before(INS, cur, reg_addr, (uint64_t)ptr);
-    INS_load_imm64_before(INS, cur, reg_imm, (uint64_t)imm);
+    INS_load_imm64_before(INS, cur, reg_imm, imm);
     INS_insert_ins_before(INS, cur, ins_create_3(LISA_AMADD_D, reg_zero, reg_imm, reg_addr));
     reg_free_itemp(reg_addr);
     reg_free_itemp(reg_imm);
