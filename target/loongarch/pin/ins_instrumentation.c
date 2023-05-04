@@ -880,7 +880,7 @@ static Ins *get_next_cb_position(INS INS, IPOINT ipoint)
     }
     if (ipoint == IPOINT_AFTER) {
         if (INS->iafter_next_cb == NULL) {
-            // 在INS末尾暂时插一条nop，方便在nop之前插入指令
+            // 在INS末尾临时插一条nop，方便在nop之前插入指令
             INS_insert_ins_after(INS, INS->last_ins, ins_nop());
             INS->iafter_next_cb = init_callback_block(INS, INS->last_ins);
             INS_remove_ins(INS, INS->last_ins);
@@ -1201,11 +1201,9 @@ VOID RTN_instrument(TRACE trace)
 
 
 
-/* add imm to value in ptr, not atmoic */
-static VOID insert_inline_add(INS INS, VOID* ptr, UINT64 imm)
+/* Add imm to the value pointed by ptr, non-atmoic add */
+static VOID insert_inline_add(INS INS, Ins *cur, VOID* ptr, UINT64 imm)
 {
-    Ins *cur = INS->first_ins;
-
     int reg_addr = reg_alloc_itemp();
     int reg_val = reg_alloc_itemp();
     INS_load_imm64_before(INS, cur, reg_addr, (uint64_t)ptr);
@@ -1224,10 +1222,8 @@ static VOID insert_inline_add(INS INS, VOID* ptr, UINT64 imm)
     reg_free_itemp(reg_val);
 }
 
-static VOID insert_inline_add_atomic(INS INS, VOID* ptr, UINT64 imm)
+static VOID insert_inline_add_atomic(INS INS, Ins *cur, VOID* ptr, UINT64 imm)
 {
-    Ins *cur = INS->first_ins;
-
     int reg_addr = reg_alloc_itemp();
     int reg_imm = reg_alloc_itemp();
     INS_load_imm64_before(INS, cur, reg_addr, (uint64_t)ptr);
@@ -1237,27 +1233,39 @@ static VOID insert_inline_add_atomic(INS INS, VOID* ptr, UINT64 imm)
     reg_free_itemp(reg_imm);
 }
 
-VOID INS_InsertInlineAdd(INS ins, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)
+VOID INS_InsertInlineAdd(INS INS, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(action == IPOINT_BEFORE);
+    Ins *cur;
+    if (action == IPOINT_BEFORE) {
+        cur = INS->first_ins;
+    } else if (action == IPOINT_AFTER) {
+        // 在INS末尾临时插一条nop，方便在nop之前插入指令
+        INS_insert_ins_after(INS, INS->last_ins, ins_nop());
+        cur = INS->last_ins;
+    } else {
+        lsassertm(0, "Unsupported IPOINT type\n");
+        return;
+    }
 
     if (!atomic) {
-        insert_inline_add(ins, ptr, imm);
+        insert_inline_add(INS, cur, ptr, imm);
     } else {
-        insert_inline_add_atomic(ins, ptr, imm);
+        insert_inline_add_atomic(INS, cur, ptr, imm);
+    }
+
+    if (action == IPOINT_AFTER) {
+        INS_remove_ins(INS, INS->last_ins);
     }
 }
 
 VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL atomic)
 {
-    /* TODO: support IPONT_AFTER */
-    lsassert(action == IPOINT_BEFORE);
+    lsassertm(action == IPOINT_BEFORE, "can not insert an inline-add after a BBL\n");
 
     if (!atomic) {
-        insert_inline_add(bbl->ins_head, ptr, imm);
+        insert_inline_add(bbl->ins_head, bbl->ins_head->first_ins, ptr, imm);
     } else {
-        insert_inline_add_atomic(bbl->ins_head, ptr, imm);
+        insert_inline_add_atomic(bbl->ins_head, bbl->ins_head->first_ins, ptr, imm);
     }
 }
 
