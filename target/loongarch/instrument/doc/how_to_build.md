@@ -48,7 +48,6 @@ make
 -showtrans: show translation
 -debug-log: print debug log
 -d nochain: disable tb_link
--fullregs: ld/st every reg from memory
 -noibtc: not use jmp_cache for JIRL
 -lmj-debug: debug时为了和qemu对比trace，控制环境变量等因素一致
 ```

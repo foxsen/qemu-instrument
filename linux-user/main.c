@@ -68,7 +68,6 @@ char *exec_path;
 int singlestep;
 #ifdef CONFIG_LMJ
 int showtrans;
-int fullregs;
 int enable_jmp_cache = 1;
 int lmj_debug_log;
 int lmj_debug;
@@ -405,11 +404,6 @@ static void handle_arg_showtrans(const char *arg)
     showtrans = 1;
 }
 
-static void handle_arg_fullregs(const char *arg)
-{
-    fullregs = 1;
-}
-
 static void handle_arg_noibtc(const char *arg)
 {
     enable_jmp_cache = 0;
@@ -514,8 +508,6 @@ static const struct qemu_argument arg_table[] = {
 #ifdef CONFIG_LMJ
     {"showtrans",  "QEMU_SHOWTRANS",   false, handle_arg_showtrans,
      "",           "show ins translation"},
-    {"fullregs",   "QEMU_FULLREGS",    false, handle_arg_fullregs,
-     "",           "ld/st every reg in instruction"},
     {"noibtc",     "QEMU_NOIBTC",      false, handle_arg_noibtc,
      "",           "not use jmp cache for JIRL"},
     {"debug-log",  "QEMU_DEBUG_LOG",   false, handle_arg_debug_log,

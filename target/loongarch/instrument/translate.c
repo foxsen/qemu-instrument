@@ -6,7 +6,6 @@
 /* for cpu_loop_exit */
 #include "exec/exec-all.h"
 extern int lmj_debug;
-extern int fullregs;
 extern int enable_jmp_cache;
 
 #include "instrument.h"
@@ -586,7 +585,7 @@ static void INS_reg_remapping(CPUState *cs, INS INS, Ins *ins)
 
     /* 2. if itemp used, add LD/ST ins around origin ins */
     /* FIXME 如果两个操作数的是同一个reg，如果都被READ，会是LOAD两次 */
-    if (!fullregs && is_reg_access_type_valid(ins)) {
+    if (is_reg_access_type_valid(ins)) {
         for (int i = 0; i < ins->opnd_count; ++i) {
             int gpr = origin_ins->opnd[i].val;
             if (opnd_is_gpr(ins, i) && !gpr_is_mapped(gpr)) {
@@ -600,13 +599,11 @@ static void INS_reg_remapping(CPUState *cs, INS INS, Ins *ins)
             }
         }
     } else {
-
 #ifdef CONFIG_LMJ_DEBUG
         char msg[32];
         sprint_op(ins->op, msg);
         lsdebug("Reg access type undefined: %s\n", msg);
 #endif
-
         for (int i = 0; i < ins->opnd_count; ++i) {
             int gpr = origin_ins->opnd[i].val;
             if (opnd_is_gpr(ins, i) && !gpr_is_mapped(gpr)) {

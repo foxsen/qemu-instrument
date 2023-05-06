@@ -66,7 +66,7 @@ static const int itemp_map[] = {
     /* [ITEMP8] = reg_t8, */
 };
 
-static const int itemp_index_map[] = {
+static const int itemp_reverse_map[] = {
     /* [0 ... 31] = INVALID_TEMP, */
     [reg_a6] = ITEMP0,
     [reg_s8] = ITEMP1,
@@ -227,7 +227,7 @@ int mapped_gpr(int gpr) {
 /* === 临时寄存器映射 === */
 static inline int get_itemp_index(int itemp)
 {
-    return itemp_index_map[itemp];
+    return itemp_reverse_map[itemp];
 }
 
 #define ITEMP_NUM (sizeof(itemp_map) / sizeof(int))
