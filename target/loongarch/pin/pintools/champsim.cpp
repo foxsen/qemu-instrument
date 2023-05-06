@@ -180,22 +180,25 @@ static VOID Instruction(INS ins, VOID* v)
 {
     INS_InsertInlineAdd(ins, IPOINT_BEFORE, &icount, 1, false);
     long rw = get_reg_rw(ins);
-    long gpr_w = rw & 0xff;
-    if (gpr_w >= 32) {
-        gpr_w = 0;
+    long reg_w = rw & 0xff;
+    /* Note: REG currenly only supports GRP and FPR */
+    REG REG_W;
+    if (reg_w < 32) {
+        REG_W = gpr_to_REG(reg_w);
+    } else {
+        REG_W = fpr_to_REG(reg_w - 32);
     }
-    gpr_w += REG_GR_BASE;
     unsigned int inst = ins->opcode;
     //unsigned short op = ins->origin_ins->op;
     if (INS_IsMemoryRead(ins)) {
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_load_before, IARG_UINT64, ins->pc, IARG_MEMORYOP_EA, 0, IARG_END);
-        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_load_after, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, inst,/* op,*/ IARG_END);
+        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_load_after, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, REG_W, IARG_UINT64, inst,/* op,*/ IARG_END);
     } else if (INS_IsMemoryWrite(ins)) {
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_store, IARG_UINT64, ins->pc, IARG_MEMORYOP_EA, 0, IARG_UINT64, rw, IARG_UINT64, inst,/* op,*/ IARG_END);
     } else if (INS_IsBranch(ins)) {
-        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_br, IARG_UINT64, ins->pc, IARG_BRANCH_TAKEN, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, inst,/* op,*/ IARG_END);
+        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ins_br, IARG_UINT64, ins->pc, IARG_BRANCH_TAKEN, IARG_UINT64, rw, IARG_REG_VALUE, REG_W, IARG_UINT64, inst,/* op,*/ IARG_END);
     } else {
-        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_others, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, gpr_w, IARG_UINT64, inst,/* op,*/ IARG_END);
+        INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_others, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, REG_W, IARG_UINT64, inst,/* op,*/ IARG_END);
     }
 }
 
