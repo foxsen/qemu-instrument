@@ -115,6 +115,9 @@
 
 bool gpr_is_mapped(int gpr);
 int mapped_gpr(int gpr);
+bool fpr_is_mapped(int fpr);
+int mapped_fpr(int fpr);
+
 
 int reg_alloc_itemp(void);
 void reg_free_itemp(int itemp_gpr);

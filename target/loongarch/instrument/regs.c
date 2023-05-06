@@ -43,6 +43,42 @@ static const int reg_gpr_map[] = {
     [reg_s8] = reg_invalid,
 };
 
+static const int reg_fpr_map[] = {
+    /* [0 ... 31] = reg_invalid, */
+    [reg_f0] = reg_f0,
+    [reg_f1] = reg_f1,
+    [reg_f2] = reg_f2,
+    [reg_f3] = reg_f3,
+    [reg_f4] = reg_f4,
+    [reg_f5] = reg_f5,
+    [reg_f6] = reg_f6,
+    [reg_f7] = reg_f7,
+    [reg_f8] = reg_f8,
+    [reg_f9] = reg_f9,
+    [reg_f10] = reg_f10,
+    [reg_f11] = reg_f11,
+    [reg_f12] = reg_f12,
+    [reg_f13] = reg_f13,
+    [reg_f14] = reg_f14,
+    [reg_f15] = reg_f15,
+    [reg_f16] = reg_f16,
+    [reg_f17] = reg_f17,
+    [reg_f18] = reg_f18,
+    [reg_f19] = reg_f19,
+    [reg_f20] = reg_f20,
+    [reg_f21] = reg_f21,
+    [reg_f22] = reg_f22,
+    [reg_f23] = reg_f23,
+    [reg_f24] = reg_f24,
+    [reg_f25] = reg_f25,
+    [reg_f26] = reg_f26,
+    [reg_f27] = reg_f27,
+    [reg_f28] = reg_f28,
+    [reg_f29] = reg_f29,
+    [reg_f30] = reg_f30,
+    [reg_f31] = reg_f31,
+};
+
 #define ITEMP0          0
 #define ITEMP1          1
 #define ITEMP2          2
@@ -209,10 +245,8 @@ static const int itemp_reverse_map[] = {
 
 
 /* === 寄存器映射 === */
-#define GPR_MAPPING_NUM (sizeof(reg_gpr_map) / sizeof(int))
-
 bool gpr_is_mapped(int gpr) {
-    lsassert(0 <= gpr && gpr < GPR_MAPPING_NUM);
+    lsassert(0 <= gpr && gpr < 32);
     return (reg_gpr_map[gpr] != reg_invalid);
 }
 
@@ -222,6 +256,15 @@ int mapped_gpr(int gpr) {
     return reg_gpr_map[gpr];
 }
 
+bool fpr_is_mapped(int fpr) {
+    lsassert(0 <= fpr && fpr < 32);
+    return (reg_fpr_map[fpr] != reg_invalid);
+}
+
+int mapped_fpr(int fpr) {
+    lsassert(fpr_is_mapped(fpr));
+    return reg_fpr_map[fpr];
+}
 
 
 /* === 临时寄存器映射 === */

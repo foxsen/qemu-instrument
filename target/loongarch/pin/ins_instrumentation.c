@@ -244,6 +244,69 @@ static bool gpr_is_mapped_in_instru(int gpr) {
     return gpr_is_mapped(gpr) && !gpr_need_saved_in_instru(gpr);
 }
 
+static bool fpr_need_saved_in_instru(int fpr) {
+    if (!save_fpr_regs) {
+        return false;
+    }
+    return fpr_is_mapped(fpr) && (reg_f0 <= mapped_fpr(fpr) && mapped_fpr(fpr) <= reg_f23);
+}
+
+static bool fpr_is_mapped_in_instru(int fpr) {
+    return fpr_is_mapped(fpr) && !fpr_need_saved_in_instru(fpr);
+}
+
+static void load_REG_to_gpr(INS INS, Ins *cur, REG REG, int reg)
+{
+    if (REG_is_gpr(REG)) {
+        int gpr = REG_to_gpr(REG);
+        if (gpr_is_mapped_in_instru(gpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, reg, mapped_gpr(gpr), 0));
+        } else {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg, reg_env, env_offset_of_gpr(current_cpu, gpr)));
+        }
+    } else if (REG_is_fpr(REG)) {
+        int fpr = REG_to_fpr(REG);
+        if (fpr_is_mapped_in_instru(fpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVFR2GR_D, reg, mapped_fpr(fpr)));
+        } else {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, reg, reg_env, env_offset_of_fpr(current_cpu, fpr)));
+        }
+    } else {
+        lsassertm(0, "invalid REG: not a GPR or FPR\n");
+    }
+}
+
+/* store REG to memory(env) if REG is mapped */
+static void store_REG_to_env(INS INS, Ins *cur, REG REG)
+{
+    if (REG_is_gpr(REG)) {
+        int gpr = REG_to_gpr(REG);
+        if (gpr_is_mapped_in_instru(gpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
+        }
+    } else if (REG_is_fpr(REG)) {
+        int fpr = REG_to_fpr(REG);
+        if (fpr_is_mapped_in_instru(fpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FST_D, mapped_fpr(fpr), reg_env, env_offset_of_fpr(current_cpu, fpr)));
+        }
+    } else {
+        lsassertm(0, "invalid REG: not a GPR or FPR\n");
+    }
+}
+
+/* get REG's address in memory(env) */
+static void load_reg_env_ptr_to_reg(INS INS, Ins *cur, REG REG, int reg)
+{
+    if (REG_is_gpr(REG)) {
+        /* ADDI_D use si12 is enough */
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, reg, reg_env, env_offset_of_gpr(current_cpu, REG_to_gpr(REG))));
+    } else if (REG_is_fpr(REG)) {
+        INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, reg, reg_env, env_offset_of_fpr(current_cpu, REG_to_fpr(REG))));
+    } else {
+        lsassertm(0, "invalid REG: not a GPR or FPR\n");
+    }
+}
+
 static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 {
     /* IOBJECT object = cb->object; */
@@ -269,83 +332,51 @@ static void set_iargs(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
             INS_load_imm64_before(INS, cur, arg_reg, INS_Address(INS));
             break;
         case IARG_REG_VALUE:
+            load_REG_to_gpr(INS, cur, arg_value, arg_reg);
+            break;
         case IARG_SYSCALL_NUMBER:
+            lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL);
+            load_REG_to_gpr(INS, cur, REG_SYSCALL_NR, arg_reg);
+            break;
         case IARG_SYSARG_VALUE:
+            lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL && arg_value < 7);
+            load_REG_to_gpr(INS, cur, REG_SYSCALL_ARG0 + arg_value, arg_reg);
+            break;
         case IARG_SYSRET_VALUE:
+            lsassert(ipoint == IPOINT_AFTER && op == LISA_SYSCALL);
+            load_REG_to_gpr(INS, cur, REG_SYSCALL_RET, arg_reg);
+            break;
         case IARG_FUNCARG_CALLSITE_VALUE:
         case IARG_FUNCARG_ENTRYPOINT_VALUE:
+            /* TODO assert at CALLSITE/ENTRYPOINT */
+            lsassert(arg_value < 8);
+            load_REG_to_gpr(INS, cur, REG_A0 + arg_value, arg_reg);
+            break;
         case IARG_FUNCRET_EXITPOINT_VALUE:
+            lsassert(INS_IsRet(INS));
+            load_REG_to_gpr(INS, cur, REG_A0, arg_reg);
+            break;
         case IARG_RETURN_IP:
-            {
-                int gpr;
-                switch (arg_type) {
-                case IARG_REG_VALUE:
-                    gpr = REG_to_gpr(arg_value);
-                    break;
-                case IARG_SYSCALL_NUMBER:
-                    lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL);
-                    gpr = reg_syscall_nr;
-                    break;
-                case IARG_SYSARG_VALUE:
-                    lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL && arg_value < 7);
-                    gpr = reg_syscall_arg0 + arg_value;
-                    break;
-                case IARG_SYSRET_VALUE:
-                    lsassert(ipoint == IPOINT_AFTER && op == LISA_SYSCALL);
-                    gpr = reg_syscall_ret;
-                    break;
-                case IARG_FUNCARG_CALLSITE_VALUE:
-                case IARG_FUNCARG_ENTRYPOINT_VALUE:
-                    /* TODO assert at CALLSITE/ENTRYPOINT */
-                    lsassert(arg_value < 8);
-                    gpr = reg_a0 + arg_value;
-                    break;
-                case IARG_FUNCRET_EXITPOINT_VALUE:
-                    lsassert(INS_IsRet(INS));
-                    gpr = reg_a0;
-                    break;
-                case IARG_RETURN_IP:
-                    /* TODO assert at entrypoint */
-                    /* 所有的示例里都是对RTN使用的 */
-                    gpr = reg_ra;
-                    break;
-                default:
-                    lsassertm(0, "unhandled iarg\n");
-                    break;
-                }
-
-                if (gpr_is_mapped_in_instru(gpr)) {
-                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_ORI, arg_reg, mapped_gpr(gpr), 0));
-                } else {
-                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_D, arg_reg, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                }
-            }
+            /* TODO assert at entrypoint */
+            /* 所有的官方示例里都是对RTN使用的 */
+            load_REG_to_gpr(INS, cur, REG_RA, arg_reg);
             break;
         case IARG_REG_REFERENCE:
+            {
+                REG REG = arg_value;
+                /* store reg to memory if needed, it will be reload after calling analysis_call */
+                store_REG_to_env(INS, cur, REG);
+                load_reg_env_ptr_to_reg(INS, cur, REG, arg_reg);
+            }
+            break;
         case IARG_SYSARG_REFERENCE:
             {
-                int gpr;
-                switch (arg_type) {
-                case IARG_REG_VALUE:
-                    gpr = REG_to_gpr(arg_value);
-                    break;
-                case IARG_SYSARG_REFERENCE:
-                    lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL && arg_value < 7);
-                    gpr = reg_syscall_arg0 + arg_value;
-                    break;
-                default:
-                    lsassertm(0, "unhandled iarg\n");
-                    break;
-                }
-
-                if (gpr_is_mapped_in_instru(gpr)) {
-                    /* store reg to env, it will be reload after calling analysis_call */
-                    INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                }
-                /* ADDI and LD/ST all use si12 */
-                INS_insert_ins_before(INS, cur, ins_create_3(LISA_ADDI_D, arg_reg, reg_env, env_offset_of_gpr(current_cpu, gpr)));
-                break;
+                lsassert(ipoint == IPOINT_BEFORE && op == LISA_SYSCALL && arg_value < 7);
+                REG REG = gpr_to_REG(reg_syscall_arg0 + arg_value);
+                store_REG_to_env(INS, cur, REG);
+                load_reg_env_ptr_to_reg(INS, cur, REG, arg_reg);
             }
+            break;
         case IARG_REG_CONST_REFERENCE:
             lsassertm(0, "not implemented\n");
             break;
@@ -805,18 +836,21 @@ static void iargs_delayed_action(const ANALYSIS_CALL *cb, INS INS, Ins *cur)
 /* 调用分析函数前，保存直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
 static void save_caller_saved_regs(INS INS, Ins *cur)
 {
-    /* gpr */
+    /* save gpr */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_need_saved_in_instru(gpr)) {
             INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_D, mapped_gpr(gpr), reg_env, env_offset_of_gpr(current_cpu, gpr)));
         }
     }
-    /* save fpr[0,23], fcc[8], fcsr0 */
+    /* save fpr */
+    for (int fpr = 0; fpr < 32; ++fpr) {
+        if (fpr_need_saved_in_instru(fpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FST_D, mapped_fpr(fpr), reg_env, env_offset_of_fpr(current_cpu, fpr)));
+        }
+    }
+    /* save fcc[8], fcsr0 */
     if (save_fpr_regs) {
         int reg_tmp = reg_t8;
-        for (int fpr = 0; fpr < 24; ++fpr) {
-            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FST_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
-        }
         for (int fcc = 0; fcc < 8; ++fcc) {
             INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVCF2GR, reg_tmp, fcc));
             INS_insert_ins_before(INS, cur, ins_create_3(LISA_ST_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
@@ -827,14 +861,11 @@ static void save_caller_saved_regs(INS INS, Ins *cur)
 }
 
 /* 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-static void restore_caller_saved_regs(INS INS, Ins *cur)
+static void load_caller_saved_regs(INS INS, Ins *cur)
 {
-    /* 恢复 fpr[0,23], fcc[8], fcsr0 */
+    /* 恢复 fcc[8], fcsr0 */
     if (save_fpr_regs) {
         int reg_tmp = reg_t8;
-        for (int fpr = 0; fpr < 24; ++fpr) {
-            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FLD_D, fpr, reg_env, env_offset_of_fpr(current_cpu, fpr)));
-        }
         for (int fcc = 0; fcc < 8; ++fcc) {
             INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_B, reg_tmp, reg_env, env_offset_of_fcc(current_cpu, fcc)));
             INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2CF, reg_tmp, fcc));
@@ -842,7 +873,12 @@ static void restore_caller_saved_regs(INS INS, Ins *cur)
         INS_insert_ins_before(INS, cur, ins_create_3(LISA_LD_W, reg_tmp, reg_env, env_offset_of_fscr0(current_cpu))); 
         INS_insert_ins_before(INS, cur, ins_create_2(LISA_MOVGR2FCSR, reg_tmp, reg_fcsr));
     }
-
+    /* 恢复 fpr */
+    for (int fpr = 0; fpr < 32; ++fpr) {
+        if (fpr_need_saved_in_instru(fpr)) {
+            INS_insert_ins_before(INS, cur, ins_create_3(LISA_FLD_D, mapped_fpr(fpr), reg_env, env_offset_of_fpr(current_cpu, fpr)));
+        }
+    }
     /* 恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
     for (int gpr = 0; gpr < 32; ++gpr) {
         if (gpr_need_saved_in_instru(gpr)) {
@@ -864,7 +900,7 @@ static Ins *init_callback_block(INS INS, Ins *cur)
     Ins *pos = cur->prev;
 
     /* 3. 调用分析函数后，恢复直接映射到了“调用者保存寄存器”的寄存器，以及sp,tp */
-    restore_caller_saved_regs(INS, cur);
+    load_caller_saved_regs(INS, cur);
 
     return pos->next;
 }
@@ -1272,15 +1308,16 @@ VOID BBL_InsertInlineAdd(BBL bbl, IPOINT action, VOID* ptr, UINT64 imm, BOOL ato
 
 ADDRINT PIN_GetContextReg(const CONTEXT* ctxt, REG reg)
 {
-    /* FIXME when call this, dose mapped gpr in env? */
-    assert(REG_GR_BASE <= reg && reg <= REG_GR_LAST);
-    return ctxt->env->gpr[reg - REG_GR_BASE];
+    /* FIXME mapped gpr is not in env */
+    assert(REG_is_gpr(reg));
+    return ctxt->env->gpr[REG_to_gpr(reg)];
 }
 
 VOID PIN_SetContextReg (CONTEXT *ctxt, REG reg, ADDRINT val)
 {
-    assert(REG_GR_BASE <= reg && reg <= REG_GR_LAST);
-    ctxt->env->gpr[reg - REG_GR_BASE] = val;
+    /* FIXME mapped gpr is not in env */
+    assert(REG_is_gpr(reg));
+    ctxt->env->gpr[REG_to_gpr(reg)] = val;
 }
 
 ADDRINT PIN_GetSyscallNumber (const CONTEXT *ctxt, SYSCALL_STANDARD std)
