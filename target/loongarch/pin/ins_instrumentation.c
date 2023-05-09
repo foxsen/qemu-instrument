@@ -1352,3 +1352,8 @@ VOID PIN_SetSyscallReturn (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val)
 {
     ctxt->env->gpr[reg_syscall_ret] = val;
 }
+
+extern void qemu_dump_guest_memory(const char* filename);
+VOID PIN_DumpGuestMemory (const char* filename) {
+    qemu_dump_guest_memory(filename);
+}

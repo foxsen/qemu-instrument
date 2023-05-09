@@ -4269,6 +4269,64 @@ static int elf_core_dump(int signr, const CPUArchState *env)
         return (-errno);
     return (0);
 }
+
+void qemu_dump_guest_memory(const char* filename);
+void qemu_dump_guest_memory(const char* filename) {
+    struct vm_area_struct *vma = NULL;
+    struct mm_struct *mm = NULL;
+    if ((mm = vma_init()) == NULL) {
+        fprintf(stderr, "vma_init fail\n");
+        goto out;
+    }
+    walk_memory_regions(mm, vma_walker);
+    FILE* f = fopen(filename, "wb");
+    if (f == NULL) {
+        fprintf(stderr, "unable to open %s, %s\n", filename, strerror(errno));
+        goto out;
+    }
+
+    for (vma = vma_first(mm); vma != NULL; vma = vma_next(vma)) {
+        abi_ulong addr = vma->vma_start;
+        fprintf(stderr, "vma start:%lx end:%lx\n", vma->vma_start, vma->vma_end);
+
+        for (addr = vma->vma_start; addr < vma->vma_end;
+             addr += TARGET_PAGE_SIZE) {
+            char page[TARGET_PAGE_SIZE];
+            int error;
+
+            /*
+             *  Read in page from target process memory and
+             *  write it to coredump file.
+             */
+            error = copy_from_user(page, addr, sizeof (page));
+            if (error != 0) {
+                (void) fprintf(stderr, "unable to dump " TARGET_ABI_FMT_lx "\n",
+                               addr);
+                // errno = -error;
+                // goto out;
+                continue;
+            }
+            uint64_t begin_size[8] = {0};
+            begin_size[0] = addr;
+            begin_size[1] = TARGET_PAGE_SIZE;
+            if(fwrite(begin_size, sizeof(begin_size), 1, f) != 1) {
+                fprintf(stderr, "unable to write %s, %s\n", filename, strerror(errno));
+                goto out;
+            }
+            if(fwrite(page, TARGET_PAGE_SIZE, 1, f) != 1) {
+                fprintf(stderr, "unable to write %s, %s\n", filename, strerror(errno));
+                goto out;
+            }
+        }
+    }
+ out:
+    if (mm != NULL)
+        vma_delete(mm);
+    if (f != NULL)
+        fclose(f);
+}
+
+
 #endif /* USE_ELF_CORE_DUMP */
 
 void do_init_thread(struct target_pt_regs *regs, struct image_info *infop)
