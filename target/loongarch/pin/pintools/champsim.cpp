@@ -37,6 +37,11 @@ static void flush_trace_buffer(void) {
     trace_buffer_index = 0;
 }
 
+const char* getenv_str(const char* __name, const char* __default) {
+    const char* env = getenv(__name);
+    return env ? env : __default;
+}
+
 static UINT64 icount = 0;
 static UINT64 icount_begin = 1000000;
 static UINT64 icount_end = 2000000;
@@ -59,6 +64,12 @@ void put_trace(trace_instr_format_t* trace) {
 #define reg_rw_r1(rw) (unsigned char)((rw >> 16) & 0xff)
 #define reg_rw_r2(rw) (unsigned char)((rw >> 24) & 0xff)
 
+static void dump_guest_memory(void) {
+    if (icount == icount_begin) {
+        PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
+    }
+}
+
 static UINT64 ins_load_addr;
 static VOID ins_load_before(UINT64 pc, UINT64 addr)
 {
@@ -67,6 +78,7 @@ static VOID ins_load_before(UINT64 pc, UINT64 addr)
 
 static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    dump_guest_memory();
     if (icount < icount_begin) {
         return;
     }
@@ -88,6 +100,7 @@ static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst
 
 static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT16 op*/)
 {
+    dump_guest_memory();
     if (icount < icount_begin) {
         return;
     }
@@ -108,6 +121,7 @@ static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT
 
 static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    dump_guest_memory();
     if (icount < icount_begin) {
         return;
     }
@@ -130,6 +144,7 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT3
 
 static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    dump_guest_memory();
     if (icount < icount_begin) {
         return;
     }
