@@ -64,8 +64,12 @@ void put_trace(trace_instr_format_t* trace) {
 #define reg_rw_r1(rw) (unsigned char)((rw >> 16) & 0xff)
 #define reg_rw_r2(rw) (unsigned char)((rw >> 24) & 0xff)
 
+static int has_dump_memory;
+
 static void dump_guest_memory(void) {
-    if (icount == icount_begin) {
+    if (icount >= icount_begin - 1 && icount <= icount_begin + 1 && !has_dump_memory) {
+        has_dump_memory = 1;
+        fprintf(stderr, "champsim TRACE_DUMP_MEMORY\n");
         PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
     }
 }
