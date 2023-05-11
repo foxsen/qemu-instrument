@@ -59,6 +59,7 @@ VOID PIN_SetSyscallArgument (CONTEXT *ctxt, SYSCALL_STANDARD std, UINT32 argNum,
 ADDRINT PIN_GetSyscallReturn (const CONTEXT *ctxt, SYSCALL_STANDARD std);
 VOID PIN_SetSyscallReturn (CONTEXT *ctxt, SYSCALL_STANDARD std, ADDRINT val);
 VOID PIN_DumpGuestMemory (const char* filename);
+VOID PIN_DumpGuestReg (const char* filename);
 
 #ifdef __cplusplus
 }

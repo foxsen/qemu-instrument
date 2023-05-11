@@ -66,11 +66,12 @@ void put_trace(trace_instr_format_t* trace) {
 
 static int has_dump_memory;
 
-static void dump_guest_memory(void) {
+static void dump_guest_memory_reg(void) {
     if (icount >= icount_begin - 1 && icount <= icount_begin + 1 && !has_dump_memory) {
         has_dump_memory = 1;
-        fprintf(stderr, "champsim TRACE_DUMP_MEMORY\n");
+        fprintf(stderr, "champsim TRACE_DUMP_MEMORY_REG\n");
         PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
+        PIN_DumpGuestReg(getenv_str("TRACE_DUMP_MEMORY", "regfile.txt"));
     }
 }
 
@@ -82,7 +83,7 @@ static VOID ins_load_before(UINT64 pc, UINT64 addr)
 
 static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    dump_guest_memory();
+    dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
@@ -104,7 +105,7 @@ static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst
 
 static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT16 op*/)
 {
-    dump_guest_memory();
+    dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
@@ -125,7 +126,7 @@ static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT
 
 static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    dump_guest_memory();
+    dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
@@ -148,7 +149,7 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT3
 
 static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    dump_guest_memory();
+    dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }

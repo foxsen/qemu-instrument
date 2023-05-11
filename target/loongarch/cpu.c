@@ -674,3 +674,18 @@ CpuDefinitionInfoList *qmp_query_cpu_definitions(Error **errp)
 
     return cpu_list;
 }
+
+void qemu_dump_guest_reg(const char* filename) {
+    LoongArchCPU *cpu = LOONGARCH_CPU(current_cpu);
+    CPULoongArchState *env = &cpu->env;
+    FILE* f = fopen(filename, "w");
+    if (f == NULL) {
+        fprintf(stderr, "unable to open %s, %s\n", filename, strerror(errno));
+        return;
+    }
+    for (int i = 0; i < 32; i++) {
+        fprintf("gpr, %d, %016lx\n", i, env->gpr[i]);
+    }
+
+    fclose(f);
+}

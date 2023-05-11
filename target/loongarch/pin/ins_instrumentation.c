@@ -1357,3 +1357,8 @@ extern void qemu_dump_guest_memory(const char* filename);
 VOID PIN_DumpGuestMemory (const char* filename) {
     qemu_dump_guest_memory(filename);
 }
+
+extern void qemu_dump_guest_reg(const char* filename);
+VOID PIN_DumpGuestReg (const char* filename) {
+    qemu_dump_guest_reg(filename);
+}
