@@ -675,6 +675,7 @@ CpuDefinitionInfoList *qmp_query_cpu_definitions(Error **errp)
     return cpu_list;
 }
 
+void qemu_dump_guest_reg(const char* filename);
 void qemu_dump_guest_reg(const char* filename) {
     LoongArchCPU *cpu = LOONGARCH_CPU(current_cpu);
     CPULoongArchState *env = &cpu->env;
@@ -684,7 +685,7 @@ void qemu_dump_guest_reg(const char* filename) {
         return;
     }
     for (int i = 0; i < 32; i++) {
-        fprintf("gpr, %d, %016lx\n", i, env->gpr[i]);
+        fprintf(f, "gpr, %d, %016lx\n", i, env->gpr[i]);
     }
 
     fclose(f);

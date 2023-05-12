@@ -71,7 +71,7 @@ static void dump_guest_memory_reg(void) {
         has_dump_memory = 1;
         fprintf(stderr, "champsim TRACE_DUMP_MEMORY_REG\n");
         PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
-        PIN_DumpGuestReg(getenv_str("TRACE_DUMP_MEMORY", "regfile.txt"));
+        PIN_DumpGuestReg(getenv_str("TRACE_DUMP_REG", "regfile.txt"));
     }
 }
 
