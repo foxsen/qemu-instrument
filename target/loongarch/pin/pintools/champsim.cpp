@@ -64,11 +64,8 @@ void put_trace(trace_instr_format_t* trace) {
 #define reg_rw_r1(rw) (unsigned char)((rw >> 16) & 0xff)
 #define reg_rw_r2(rw) (unsigned char)((rw >> 24) & 0xff)
 
-static int has_dump_memory;
-
 static void dump_guest_memory_reg(void) {
-    if (icount >= icount_begin - 1 && icount <= icount_begin + 1 && !has_dump_memory) {
-        has_dump_memory = 1;
+    if (icount == icount_begin) {
         fprintf(stderr, "champsim TRACE_DUMP_MEMORY_REG\n");
         PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
         PIN_DumpGuestReg(getenv_str("TRACE_DUMP_REG", "regfile.txt"));
@@ -198,7 +195,6 @@ static uint64_t get_reg_rw(INS ins) {
 
 static VOID Instruction(INS ins, VOID* v)
 {
-    INS_InsertInlineAdd(ins, IPOINT_BEFORE, &icount, 1, false);
     long rw = get_reg_rw(ins);
     long reg_w = rw & 0xff;
     /* Note: REG currenly only supports GRP and FPR */
@@ -220,6 +216,7 @@ static VOID Instruction(INS ins, VOID* v)
     } else {
         INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR)ins_others, IARG_UINT64, ins->pc, IARG_UINT64, rw, IARG_REG_VALUE, REG_W, IARG_UINT64, inst,/* op,*/ IARG_END);
     }
+    INS_InsertInlineAdd(ins, IPOINT_BEFORE, &icount, 1, false);
 }
 
 static VOID Init(VOID)
