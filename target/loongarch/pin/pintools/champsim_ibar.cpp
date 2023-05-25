@@ -76,12 +76,12 @@ static void dump_guest_memory_reg(void) {
 static UINT64 ins_load_addr;
 static VOID ins_load_before(UINT64 pc, UINT64 addr)
 {
-    icount += ibar;
     ins_load_addr = addr;
 }
 
 static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    icount += ibar;
     dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
