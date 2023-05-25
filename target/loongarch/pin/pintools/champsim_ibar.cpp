@@ -197,7 +197,6 @@ static uint64_t get_reg_rw(INS ins) {
     return destination_registers | source_registers[0] << 8 | source_registers[1] << 16 | source_registers[2] << 24;
 }
 
-int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type);
 
 static VOID Instruction(INS ins, VOID* v)
 {

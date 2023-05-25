@@ -9,6 +9,7 @@ extern "C" {
 
 void la_disasm(uint32_t opcode, Ins *ins);
 LA_OPCODE get_ins_op(uint32_t insn);
+int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type);
 
 #ifdef __cplusplus
 }
