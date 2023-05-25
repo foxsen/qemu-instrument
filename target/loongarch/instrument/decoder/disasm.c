@@ -74,7 +74,7 @@ static bool is_la_sign_opnd[] = {
     0,//OPD_XK
 };
 
-static int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type)
+int extract_opnd_val(uint32_t insn, GM_OPERAND_TYPE type)
 {
     GM_OPERAND_PLACE_RELATION bit_field = bit_field_table[type];
     int bit_start = bit_field.bit_range_0.start;
