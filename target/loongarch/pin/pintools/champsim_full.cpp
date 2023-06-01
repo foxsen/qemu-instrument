@@ -40,6 +40,7 @@ static void flush_trace_buffer(void) {
     trace_buffer_index = 0;
 }
 
+static UINT64 icount = 0;
 static int ibar_begin = 0;
 static int ibar_end = 0;
 static int mem_reg_dmped = 0;
@@ -62,7 +63,7 @@ void open_new_trace_file(){
     const char* trace_file_env = getenv("TRACE_FILE");
 
     if(trace_file_env){
-        strcat(trace_file_name, trace_file_env); strcat(trace_file_name, "_");
+        strcat(trace_file_name, trace_file_env);
     }
     strcat(trace_file_name, ".champsim.trace");
 
@@ -72,13 +73,13 @@ void open_new_trace_file(){
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stderr, "%s %ld %ld\n", trace_file_name);
+    fprintf(stderr, "%s\n", trace_file_name);
 }
 
 void reach_icount_end(){
     flush_trace_buffer();
 
-    printf("Dump Trace Finish!\n");
+    printf("Dump Trace Finish! icount = %ld\n", icount);
     fclose(trace_file);
     exit(0);
 }
@@ -116,6 +117,7 @@ static VOID ins_load_before(UINT64 pc, UINT64 addr)
 
 static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (!ibar_begin) {
         return;
@@ -137,6 +139,7 @@ static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst
 
 static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT16 op*/)
 {
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (!ibar_begin) {
         return;
@@ -157,6 +160,7 @@ static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT
 
 static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (!ibar_begin) {
         return;
@@ -179,6 +183,7 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT3
 
 static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (!ibar_begin) {
         return;
