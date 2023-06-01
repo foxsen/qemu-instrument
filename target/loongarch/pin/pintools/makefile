@@ -27,7 +27,8 @@ NAMES += isampling
 NAMES += branch_offset
 NAMES += mem_trace
 NAMES += champsim
-NAMES += champsim_ibar
+NAMES += champsim_multi
+NAMES += champsim_full
 
 SONAMES := $(addsuffix .so,$(addprefix lib,$(NAMES)))
 
