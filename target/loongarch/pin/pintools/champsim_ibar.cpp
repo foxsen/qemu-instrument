@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <vector>
+#include <string.h>
+#include <algorithm>
 #include "pintool.h"
 #include "../../instrument/decoder/disasm.h"
 #include "../../instrument/decoder/la_print.h"
@@ -37,15 +40,12 @@ static void flush_trace_buffer(void) {
     trace_buffer_index = 0;
 }
 
-const char* getenv_str(const char* __name, const char* __default) {
-    const char* env = getenv(__name);
-    return env ? env : __default;
-}
-
 static UINT64 icount = 0;
 static UINT64 icount_begin = 1000000;
 static UINT64 icount_end = 2000000;
-static int ibar = 0; 
+vector<uint64_t> simpoints;
+static int ibar_begin = 0;
+static int ibar_end = 0;
 
 void put_trace(trace_instr_format_t* trace) {
     if (trace_buffer_index == TRACE_BUFFER_CAP) {
@@ -60,6 +60,44 @@ void put_trace(trace_instr_format_t* trace) {
     */
 }
 
+void open_new_trace_file(){
+    char trace_file_name[256] = {0};
+    const char* trace_file_env = getenv("TRACE_FILE");
+    char start_pos[128] = {0}; sprintf(start_pos,"%ld", icount_begin);
+
+    if(trace_file_env){
+        strcat(trace_file_name, trace_file_env); strcat(trace_file_name, "_");
+    }
+    strcat(trace_file_name, start_pos); strcat(trace_file_name, ".champsim.trace");
+
+    trace_file = fopen(trace_file_name, "wb");
+    if (!trace_file) {
+        perror(trace_file_name);
+        exit(EXIT_FAILURE);
+    }
+
+    fprintf(stderr, "%s %ld %ld\n", trace_file_name, icount_begin, icount_end);
+}
+
+void reach_icount_end(){
+    flush_trace_buffer();
+
+    auto simpoints_it = simpoints.begin();
+    if((simpoints_it == simpoints.end()) || ibar_end){
+        printf("Dump Trace Finish!\n");
+        fclose(trace_file);
+        exit(0);
+    } else{
+        uint64_t simpoints_point = *simpoints_it;
+        icount_begin = simpoints_point - 10000000;
+        icount_end = icount_begin + 110000000;
+        simpoints.erase(simpoints_it);
+        fclose(trace_file);
+
+        open_new_trace_file();
+    }
+}
+
 #define reg_rw_w(rw) (unsigned char)(rw & 0xff)
 #define reg_rw_r0(rw) (unsigned char)((rw >> 8) & 0xff)
 #define reg_rw_r1(rw) (unsigned char)((rw >> 16) & 0xff)
@@ -68,8 +106,22 @@ void put_trace(trace_instr_format_t* trace) {
 static void dump_guest_memory_reg(void) {
     if (icount == icount_begin) {
         fprintf(stderr, "champsim TRACE_DUMP_MEMORY_REG\n");
-        PIN_DumpGuestMemory(getenv_str("TRACE_DUMP_MEMORY", "memory.bin"));
-        PIN_DumpGuestReg(getenv_str("TRACE_DUMP_REG", "regfile.txt"));
+
+        char mem_name[256] = {0};
+        char reg_name[256] = {0};
+        const char* trace_file_env = getenv("TRACE_FILE");
+        char start_pos[128] = {0}; sprintf(start_pos,"%ld", icount_begin);
+
+        if(trace_file_env){
+            strcat(mem_name, trace_file_env); strcat(mem_name, "_");
+            strcat(reg_name, trace_file_env); strcat(reg_name, "_");
+        }
+        strcat(mem_name, start_pos); strcat(mem_name, ".memory.bin");
+        strcat(reg_name, start_pos); strcat(reg_name, ".regfile.txt");
+
+
+        PIN_DumpGuestMemory(mem_name);
+        PIN_DumpGuestReg(reg_name);
     }
 }
 
@@ -81,14 +133,13 @@ static VOID ins_load_before(UINT64 pc, UINT64 addr)
 
 static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    icount += ibar;
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
-    if (icount >= icount_end) {
-        flush_trace_buffer();
-        exit(0);
+    if ((icount >= icount_end) || ibar_end) {
+        reach_icount_end();
     }
     trace_instr_format_t trace = {
         .ip = pc,
@@ -104,14 +155,13 @@ static VOID ins_load_after(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst
 
 static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT16 op*/)
 {
-    icount += ibar;
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
-    if (icount >= icount_end) {
-        flush_trace_buffer();
-        exit(0);
+    if ((icount >= icount_end) || ibar_end) {
+        reach_icount_end();
     }
     trace_instr_format_t trace = {
         .ip = pc,
@@ -126,14 +176,13 @@ static VOID ins_store(UINT64 pc, UINT64 addr, UINT64 reg_rw, UINT32 inst/*, UINT
 
 static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    icount += ibar;
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
-    if (icount >= icount_end) {
-        flush_trace_buffer();
-        exit(0);
+    if ((icount >= icount_end) || ibar_end) {
+        reach_icount_end();
     }
     trace_instr_format_t trace = {
         .ip = pc,
@@ -150,14 +199,13 @@ static VOID ins_br(UINT64 pc, UINT64 taken, UINT64 reg_rw, UINT64 ret_val, UINT3
 
 static VOID ins_others(UINT64 pc, UINT64 reg_rw, UINT64 ret_val, UINT32 inst/*, UINT16 op*/)
 {
-    icount += ibar;
+    icount += ibar_begin;
     dump_guest_memory_reg();
     if (icount < icount_begin) {
         return;
     }
-    if (icount >= icount_end) {
-        flush_trace_buffer();
-        exit(0);
+    if ((icount >= icount_end) || ibar_end) {
+        reach_icount_end();
     }
     trace_instr_format_t trace = {
         .ip = pc,
@@ -211,8 +259,14 @@ static VOID Instruction(INS ins, VOID* v)
     }
     unsigned int inst = ins->opcode;
     //unsigned short op = ins->origin_ins->op;
-    if(ins->origin_ins->op == LISA_IBAR && extract_opnd_val(inst, IMM_HINTL) == 64){
-        ibar = 1;
+    if(ins->origin_ins->op == LISA_IBAR){
+        if(extract_opnd_val(inst, IMM_HINTL) == 64){
+            printf("Encounter ibar begin!\n");
+            ibar_begin = 1;
+        } else if(extract_opnd_val(inst, IMM_HINTL) == 65){
+            printf("Encounter ibar End!\n");
+            ibar_end = 1;
+        }
     }
 
     if (INS_IsMemoryRead(ins)) {
@@ -230,22 +284,27 @@ static VOID Instruction(INS ins, VOID* v)
 
 static VOID Init(VOID)
 {
-    const char* trace_file_env = getenv("TRACE_FILE");
-    const char* trace_file_name = trace_file_env ? trace_file_env : "champsim.trace";
-    trace_file = fopen(trace_file_name, "wb");
-    if (!trace_file) {
-        perror(trace_file_name);
-        exit(EXIT_FAILURE);
+    const char* simpoints_env = getenv("SIMPOINTS");
+    FILE* fp_simpoints = fopen(simpoints_env, "r");
+    if(!fp_simpoints){
+        printf("Can not open simpoints file!\n");
     }
-    const char* icount_begin_env = getenv("ICOUNT_BEGIN");
-    if (icount_begin_env) {
-        icount_begin = atoll(icount_begin_env);
+
+    char buffer[128];
+    while (fgets(buffer, 128, fp_simpoints) != NULL) {
+        int64_t point = atoll(buffer) * 100000000;
+        simpoints.push_back(point);
     }
-    const char* icount_end_env = getenv("ICOUNT_END");
-    if (icount_end_env) {
-        icount_end = atoll(icount_end_env);
-    }
-    fprintf(stderr, "%s %ld %ld\n", trace_file_name, icount_begin, icount_end);
+    sort(simpoints.begin(), simpoints.end());
+    fclose(fp_simpoints);
+
+    auto simpoints_it = simpoints.begin();
+    uint64_t simpoints_point = *simpoints_it;
+    icount_begin = (simpoints_point == 0)? simpoints_point : (simpoints_point - 10000000);
+    icount_end = (simpoints_point == 0)? (icount_begin + 100000000) : (icount_begin + 110000000);
+    simpoints.erase(simpoints_it);
+
+    open_new_trace_file();
 }
 
 static VOID Fini(INT32 code, VOID* v)
