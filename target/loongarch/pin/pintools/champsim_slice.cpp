@@ -108,7 +108,7 @@ static void dump_guest_memory_reg(void) {
         char mem_name[256] = {0};
         char reg_name[256] = {0};
         const char* trace_file_env = getenv("TRACE_FILE");
-        char start_pos[128] = {0}; sprintf(start_pos,"%ld", icount_begin);
+        char start_pos[128] = {0}; sprintf(start_pos,"%ld", icount_begin-JUMP_LENGTH);
 
         if(trace_file_env){
             strcat(mem_name, trace_file_env); strcat(mem_name, "_");
